@@ -47,13 +47,16 @@ class MainWindow:
         """Setup the main GUI components."""
         # Create main frame
         self.main_frame = ctk.CTkFrame(self.root)
-        self.main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.main_frame.pack(fill="both", expand=True, padx=10, pady=(10, 0))
         
         # Create toolbar
         self.create_toolbar()
         
         # Create main content area
         self.create_content_area()
+        
+        # Create status bar
+        self.create_status_bar()
         
     def create_toolbar(self):
         """Create the toolbar with file operations and view controls."""
@@ -155,7 +158,7 @@ class MainWindow:
         self.tree_view.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
         
         # Create edit panel
-        self.edit_panel = EditPanel(self.right_panel, self.tree_view)
+        self.edit_panel = EditPanel(self.right_panel, self.tree_view, self)
         self.edit_panel.pack(fill="both", expand=True)
         
         # Load column visibility settings
@@ -163,6 +166,43 @@ class MainWindow:
         
         # Update Save View button state
         self.update_save_view_button_state()
+        
+    def create_status_bar(self):
+        """Create the status bar at the bottom of the application."""
+        # Create status bar frame at the bottom of the main window
+        self.status_bar = ctk.CTkFrame(self.root)
+        self.status_bar.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
+        
+        # Create status label
+        self.status_label = ctk.CTkLabel(
+            self.status_bar,
+            text="Ready",
+            font=ctk.CTkFont(size=12),
+            anchor="w"
+        )
+        self.status_label.pack(side="left", padx=10, pady=5)
+        
+        # Create file info label on the right
+        self.file_info_label = ctk.CTkLabel(
+            self.status_bar,
+            text="No file loaded",
+            font=ctk.CTkFont(size=12),
+            anchor="e"
+        )
+        self.file_info_label.pack(side="right", padx=10, pady=5)
+    
+    def update_status(self, message):
+        """Update the status bar message."""
+        self.status_label.configure(text=message)
+        self.root.update_idletasks()  # Force immediate update
+    
+    def update_file_info(self, file_path=None):
+        """Update the file information in the status bar."""
+        if file_path:
+            filename = os.path.basename(file_path)
+            self.file_info_label.configure(text=f"File: {filename}")
+        else:
+            self.file_info_label.configure(text="No file loaded")
         
     def open_file(self):
         """Open an Excel file."""
@@ -173,6 +213,8 @@ class MainWindow:
         
         if file_path:
             try:
+                self.update_status("Loading file...")
+                
                 # Load the Excel file
                 self.excel_handler.load_file(file_path)
                 self.current_file_path = file_path
@@ -196,17 +238,27 @@ class MainWindow:
                 self.filter_button.configure(state="normal")
                 self.clear_filters_button.configure(state="normal")
                 
+                # Update status and file info
+                self.update_status("File loaded successfully")
+                self.update_file_info(file_path)
+                
             except Exception as e:
+                self.update_status("Error loading file")
                 messagebox.showerror("Error", f"Failed to load file: {str(e)}")
                 
     def save_file(self):
         """Save the current file."""
         if self.current_file_path:
             try:
+                self.update_status("Saving file...")
+                
                 # Get data with user modifications applied
                 data = self.get_data_with_modifications()
                 self.excel_handler.save_file(self.current_file_path, data)
+                
+                self.update_status("File saved successfully")
             except Exception as e:
+                self.update_status("Error saving file")
                 messagebox.showerror("Error", f"Failed to save file: {str(e)}")
         else:
             messagebox.showwarning("Warning", "No file is currently open")
@@ -222,11 +274,17 @@ class MainWindow:
             
             if file_path:
                 try:
+                    self.update_status("Saving file...")
+                    
                     # Get data with user modifications applied
                     data = self.get_data_with_modifications()
                     self.excel_handler.save_file(file_path, data)
                     self.current_file_path = file_path
+                    
+                    self.update_status("File saved successfully")
+                    self.update_file_info(file_path)
                 except Exception as e:
+                    self.update_status("Error saving file")
                     messagebox.showerror("Error", f"Failed to save file: {str(e)}")
         else:
             messagebox.showwarning("Warning", "No file is currently open")
@@ -301,9 +359,11 @@ class MainWindow:
     def open_filter_dialog(self):
         """Open the filter dialog."""
         if hasattr(self, 'tree_view') and self.tree_view.has_data():
+            self.update_status("Opening filter dialog...")
             from src.gui.filter_dialog import FilterDialog
             dialog = FilterDialog(self.root, self.tree_view, self)
             self.root.wait_window(dialog.dialog)
+            self.update_status("Ready")
         else:
             messagebox.showwarning("Warning", "Please open a file first")
     
@@ -314,6 +374,7 @@ class MainWindow:
             # Notify that filters have changed
             self.view_has_changes = True
             self.update_save_view_button_state()
+            self.update_status("All filters cleared")
         else:
             messagebox.showwarning("Warning", "Please open a file first")
     
@@ -331,9 +392,14 @@ class MainWindow:
                 # Get original row data
                 original_data = self.get_original_row_data(row_id)
                 self.edit_panel.set_selected_item(original_data, row_id)
+                
+                # Update status
+                erp_name = original_data.get('ERP name', 'Unknown') if original_data else 'Unknown'
+                self.update_status(f"Selected: {erp_name}")
             else:
                 # Not an ERP item (category, subcategory, or sublevel node)
                 self.edit_panel.set_selected_item(None, None)
+                self.update_status("Ready")
         else:
             self.edit_panel.set_selected_item(None, None)
     
@@ -381,6 +447,26 @@ class MainWindow:
         # Start with original data
         data = self.tree_view.get_data().copy()
         
+        # Ensure User ERP Name column exists and is positioned correctly
+        if 'User ERP Name' in data.columns:
+            # If column exists but is in wrong position, move it
+            current_pos = data.columns.get_loc('User ERP Name')
+            erp_name_pos = data.columns.get_loc('ERP name')
+            
+            # If User ERP Name is not right after ERP name, move it
+            if current_pos != erp_name_pos + 1:
+                # Remove the column from its current position
+                user_erp_values = data['User ERP Name'].copy()
+                data = data.drop('User ERP Name', axis=1)
+                
+                # Insert it right after ERP name
+                erp_name_pos = data.columns.get_loc('ERP name') + 1
+                data.insert(erp_name_pos, 'User ERP Name', user_erp_values)
+        else:
+            # If column doesn't exist, add it after ERP name
+            erp_name_pos = data.columns.get_loc('ERP name') + 1
+            data.insert(erp_name_pos, 'User ERP Name', '')
+        
         # Apply user modifications
         modifications = self.tree_view.get_user_modifications()
         
@@ -406,16 +492,13 @@ class MainWindow:
                 if mask.any():
                     # Apply User ERP Name modification
                     if 'user_erp_name' in mods:
-                        # Add User ERP Name column if it doesn't exist
-                        if 'User ERP Name' not in data.columns:
-                            data['User ERP Name'] = ''
                         data.loc[mask, 'User ERP Name'] = mods['user_erp_name']
                     
                     # Apply reassignment modifications
                     if 'new_category' in mods and 'new_subcategory' in mods and 'new_sublevel' in mods:
                         data.loc[mask, 'Article Category'] = mods['new_category']
                         data.loc[mask, 'Article Subcategory'] = mods['new_subcategory']
-                        data.loc[mask, 'Article Sublevel'] = mods['new_sublevel']
+                        data.loc[mask, sublevel_col] = mods['new_sublevel']
         
         return data
             

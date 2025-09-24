@@ -10,11 +10,12 @@ import tkinter as tk
 class EditPanel(ctk.CTkFrame):
     """Panel for editing selected ERP items."""
     
-    def __init__(self, parent, tree_view):
+    def __init__(self, parent, tree_view, main_window=None):
         """Initialize the edit panel."""
         super().__init__(parent)
         
         self.tree_view = tree_view
+        self.main_window = main_window
         self.selected_item = None
         self.selected_row_id = None
         
@@ -236,6 +237,13 @@ class EditPanel(ctk.CTkFrame):
         user_erp_name = self.user_erp_name_entry.get().strip()
         self.tree_view.update_user_erp_name(self.selected_row_id, user_erp_name)
         
+        # Update status if main window is available
+        if self.main_window:
+            if user_erp_name:
+                self.main_window.update_status(f"Updated ERP name: {user_erp_name}")
+            else:
+                self.main_window.update_status("Cleared user ERP name")
+        
     def reassign_item(self):
         """Reassign the selected item to new category, subcategory, and sublevel."""
         if not self.selected_row_id:
@@ -251,3 +259,7 @@ class EditPanel(ctk.CTkFrame):
             return
             
         self.tree_view.reassign_item(self.selected_row_id, category, subcategory, sublevel)
+        
+        # Update status if main window is available
+        if self.main_window:
+            self.main_window.update_status(f"Reassigned item to: {category} > {subcategory} > {sublevel}")

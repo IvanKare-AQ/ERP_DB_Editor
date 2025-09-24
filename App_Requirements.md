@@ -83,6 +83,19 @@
 - Filters must be automatically loaded from settings file when application starts
 - Filter state must be properly synchronized with Save View button state
 
+## Data Export and Save Requirements
+- "User ERP Name" column must be positioned immediately after "ERP name" column in saved Excel files
+- Column reordering must preserve all existing data during save operations
+- Save functionality must handle both scenarios: existing column in wrong position and missing column
+- Consistent column order must be maintained across all save operations
+
+## User Interface Requirements
+- Status message bar at the bottom of the application window
+- Status messages for all major operations (file operations, item selection, modifications, filters)
+- File information display showing current loaded file name
+- Status messages must be visible and provide clear feedback to users
+- Status bar must be properly sized and positioned on application startup
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)

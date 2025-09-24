@@ -70,6 +70,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed edit panel population with correct ERP names and dropdown values
 - Fixed duplicate column handling in Excel data loading
 - Fixed User ERP Name column visibility based on settings
+- Fixed "User ERP Name" column positioning in Excel save files (now appears after "ERP name" column)
+- Fixed column reordering to preserve data during save operations
+
+### Added
+- Status message bar at bottom of application window
+- Status messages for file operations (open, save, save as)
+- Status messages for item operations (selection, name updates, reassignment)
+- Status messages for filter operations (open dialog, clear filters)
+- File information display showing current loaded file name
+- Comprehensive user feedback for all major operations
+- Smart column reordering logic for consistent Excel file structure
 
 ### Technical
 - Backend components moved under src/backend/ for better organization
