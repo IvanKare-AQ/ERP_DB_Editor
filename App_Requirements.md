@@ -56,6 +56,16 @@
 - "Save View" button must be grayed out when there are no differences between current view and saved settings
 - Proper separation between temporary view changes and persistent settings
 
+## Data Filtering Requirements
+- Excel-style filtering functionality for columns in tree view
+- Filter types: contains, equals, starts with, ends with
+- Filter dialog with individual column filter controls
+- Multiple column filters can be applied simultaneously
+- Filters must work with column visibility settings
+- Clear individual filters and clear all filters functionality
+- Real-time filter application with immediate tree view updates
+- Filters must preserve hierarchical tree structure
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)

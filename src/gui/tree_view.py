@@ -19,6 +19,8 @@ class TreeViewWidget(ctk.CTkFrame):
         # Data storage
         self.data = None
         self.visible_columns = None
+        self.filtered_data = None
+        self.active_filters = {}
         
         # Create the tree view
         self.create_tree_view()
@@ -78,19 +80,9 @@ class TreeViewWidget(ctk.CTkFrame):
     def load_data(self, data):
         """Load data into the tree view."""
         self.data = data
-        self.clear_tree()
-        
-        if data is not None and not data.empty:
-            # Apply column visibility settings if they exist
-            if self.visible_columns:
-                self.setup_columns_with_visibility(self.visible_columns)
-                self.populate_tree_with_visibility(data, self.visible_columns)
-            else:
-                # Group data by hierarchy with all columns
-                self.populate_tree(data)
-            
-            # Expand all nodes
-            self.expand_all()
+        # Clear filters when loading new data
+        self.active_filters.clear()
+        self.refresh_view()
             
     def clear_tree(self):
         """Clear all items from the tree."""
@@ -284,3 +276,100 @@ class TreeViewWidget(ctk.CTkFrame):
         visible_columns = config_manager.get_column_visibility()
         if visible_columns:
             self.set_visible_columns(visible_columns)
+    
+    def apply_filter(self, column, filter_value, filter_type="contains"):
+        """Apply a filter to a specific column."""
+        self.active_filters[column] = {
+            'value': filter_value,
+            'type': filter_type
+        }
+        self.refresh_view()
+    
+    def remove_filter(self, column):
+        """Remove filter from a specific column."""
+        if column in self.active_filters:
+            del self.active_filters[column]
+            self.refresh_view()
+    
+    def clear_all_filters(self):
+        """Clear all active filters."""
+        self.active_filters.clear()
+        self.refresh_view()
+    
+    def get_filtered_data(self):
+        """Get data with active filters applied."""
+        if not self.data is not None or self.data.empty:
+            return None
+        
+        filtered_data = self.data.copy()
+        
+        for column, filter_info in self.active_filters.items():
+            filter_value = filter_info['value']
+            filter_type = filter_info['type']
+            
+            # Map display column names to data column names
+            data_column = self.get_data_column_name(column)
+            if data_column not in filtered_data.columns:
+                continue
+            
+            if filter_type == "contains":
+                filtered_data = filtered_data[filtered_data[data_column].astype(str).str.contains(str(filter_value), case=False, na=False)]
+            elif filter_type == "equals":
+                filtered_data = filtered_data[filtered_data[data_column].astype(str) == str(filter_value)]
+            elif filter_type == "starts_with":
+                filtered_data = filtered_data[filtered_data[data_column].astype(str).str.startswith(str(filter_value), na=False)]
+            elif filter_type == "ends_with":
+                filtered_data = filtered_data[filtered_data[data_column].astype(str).str.endswith(str(filter_value), na=False)]
+        
+        return filtered_data
+    
+    def get_data_column_name(self, display_column):
+        """Map display column names to data column names."""
+        column_mapping = {
+            "ERP Name": "ERP name",
+            "CAD Name": "CAD name",
+            "Electronics": "Electronics",
+            "Product Value": "Product Value",
+            "Manufacturer": "Manufacturer",
+            "SKU": "SKU",
+            "EAN 13": "EAN 13",
+            "Unit": "Unit",
+            "Supplier": "Supplier",
+            "Expiry Date": "Expiry Date (Y/N)",
+            "Tracking Method": "Tracking Method",
+            "Procurement Method": "Procurement Method (Buy/Make)",
+            "Remark": "REMARK"
+        }
+        return column_mapping.get(display_column, display_column)
+    
+    def refresh_view(self):
+        """Refresh the tree view with current filters and visibility settings."""
+        if self.data is not None and not self.data.empty:
+            # Get filtered data
+            self.filtered_data = self.get_filtered_data()
+            
+            # Clear current view
+            self.clear_tree()
+            
+            # Apply column visibility settings if they exist
+            if self.visible_columns:
+                self.setup_columns_with_visibility(self.visible_columns)
+                self.populate_tree_with_visibility(self.filtered_data, self.visible_columns)
+            else:
+                # Group data by hierarchy with all columns
+                self.populate_tree(self.filtered_data)
+            
+            # Expand all nodes
+            self.expand_all()
+    
+    def get_unique_values(self, column):
+        """Get unique values for a specific column for filter options."""
+        if self.data is None or self.data.empty:
+            return []
+        
+        data_column = self.get_data_column_name(column)
+        if data_column not in self.data.columns:
+            return []
+        
+        unique_values = self.data[data_column].dropna().unique()
+        return sorted([str(val) for val in unique_values if val != ''])

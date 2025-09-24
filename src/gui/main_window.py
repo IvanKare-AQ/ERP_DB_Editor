@@ -108,6 +108,29 @@ class MainWindow:
         )
         self.save_view_button.pack(side="left", padx=5, pady=5)
         
+        # Separator
+        separator2 = ctk.CTkFrame(self.toolbar_frame, width=2, height=30)
+        separator2.pack(side="left", padx=10, pady=5)
+        
+        # Filter controls
+        self.filter_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Filter Data",
+            command=self.open_filter_dialog,
+            width=100,
+            state="disabled"
+        )
+        self.filter_button.pack(side="left", padx=5, pady=5)
+        
+        self.clear_filters_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Clear Filters",
+            command=self.clear_all_filters,
+            width=100,
+            state="disabled"
+        )
+        self.clear_filters_button.pack(side="left", padx=5, pady=5)
+        
     def create_content_area(self):
         """Create the main content area with tree view."""
         self.content_frame = ctk.CTkFrame(self.main_frame)
@@ -144,6 +167,8 @@ class MainWindow:
                 self.save_as_button.configure(state="normal")
                 self.column_visibility_button.configure(state="normal")
                 self.save_view_button.configure(state="normal")
+                self.filter_button.configure(state="normal")
+                self.clear_filters_button.configure(state="normal")
                 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load file: {str(e)}")
@@ -227,6 +252,22 @@ class MainWindow:
         else:
             self.save_view_button.configure(state="disabled")
             self.view_has_changes = False
+    
+    def open_filter_dialog(self):
+        """Open the filter dialog."""
+        if hasattr(self, 'tree_view') and self.tree_view.has_data():
+            from src.gui.filter_dialog import FilterDialog
+            dialog = FilterDialog(self.root, self.tree_view)
+            self.root.wait_window(dialog.dialog)
+        else:
+            messagebox.showwarning("Warning", "Please open a file first")
+    
+    def clear_all_filters(self):
+        """Clear all active filters."""
+        if hasattr(self, 'tree_view') and self.tree_view.has_data():
+            self.tree_view.clear_all_filters()
+        else:
+            messagebox.showwarning("Warning", "Please open a file first")
             
     def run(self):
         """Run the main application loop."""

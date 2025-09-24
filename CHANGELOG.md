@@ -35,6 +35,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Save View button state management - grays out when no changes exist
 - Implemented proper separation between temporary view changes and persistent settings
 
+### Added
+- Excel-style filtering functionality for tree view columns
+- Filter dialog with individual column filter controls
+- Multiple filter types: contains, equals, starts with, ends with
+- Filter toolbar buttons: Filter Data and Clear Filters
+- Real-time filter application with immediate tree view updates
+- Integration with column visibility settings
+- Hierarchical tree structure preservation during filtering
+
 ### Technical
 - Backend components moved under src/backend/ for better organization
 - Clean separation between GUI and backend layers
