@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved error handling in test script with better messages for missing modules
 - Enhanced installation scripts to handle test failures gracefully
 - Test script now correctly identifies project structure and missing dependencies
+- Fixed column visibility functionality - changes now properly reflected in table view
+- Implemented proper column hiding/showing in tree view widget
+- Added column visibility loading from configuration on startup
 
 ### Technical
 - Backend components moved under src/backend/ for better organization
