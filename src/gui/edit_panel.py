@@ -58,11 +58,6 @@ class EditPanel(ctk.CTkFrame):
         
     def setup_user_erp_name_section(self):
         """Setup the User ERP Name editing section."""
-        # Section title
-        section_title = ctk.CTkLabel(self, text="User ERP Name", 
-                                   font=ctk.CTkFont(size=14, weight="bold"))
-        section_title.pack(pady=(0, 5))
-        
         # Input field
         self.user_erp_name_entry = ctk.CTkEntry(
             self,
@@ -100,11 +95,6 @@ class EditPanel(ctk.CTkFrame):
         
     def setup_reassignment_section(self):
         """Setup the reassignment section."""
-        # Section title
-        section_title = ctk.CTkLabel(self, text="Reassign Item", 
-                                   font=ctk.CTkFont(size=14, weight="bold"))
-        section_title.pack(pady=(0, 5))
-        
         # Category dropdown
         category_frame = ctk.CTkFrame(self)
         category_frame.pack(fill="x", padx=10, pady=5)
@@ -328,11 +318,6 @@ class EditPanel(ctk.CTkFrame):
     
     def setup_ai_editing_section(self):
         """Setup the AI editing section."""
-        # Section title
-        section_title = ctk.CTkLabel(self, text="AI Editing", 
-                                   font=ctk.CTkFont(size=14, weight="bold"))
-        section_title.pack(pady=(0, 5))
-        
         # AI Settings subsection
         ai_settings_frame = ctk.CTkFrame(self)
         ai_settings_frame.pack(fill="x", padx=10, pady=5)
