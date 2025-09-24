@@ -99,6 +99,21 @@
 - Status messages must be visible and provide clear feedback to users
 - Status bar must be properly sized and positioned on application startup
 
+## Data Integrity and Column Handling Requirements
+- Excel data may contain duplicate column names with trailing spaces (e.g., "Article Sublevel " vs "Article Sublevel")
+- Application must correctly identify and use the column containing actual data
+- All tree view operations must use consistent column references throughout the application
+- Row ID generation must use the correct column name to ensure proper item identification
+- Dropdown population in edit panel must use the same column references as tree view operations
+- User ERP Name updates must work correctly with the tree view's tag structure
+
+## Visual Design Requirements
+- Dark mode theme for table view with professional appearance
+- Alternating row backgrounds for ERP items with subtle contrast
+- Color-coded hierarchy levels that are visible in dark theme
+- Consistent styling across all tree view elements
+- Hover effects and selection highlighting that work with dark theme
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)

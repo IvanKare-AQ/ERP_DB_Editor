@@ -120,6 +120,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Sublevels: Lighter dark gray background (#545454) with light green text (#81c784)
   - Dark theme hover effects (#424242) and selection highlighting (#1976d2)
 
+### Fixed
+- **Article Sublevel Display**: Fixed missing Article Sublevel in tree hierarchy
+  - Root cause: Excel data contains 'Article Sublevel ' (with trailing space) but code was looking for 'Article Sublevel' (without space)
+  - Updated all tree view operations to use correct column name consistently
+  - Fixed row ID generation, dropdown population, and data processing methods
+- **User ERP Name Updates**: Fixed User ERP Name not updating after dark mode implementation
+  - Updated tree selection handler to recognize new alternating row tag names (erp_item_even, erp_item_odd)
+  - Maintained compatibility with existing tag structure while supporting new styling
+- **Sublevel Dropdown Population**: Fixed Sublevel dropdown not updating on item selection in Reassign Item section
+  - Updated set_selected_item method to use correct column name ('Article Sublevel ' with trailing space)
+  - Now all three dropdowns (Category, Subcategory, Sublevel) populate correctly when items are selected
+
 ## [0.1.0] - Initial Release
 
 ### Added
