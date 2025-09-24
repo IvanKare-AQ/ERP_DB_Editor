@@ -114,6 +114,9 @@ class MainWindow:
         self.tree_view = TreeViewWidget(self.content_frame)
         self.tree_view.pack(fill="both", expand=True, padx=10, pady=10)
         
+        # Load column visibility settings
+        self.tree_view.load_column_visibility(self.config_manager)
+        
     def open_file(self):
         """Open an Excel file."""
         file_path = filedialog.askopenfilename(

@@ -84,6 +84,10 @@ class TreeViewWidget(ctk.CTkFrame):
             # Group data by hierarchy
             self.populate_tree(data)
             
+            # Apply column visibility settings if they exist
+            if self.visible_columns:
+                self.set_visible_columns(self.visible_columns)
+            
     def clear_tree(self):
         """Clear all items from the tree."""
         for item in self.tree.get_children():
@@ -164,12 +168,34 @@ class TreeViewWidget(ctk.CTkFrame):
         
     def get_visible_columns(self):
         """Get the currently visible columns."""
-        # This would be implemented based on the column visibility settings
-        # For now, return all columns
-        return self.tree["columns"]
+        if self.visible_columns:
+            return self.visible_columns
+        else:
+            # Return all columns if no visibility settings
+            return self.tree["columns"]
         
     def set_visible_columns(self, visible_columns):
         """Set the visible columns."""
         self.visible_columns = visible_columns
+        
         # Hide/show columns based on visibility settings
-        # This would be implemented based on the column visibility functionality
+        if visible_columns:
+            # Get all available columns
+            all_columns = self.tree["columns"]
+            
+            # Hide columns that are not in visible_columns
+            for column in all_columns:
+                if column not in visible_columns:
+                    self.tree.column(column, width=0, minwidth=0)
+                else:
+                    # Restore column width if it was hidden
+                    self.tree.column(column, width=100, minwidth=80)
+            
+            # Update the tree view to reflect changes
+            self.tree.update()
+    
+    def load_column_visibility(self, config_manager):
+        """Load column visibility settings from config manager."""
+        visible_columns = config_manager.get_column_visibility()
+        if visible_columns:
+            self.set_visible_columns(visible_columns)
