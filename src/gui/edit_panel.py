@@ -58,22 +58,22 @@ class EditPanel(ctk.CTkFrame):
         
     def setup_user_erp_name_section(self):
         """Setup the User ERP Name editing section."""
+        # Input field and buttons frame
+        input_frame = ctk.CTkFrame(self)
+        input_frame.pack(pady=(0, 5))
+        
         # Input field
         self.user_erp_name_entry = ctk.CTkEntry(
-            self,
+            input_frame,
             placeholder_text="Enter User ERP Name...",
-            width=600,
+            width=400,
             height=35
         )
-        self.user_erp_name_entry.pack(pady=(0, 5))
-        
-        # Update and Reset buttons frame
-        button_frame = ctk.CTkFrame(self)
-        button_frame.pack(pady=(0, 5))
+        self.user_erp_name_entry.pack(side="left", padx=(0, 10))
         
         # Update button
         self.update_name_button = ctk.CTkButton(
-            button_frame,
+            input_frame,
             text="Update",
             command=self.update_user_erp_name,
             width=80,
@@ -84,7 +84,7 @@ class EditPanel(ctk.CTkFrame):
         
         # Reset button
         self.reset_name_button = ctk.CTkButton(
-            button_frame,
+            input_frame,
             text="Reset",
             command=self.reset_user_erp_name,
             width=60,
@@ -95,9 +95,17 @@ class EditPanel(ctk.CTkFrame):
         
     def setup_reassignment_section(self):
         """Setup the reassignment section."""
+        # Main container frame for two-column layout
+        main_frame = ctk.CTkFrame(self)
+        main_frame.pack(fill="x", padx=10, pady=5)
+        
+        # Left column for dropdowns
+        left_column = ctk.CTkFrame(main_frame)
+        left_column.pack(side="left", fill="both", expand=True, padx=(10, 5), pady=5)
+        
         # Category dropdown
-        category_frame = ctk.CTkFrame(self)
-        category_frame.pack(fill="x", padx=10, pady=5)
+        category_frame = ctk.CTkFrame(left_column)
+        category_frame.pack(fill="x", pady=2)
         
         category_label = ctk.CTkLabel(category_frame, text="Category:", width=100)
         category_label.pack(side="left", padx=(10, 5), pady=5)
@@ -111,8 +119,8 @@ class EditPanel(ctk.CTkFrame):
         self.category_dropdown.pack(side="left", padx=5, pady=5)
         
         # Subcategory dropdown
-        subcategory_frame = ctk.CTkFrame(self)
-        subcategory_frame.pack(fill="x", padx=10, pady=5)
+        subcategory_frame = ctk.CTkFrame(left_column)
+        subcategory_frame.pack(fill="x", pady=2)
         
         subcategory_label = ctk.CTkLabel(subcategory_frame, text="Subcategory:", width=100)
         subcategory_label.pack(side="left", padx=(10, 5), pady=5)
@@ -126,8 +134,8 @@ class EditPanel(ctk.CTkFrame):
         self.subcategory_dropdown.pack(side="left", padx=5, pady=5)
         
         # Sublevel dropdown
-        sublevel_frame = ctk.CTkFrame(self)
-        sublevel_frame.pack(fill="x", padx=10, pady=5)
+        sublevel_frame = ctk.CTkFrame(left_column)
+        sublevel_frame.pack(fill="x", pady=2)
         
         sublevel_label = ctk.CTkLabel(sublevel_frame, text="Sublevel:", width=100)
         sublevel_label.pack(side="left", padx=(10, 5), pady=5)
@@ -139,16 +147,20 @@ class EditPanel(ctk.CTkFrame):
         )
         self.sublevel_dropdown.pack(side="left", padx=5, pady=5)
         
+        # Right column for Reassign button
+        right_column = ctk.CTkFrame(main_frame)
+        right_column.pack(side="right", padx=(5, 10), pady=5)
+        
         # Reassign button
         self.reassign_button = ctk.CTkButton(
-            self,
+            right_column,
             text="Reassign",
             command=self.reassign_item,
             width=100,
-            height=30,
+            height=90,  # Increased height to span the three dropdown rows
             state="disabled"
         )
-        self.reassign_button.pack(pady=(10, 5))
+        self.reassign_button.pack(pady=5)
         
     def load_categories(self):
         """Load categories into the dropdown."""
@@ -422,7 +434,7 @@ class EditPanel(ctk.CTkFrame):
             command=self.generate_preview,
             width=80,
             height=30,
-            state="disabled"
+            state="normal"
         )
         self.preview_button.pack(side="left", padx=5)
         
@@ -537,7 +549,17 @@ class EditPanel(ctk.CTkFrame):
     
     def generate_preview(self):
         """Generate AI preview suggestions."""
-        if not self.selected_item or not self.available_models:
+        # Check if we have any selected items (either single or multiple)
+        if not self.selected_item and not (hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items):
+            messagebox.showwarning("Warning", "Please select an item in the tree view first")
+            return
+        
+        # If no models are available, try to refresh them
+        if not self.available_models:
+            messagebox.showinfo("Info", "Loading AI models...")
+            self.refresh_models()
+            # Wait a moment for models to load
+            self.main_window.root.after(2000, self.generate_preview)  # Retry after 2 seconds
             return
         
         model_name = self.model_dropdown.get()
@@ -584,9 +606,23 @@ class EditPanel(ctk.CTkFrame):
         threading.Thread(target=generate_thread, daemon=True).start()
     
     def get_selected_item_context(self):
-        """Get context for selected item only."""
+        """Get context for selected item(s) only."""
+        # Check for single selected item
         if self.selected_item:
             return f"Current ERP name: {self.selected_item.get('ERP name', 'Unknown')}"
+        
+        # Check for multiple selected items
+        if hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items:
+            erp_names = []
+            for item_data, row_id in self.tree_view.selected_items:
+                erp_name = item_data.get('ERP name', 'Unknown')
+                erp_names.append(erp_name)
+            
+            if len(erp_names) == 1:
+                return f"Current ERP name: {erp_names[0]}"
+            else:
+                return f"Selected ERP names: {', '.join(erp_names)}"
+        
         return "No item selected"
     
     def get_entire_table_context(self):

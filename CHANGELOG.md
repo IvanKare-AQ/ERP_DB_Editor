@@ -131,6 +131,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sublevel Dropdown Population**: Fixed Sublevel dropdown not updating on item selection in Reassign Item section
   - Updated set_selected_item method to use correct column name ('Article Sublevel ' with trailing space)
   - Now all three dropdowns (Category, Subcategory, Sublevel) populate correctly when items are selected
+- **AI Generation Functionality**: Fixed AI generation not working properly
+  - Fixed UI update calls from background threads using self.main_window.root.after()
+  - Changed Generate button initial state from "disabled" to "normal"
+  - Improved error handling and user feedback for AI operations
+- **Item Selection Issues**: Fixed item selection not working with AI generation
+  - Root cause: Row ID delimiter collision with ERP names containing underscores and pipes
+  - Implemented robust Unicode delimiter (◆◆◆) that's virtually guaranteed to be unique
+  - Updated all row ID generation and parsing to use new delimiter
+  - Fixed IndentationError in tree_view.py that was preventing application startup
+  - Enhanced AI generation to work with both single and multiple item selections
 
 ## [0.1.0] - Initial Release
 

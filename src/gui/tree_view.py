@@ -207,7 +207,9 @@ class TreeViewWidget(ctk.CTkFrame):
                     for index, (_, row) in enumerate(erp_items):
                         # Create row ID for this item (use the Article Sublevel column with trailing space)
                         sublevel = row.get('Article Sublevel ', '')
-                        row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
+                        # Use a unique delimiter that's unlikely to appear in the data
+                        delimiter = "◆◆◆"  # Using a unique Unicode character sequence
+                        row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{sublevel}"
                         
                         erp_name = row.get('ERP name', '')
                         cad_name = row.get('CAD name', '')
@@ -360,7 +362,9 @@ class TreeViewWidget(ctk.CTkFrame):
                             if col == "User ERP Name":
                                 # Get user ERP name - first check if it exists in original data, then check modifications
                                 sublevel = row.get('Article Sublevel', '')
-                                row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
+                                # Use a unique delimiter that's unlikely to appear in the data
+                                delimiter = "◆◆◆"  # Using a unique Unicode character sequence
+                                row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{sublevel}"
                                 user_value = row.get('User ERP Name', '')
                                 if row_id in self.user_modifications and 'user_erp_name' in self.user_modifications[row_id]:
                                     user_value = self.user_modifications[row_id]['user_erp_name']
@@ -396,7 +400,9 @@ class TreeViewWidget(ctk.CTkFrame):
                         
                         # Create row ID for this item (use the Article Sublevel column with trailing space)
                         sublevel = row.get('Article Sublevel ', '')
-                        row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
+                        # Use a unique delimiter that's unlikely to appear in the data
+                        delimiter = "◆◆◆"  # Using a unique Unicode character sequence
+                        row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{sublevel}"
                         
                         # Determine alternating background tag
                         row_tag = "erp_item_even" if index % 2 == 0 else "erp_item_odd"

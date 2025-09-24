@@ -114,8 +114,26 @@
 - Consistent styling across all tree view elements
 - Hover effects and selection highlighting that work with dark theme
 
+## AI-Powered ERP Name Editing Requirements
+- Integration with Ollama for AI-powered ERP name suggestions
+- AI settings section with model selection dropdown
+- Model refresh functionality to detect newly installed models
+- Model download capability for pulling new models
+- Prompt input field for custom AI instructions
+- Context selection: entire table or selected items only
+- AI Results section (formerly AI Suggestions) for displaying generated names
+- Preview functionality showing up to 5 AI-generated ERP name suggestions
+- Apply functionality to set selected AI suggestion as User ERP Name
+- "Apply to selected" button to apply AI prompt to all selected items individually
+- AI model selection persistence in configuration file
+- Automatic AI model refresh on application startup
+- Threading for AI operations to prevent UI freezing
+- Confirmation dialog before applying AI suggestions to prevent accidental changes
+- Support for both single item and multiple item selection in AI operations
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)
 - openpyxl (for Excel file reading/writing)
 - tkinter (built-in, for additional GUI components)
+- requests (for Ollama API communication)

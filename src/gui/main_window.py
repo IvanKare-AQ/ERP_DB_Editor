@@ -456,14 +456,15 @@ class MainWindow:
             ]
             if not matching_rows.empty:
                 row = matching_rows.iloc[0]
-                return f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{row.get('Article Sublevel', '')}"
+                delimiter = "◆◆◆"
+                return f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel', '')}"
         return None
     
     def get_original_row_data(self, row_id):
         """Get original row data for a row ID."""
-        if not self.tree_view.data.empty:
+        if hasattr(self.tree_view, 'data') and not self.tree_view.data.empty:
             # Parse row ID to find matching data
-            parts = row_id.split('_')
+            parts = row_id.split('◆◆◆')
             if len(parts) >= 4:
                 erp_name = parts[0]
                 category = parts[1]
@@ -527,7 +528,7 @@ class MainWindow:
         
         for row_id, mods in modifications.items():
             # Find the row in data
-            parts = row_id.split('_')
+            parts = row_id.split('◆◆◆')
             if len(parts) >= 4:
                 erp_name = parts[0]
                 category = parts[1]
