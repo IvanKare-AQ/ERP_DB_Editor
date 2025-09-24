@@ -233,7 +233,7 @@ class EditPanel(ctk.CTkFrame):
             # Set the dropdowns to current item's category/subcategory/sublevel
             current_category = item_data.get('Article Category', '')
             current_subcategory = item_data.get('Article Subcategory', '')
-            current_sublevel = item_data.get('Article Sublevel', '')
+            current_sublevel = item_data.get('Article Sublevel ', '')
             
             # Load categories first
             self.load_categories()
