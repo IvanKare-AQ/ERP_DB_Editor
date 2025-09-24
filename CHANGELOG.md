@@ -108,6 +108,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - App_Requirements.md with project requirements and development context
 - Installation scripts with colored output and error handling
 - Project structure documentation
+- **Dark Mode Theme**: Implemented dark mode styling for the table view
+  - Dark background (#2b2b2b) with white text for better readability
+  - Dark header background (#3c3c3c) with white text
+  - Alternating row backgrounds for ERP items:
+    - Even rows: Dark background (#2b2b2b)
+    - Odd rows: Slightly lighter dark background (#333333)
+  - Color-coded hierarchy levels with dark theme:
+    - Categories: Dark gray background (#404040) with light blue text (#64b5f6)
+    - Subcategories: Medium dark gray background (#4a4a4a) with light purple text (#ba68c8)
+    - Sublevels: Lighter dark gray background (#545454) with light green text (#81c784)
+  - Dark theme hover effects (#424242) and selection highlighting (#1976d2)
 
 ## [0.1.0] - Initial Release
 

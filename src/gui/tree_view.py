@@ -25,6 +25,7 @@ class TreeViewWidget(ctk.CTkFrame):
         # User modifications tracking
         self.user_modifications = {}
         self.selected_item = None
+        self.selected_items = []  # For multi-selection support
         
         # Create the tree view
         self.create_tree_view()
@@ -35,7 +36,7 @@ class TreeViewWidget(ctk.CTkFrame):
         self.tree_frame = ctk.CTkFrame(self)
         self.tree_frame.pack(fill="both", expand=True)
         
-        # Create tree view
+        # Create tree view with custom styling
         self.tree = ttk.Treeview(self.tree_frame)
         
         # Create scrollbars
@@ -45,6 +46,9 @@ class TreeViewWidget(ctk.CTkFrame):
         # Configure tree view
         self.tree.configure(yscrollcommand=self.v_scrollbar.set, xscrollcommand=self.h_scrollbar.set)
         
+        # Configure tree view styling
+        self.configure_tree_style()
+        
         # Pack components
         self.tree.pack(side="left", fill="both", expand=True)
         self.v_scrollbar.pack(side="right", fill="y")
@@ -52,6 +56,78 @@ class TreeViewWidget(ctk.CTkFrame):
         
         # Configure columns
         self.setup_columns()
+    
+    def configure_tree_style(self):
+        """Configure the tree view styling with dark mode colors and fonts."""
+        # Create a style object
+        style = ttk.Style()
+        
+        # Configure the treeview style with dark theme
+        style.configure("Treeview", 
+                       font=("Arial", 9),  # Smaller font size
+                       rowheight=20,  # Smaller row height
+                       background="#2b2b2b",  # Dark background
+                       foreground="#ffffff",  # White text
+                       fieldbackground="#2b2b2b")  # Dark field background
+        
+        # Configure treeview heading with dark theme
+        style.configure("Treeview.Heading",
+                       font=("Arial", 9, "bold"),  # Bold headers with smaller font
+                       background="#3c3c3c",  # Darker header background
+                       foreground="#ffffff")  # White header text
+        
+        # Define dark color schemes for different hierarchy levels
+        self.hierarchy_colors = {
+            'category': '#404040',      # Dark gray for categories
+            'subcategory': '#4a4a4a',   # Slightly lighter gray for subcategories  
+            'sublevel': '#545454',      # Even lighter gray for sublevels
+            'erp_item': '#2b2b2b'       # Dark background for ERP items
+        }
+        
+        # Configure tags for different hierarchy levels with dark theme
+        self.tree.tag_configure('category', 
+                               background=self.hierarchy_colors['category'],
+                               font=("Arial", 10, "bold"),
+                               foreground="#64b5f6")  # Light blue text
+        
+        self.tree.tag_configure('subcategory',
+                               background=self.hierarchy_colors['subcategory'], 
+                               font=("Arial", 9, "bold"),
+                               foreground="#ba68c8")  # Light purple text
+        
+        self.tree.tag_configure('sublevel',
+                               background=self.hierarchy_colors['sublevel'],
+                               font=("Arial", 9, "bold"),
+                               foreground="#81c784")  # Light green text
+        
+        self.tree.tag_configure('erp_item',
+                               background=self.hierarchy_colors['erp_item'],
+                               font=("Arial", 9),
+                               foreground="#ffffff")  # White text
+        
+        # Configure alternating row backgrounds for ERP items
+        self.tree.tag_configure('erp_item_odd',
+                               background="#2b2b2b",  # Dark background
+                               font=("Arial", 9),
+                               foreground="#ffffff")
+        
+        self.tree.tag_configure('erp_item_even',
+                               background="#333333",  # Slightly lighter dark background
+                               font=("Arial", 9),
+                               foreground="#ffffff")
+        
+        # Configure selection colors for dark theme
+        self.tree.tag_configure('selected',
+                               background="#1976d2",  # Blue selection
+                               foreground="#ffffff")
+        
+        # Add hover effect for dark theme
+        self.tree.tag_configure('hover',
+                               background="#424242")  # Dark hover background
+        
+        # Bind mouse events for hover effects
+        self.tree.bind("<Motion>", self.on_mouse_motion)
+        self.tree.bind("<Leave>", self.on_mouse_leave)
         
     def setup_columns(self):
         """Setup the tree view columns."""
@@ -101,30 +177,34 @@ class TreeViewWidget(ctk.CTkFrame):
         categories = data.groupby('Article Category')
         
         for category_name, category_data in categories:
-            # Create category node
+            # Create category node with color tag
             category_node = self.tree.insert("", "end", text=category_name, 
-                                           values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""))
+                                           values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                                           tags=("category",))
             
             # Group by Article Subcategory within category
             subcategories = category_data.groupby('Article Subcategory')
             
             for subcategory_name, subcategory_data in subcategories:
-                # Create subcategory node
+                # Create subcategory node with color tag
                 subcategory_node = self.tree.insert(category_node, "end", 
                                                   text=subcategory_name,
-                                                  values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""))
+                                                  values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                                                  tags=("subcategory",))
                 
                 # Group by Article Sublevel within subcategory
                 sublevels = subcategory_data.groupby('Article Sublevel')
                 
                 for sublevel_name, sublevel_data in sublevels:
-                    # Create sublevel node
+                    # Create sublevel node with color tag
                     sublevel_node = self.tree.insert(subcategory_node, "end", 
                                                    text=sublevel_name,
-                                                   values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""))
+                                                   values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                                                   tags=("sublevel",))
                     
-                    # Add ERP Name items under sublevel
-                    for _, row in sublevel_data.iterrows():
+                    # Add ERP Name items under sublevel with alternating backgrounds
+                    erp_items = list(sublevel_data.iterrows())
+                    for index, (_, row) in enumerate(erp_items):
                         # Create row ID for this item (use the clean Article Sublevel column)
                         sublevel = row.get('Article Sublevel', '')
                         row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
@@ -148,13 +228,16 @@ class TreeViewWidget(ctk.CTkFrame):
                         if row_id in self.user_modifications and 'user_erp_name' in self.user_modifications[row_id]:
                             user_erp_name = self.user_modifications[row_id]['user_erp_name']
                         
-                        # Create ERP item node with row ID stored in tags
+                        # Determine alternating background tag
+                        row_tag = "erp_item_even" if index % 2 == 0 else "erp_item_odd"
+                        
+                        # Create ERP item node with row ID and alternating color tag stored in tags
                         self.tree.insert(sublevel_node, "end", 
                                        text=erp_name,
                                        values=(user_erp_name, erp_name, cad_name, electronics, product_value,
                                               manufacturer, sku, ean13, unit, supplier,
                                               expiry_date, tracking_method, procurement_method, remark),
-                                       tags=("erp_item", row_id))
+                                       tags=(row_tag, row_id))
         
         # Expand all nodes by default
         self.expand_all()
@@ -243,30 +326,34 @@ class TreeViewWidget(ctk.CTkFrame):
         categories = data.groupby('Article Category')
         
         for category_name, category_data in categories:
-            # Create category node
+            # Create category node with color tag
             category_node = self.tree.insert("", "end", text=category_name, 
-                                           values=("",) * len(columns_to_use))
+                                           values=("",) * len(columns_to_use),
+                                           tags=("category",))
             
             # Group by Article Subcategory within category
             subcategories = category_data.groupby('Article Subcategory')
             
             for subcategory_name, subcategory_data in subcategories:
-                # Create subcategory node
+                # Create subcategory node with color tag
                 subcategory_node = self.tree.insert(category_node, "end", 
                                                   text=subcategory_name,
-                                                  values=("",) * len(columns_to_use))
+                                                  values=("",) * len(columns_to_use),
+                                                  tags=("subcategory",))
                 
                 # Group by Article Sublevel within subcategory
                 sublevels = subcategory_data.groupby('Article Sublevel')
                 
                 for sublevel_name, sublevel_data in sublevels:
-                    # Create sublevel node
+                    # Create sublevel node with color tag
                     sublevel_node = self.tree.insert(subcategory_node, "end", 
                                                    text=sublevel_name,
-                                                   values=("",) * len(columns_to_use))
+                                                   values=("",) * len(columns_to_use),
+                                                   tags=("sublevel",))
                     
-                    # Add ERP Name items under sublevel
-                    for _, row in sublevel_data.iterrows():
+                    # Add ERP Name items under sublevel with alternating backgrounds
+                    erp_items = list(sublevel_data.iterrows())
+                    for index, (_, row) in enumerate(erp_items):
                         # Create values tuple with only visible columns
                         values = []
                         for col in columns_to_use:
@@ -311,11 +398,14 @@ class TreeViewWidget(ctk.CTkFrame):
                         sublevel = row.get('Article Sublevel', '')
                         row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
                         
-                        # Create ERP item node with row ID stored in tags
+                        # Determine alternating background tag
+                        row_tag = "erp_item_even" if index % 2 == 0 else "erp_item_odd"
+                        
+                        # Create ERP item node with row ID and alternating color tag stored in tags
                         item = self.tree.insert(sublevel_node, "end", 
                                                text=row.get('ERP name', ''),
                                                values=tuple(values),
-                                               tags=("erp_item", row_id))
+                                               tags=(row_tag, row_id))
     
     def load_column_visibility(self, config_manager):
         """Load column visibility settings from config manager."""
@@ -487,3 +577,56 @@ class TreeViewWidget(ctk.CTkFrame):
         # Use the clean Article Sublevel column
         sublevel_col = 'Article Sublevel'
         return sorted(filtered_data[sublevel_col].dropna().unique().tolist())
+    
+    def clear_user_erp_names_for_selected(self):
+        """Clear User ERP Name for all selected items."""
+        if not self.selected_items:
+            return 0
+            
+        cleared_count = 0
+        for item_data, row_id in self.selected_items:
+            if row_id in self.user_modifications:
+                if 'user_erp_name' in self.user_modifications[row_id]:
+                    del self.user_modifications[row_id]['user_erp_name']
+                    cleared_count += 1
+            else:
+                # Add empty user_erp_name to track that it was explicitly cleared
+                self.user_modifications[row_id] = {'user_erp_name': ''}
+                cleared_count += 1
+        
+        # Refresh the tree view to show changes
+        if cleared_count > 0:
+            self.refresh_view()
+        
+        return cleared_count
+    
+    def on_mouse_motion(self, event):
+        """Handle mouse motion for hover effects."""
+        item = self.tree.identify_row(event.y)
+        if item:
+            # Remove hover from all items
+            for child in self.tree.get_children():
+                self.tree.item(child, tags=self.tree.item(child, "tags")[:-1] if self.tree.item(child, "tags") and self.tree.item(child, "tags")[-1] == "hover" else self.tree.item(child, "tags"))
+                self.remove_hover_recursive(child)
+            
+            # Add hover to current item
+            current_tags = self.tree.item(item, "tags")
+            if current_tags and "hover" not in current_tags:
+                self.tree.item(item, tags=current_tags + ("hover",))
+    
+    def remove_hover_recursive(self, item):
+        """Recursively remove hover tags from item and its children."""
+        current_tags = self.tree.item(item, "tags")
+        if current_tags and "hover" in current_tags:
+            new_tags = [tag for tag in current_tags if tag != "hover"]
+            self.tree.item(item, tags=new_tags)
+        
+        for child in self.tree.get_children(item):
+            self.remove_hover_recursive(child)
+    
+    def on_mouse_leave(self, event):
+        """Handle mouse leave to remove hover effects."""
+        # Remove hover from all items
+        for child in self.tree.get_children():
+            self.tree.item(child, tags=self.tree.item(child, "tags")[:-1] if self.tree.item(child, "tags") and self.tree.item(child, "tags")[-1] == "hover" else self.tree.item(child, "tags"))
+            self.remove_hover_recursive(child)

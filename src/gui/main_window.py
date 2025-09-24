@@ -136,6 +136,16 @@ class MainWindow:
         )
         self.clear_filters_button.pack(side="left", padx=5, pady=5)
         
+        # Multi-selection control section
+        self.clear_user_erp_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Clear User ERP Name",
+            command=self.clear_user_erp_names,
+            width=140,
+            state="disabled"
+        )
+        self.clear_user_erp_button.pack(side="left", padx=5, pady=5)
+        
     def create_content_area(self):
         """Create the main content area with tree view and edit panel."""
         self.content_frame = ctk.CTkFrame(self.main_frame)
@@ -166,6 +176,10 @@ class MainWindow:
         
         # Update Save View button state
         self.update_save_view_button_state()
+        
+        # Refresh AI models after main window is fully initialized
+        if hasattr(self.edit_panel, 'refresh_models_on_startup'):
+            self.root.after(1000, self.edit_panel.refresh_models_on_startup)  # Delay to ensure everything is loaded
         
     def create_status_bar(self):
         """Create the status bar at the bottom of the application."""
@@ -378,30 +392,58 @@ class MainWindow:
         else:
             messagebox.showwarning("Warning", "Please open a file first")
     
+    def clear_user_erp_names(self):
+        """Clear User ERP Name for all selected items."""
+        if hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items:
+            cleared_count = self.tree_view.clear_user_erp_names_for_selected()
+            if cleared_count > 0:
+                self.update_status(f"Cleared User ERP Name for {cleared_count} items")
+            else:
+                self.update_status("No User ERP Name values to clear")
+        else:
+            self.update_status("Please select items first")
+    
     def on_tree_select(self, event):
         """Handle tree view selection events."""
         selection = self.tree_view.tree.selection()
         if selection:
-            item = selection[0]
-            # Get item tags to check if this is an ERP item
-            tags = self.tree_view.tree.item(item, "tags")
+            # Get all ERP items from selection
+            erp_items = []
+            for item in selection:
+                tags = self.tree_view.tree.item(item, "tags")
+                if tags and len(tags) >= 2 and tags[0] == "erp_item":
+                    row_id = tags[1]
+                    original_data = self.get_original_row_data(row_id)
+                    if original_data:
+                        erp_items.append((original_data, row_id))
             
-            # Only process ERP items (items with "erp_item" tag)
-            if tags and len(tags) >= 2 and tags[0] == "erp_item":
-                row_id = tags[1]  # Row ID is stored as the second tag
-                # Get original row data
-                original_data = self.get_original_row_data(row_id)
-                self.edit_panel.set_selected_item(original_data, row_id)
+            if erp_items:
+                # If only one ERP item selected, populate edit panel
+                if len(erp_items) == 1:
+                    original_data, row_id = erp_items[0]
+                    self.edit_panel.set_selected_item(original_data, row_id)
+                    erp_name = original_data.get('ERP name', 'Unknown')
+                    self.update_status(f"Selected: {erp_name}")
+                else:
+                    # Multiple ERP items selected
+                    self.edit_panel.set_selected_item(None, None)
+                    self.update_status(f"Selected {len(erp_items)} items")
                 
-                # Update status
-                erp_name = original_data.get('ERP name', 'Unknown') if original_data else 'Unknown'
-                self.update_status(f"Selected: {erp_name}")
+                # Store selected items for multi-selection operations
+                self.tree_view.selected_items = erp_items
+                
+                # Enable clear button if we have ERP items selected
+                self.clear_user_erp_button.configure(state="normal")
             else:
-                # Not an ERP item (category, subcategory, or sublevel node)
+                # No ERP items selected
                 self.edit_panel.set_selected_item(None, None)
+                self.tree_view.selected_items = []
+                self.clear_user_erp_button.configure(state="disabled")
                 self.update_status("Ready")
         else:
             self.edit_panel.set_selected_item(None, None)
+            self.tree_view.selected_items = []
+            self.clear_user_erp_button.configure(state="disabled")
     
     def find_row_id_from_tree_item(self, item_text, item_values):
         """Find the row ID for a tree item."""

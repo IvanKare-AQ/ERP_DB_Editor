@@ -33,5 +33,8 @@
                 "type": "contains"
             }
         }
+    },
+    "ai_settings": {
+        "selected_model": "gemma3:27b"
     }
 }

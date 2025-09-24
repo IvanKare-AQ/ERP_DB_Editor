@@ -37,21 +37,21 @@ class EditPanel(ctk.CTkFrame):
         # Title
         title_label = ctk.CTkLabel(self, text="Edit Selected Item", 
                                  font=ctk.CTkFont(size=16, weight="bold"))
-        title_label.pack(pady=(10, 20))
+        title_label.pack(pady=(5, 10))
         
         # User ERP Name section
         self.setup_user_erp_name_section()
         
         # Separator
         separator1 = ctk.CTkFrame(self, height=2)
-        separator1.pack(fill="x", padx=10, pady=20)
+        separator1.pack(fill="x", padx=10, pady=10)
         
         # Reassignment section
         self.setup_reassignment_section()
         
         # Separator
         separator2 = ctk.CTkFrame(self, height=2)
-        separator2.pack(fill="x", padx=10, pady=20)
+        separator2.pack(fill="x", padx=10, pady=10)
         
         # AI Editing section
         self.setup_ai_editing_section()
@@ -61,7 +61,7 @@ class EditPanel(ctk.CTkFrame):
         # Section title
         section_title = ctk.CTkLabel(self, text="User ERP Name", 
                                    font=ctk.CTkFont(size=14, weight="bold"))
-        section_title.pack(pady=(0, 10))
+        section_title.pack(pady=(0, 5))
         
         # Input field
         self.user_erp_name_entry = ctk.CTkEntry(
@@ -70,32 +70,47 @@ class EditPanel(ctk.CTkFrame):
             width=300,
             height=35
         )
-        self.user_erp_name_entry.pack(pady=(0, 10))
+        self.user_erp_name_entry.pack(pady=(0, 5))
+        
+        # Update and Reset buttons frame
+        button_frame = ctk.CTkFrame(self)
+        button_frame.pack(pady=(0, 5))
         
         # Update button
         self.update_name_button = ctk.CTkButton(
-            self,
-            text="Update Name",
+            button_frame,
+            text="Update",
             command=self.update_user_erp_name,
-            width=120,
-            height=35,
+            width=80,
+            height=30,
             state="disabled"
         )
-        self.update_name_button.pack(pady=(0, 10))
+        self.update_name_button.pack(side="left", padx=(0, 5))
+        
+        # Reset button
+        self.reset_name_button = ctk.CTkButton(
+            button_frame,
+            text="Reset",
+            command=self.reset_user_erp_name,
+            width=60,
+            height=30,
+            state="disabled"
+        )
+        self.reset_name_button.pack(side="left")
         
     def setup_reassignment_section(self):
         """Setup the reassignment section."""
         # Section title
         section_title = ctk.CTkLabel(self, text="Reassign Item", 
                                    font=ctk.CTkFont(size=14, weight="bold"))
-        section_title.pack(pady=(0, 10))
+        section_title.pack(pady=(0, 5))
         
         # Category dropdown
         category_frame = ctk.CTkFrame(self)
         category_frame.pack(fill="x", padx=10, pady=5)
         
         category_label = ctk.CTkLabel(category_frame, text="Category:", width=100)
-        category_label.pack(side="left", padx=(10, 5), pady=10)
+        category_label.pack(side="left", padx=(10, 5), pady=5)
         
         self.category_dropdown = ctk.CTkOptionMenu(
             category_frame,
@@ -103,14 +118,14 @@ class EditPanel(ctk.CTkFrame):
             command=self.on_category_change,
             width=200
         )
-        self.category_dropdown.pack(side="left", padx=5, pady=10)
+        self.category_dropdown.pack(side="left", padx=5, pady=5)
         
         # Subcategory dropdown
         subcategory_frame = ctk.CTkFrame(self)
         subcategory_frame.pack(fill="x", padx=10, pady=5)
         
         subcategory_label = ctk.CTkLabel(subcategory_frame, text="Subcategory:", width=100)
-        subcategory_label.pack(side="left", padx=(10, 5), pady=10)
+        subcategory_label.pack(side="left", padx=(10, 5), pady=5)
         
         self.subcategory_dropdown = ctk.CTkOptionMenu(
             subcategory_frame,
@@ -118,32 +133,32 @@ class EditPanel(ctk.CTkFrame):
             command=self.on_subcategory_change,
             width=200
         )
-        self.subcategory_dropdown.pack(side="left", padx=5, pady=10)
+        self.subcategory_dropdown.pack(side="left", padx=5, pady=5)
         
         # Sublevel dropdown
         sublevel_frame = ctk.CTkFrame(self)
         sublevel_frame.pack(fill="x", padx=10, pady=5)
         
         sublevel_label = ctk.CTkLabel(sublevel_frame, text="Sublevel:", width=100)
-        sublevel_label.pack(side="left", padx=(10, 5), pady=10)
+        sublevel_label.pack(side="left", padx=(10, 5), pady=5)
         
         self.sublevel_dropdown = ctk.CTkOptionMenu(
             sublevel_frame,
             values=["Select Sublevel..."],
             width=200
         )
-        self.sublevel_dropdown.pack(side="left", padx=5, pady=10)
+        self.sublevel_dropdown.pack(side="left", padx=5, pady=5)
         
         # Reassign button
         self.reassign_button = ctk.CTkButton(
             self,
-            text="Reassign Item",
+            text="Reassign",
             command=self.reassign_item,
-            width=120,
-            height=35,
+            width=100,
+            height=30,
             state="disabled"
         )
-        self.reassign_button.pack(pady=(20, 10))
+        self.reassign_button.pack(pady=(10, 5))
         
     def load_categories(self):
         """Load categories into the dropdown."""
@@ -211,6 +226,10 @@ class EditPanel(ctk.CTkFrame):
             self.user_erp_name_entry.delete(0, tk.END)
             self.user_erp_name_entry.insert(0, current_user_name)
             
+            # Enable buttons when item is selected
+            self.update_name_button.configure(state="normal")
+            self.reset_name_button.configure(state="normal")
+            
             # Set the dropdowns to current item's category/subcategory/sublevel
             current_category = item_data.get('Article Category', '')
             current_subcategory = item_data.get('Article Subcategory', '')
@@ -243,7 +262,9 @@ class EditPanel(ctk.CTkFrame):
             self.user_erp_name_entry.delete(0, tk.END)
             self.user_erp_name_entry.insert(0, "")
             
+            # Disable buttons when no item is selected
             self.update_name_button.configure(state="disabled")
+            self.reset_name_button.configure(state="disabled")
             self.reassign_button.configure(state="disabled")
             
             # Reset dropdowns
@@ -265,6 +286,25 @@ class EditPanel(ctk.CTkFrame):
                 self.main_window.update_status(f"Updated ERP name: {user_erp_name}")
             else:
                 self.main_window.update_status("Cleared user ERP name")
+    
+    def reset_user_erp_name(self):
+        """Reset the user ERP name for the selected item to original ERP name."""
+        if not self.selected_row_id or not self.selected_item:
+            return
+            
+        # Get the original ERP name
+        original_erp_name = self.selected_item.get('ERP name', '')
+        
+        # Clear the user ERP name (set to empty string to reset to original)
+        self.tree_view.update_user_erp_name(self.selected_row_id, '')
+        
+        # Update the input field to show the original ERP name
+        self.user_erp_name_entry.delete(0, tk.END)
+        self.user_erp_name_entry.insert(0, original_erp_name)
+        
+        # Update status if main window is available
+        if self.main_window and hasattr(self.main_window, 'status_label'):
+            self.main_window.update_status(f"Reset ERP name to original: {original_erp_name}")
         
     def reassign_item(self):
         """Reassign the selected item to new category, subcategory, and sublevel."""
@@ -291,7 +331,7 @@ class EditPanel(ctk.CTkFrame):
         # Section title
         section_title = ctk.CTkLabel(self, text="AI Editing", 
                                    font=ctk.CTkFont(size=14, weight="bold"))
-        section_title.pack(pady=(0, 10))
+        section_title.pack(pady=(0, 5))
         
         # AI Settings subsection
         ai_settings_frame = ctk.CTkFrame(self)
@@ -299,31 +339,31 @@ class EditPanel(ctk.CTkFrame):
         
         ai_settings_label = ctk.CTkLabel(ai_settings_frame, text="AI Settings:", 
                                        font=ctk.CTkFont(size=12, weight="bold"))
-        ai_settings_label.pack(pady=(10, 5))
+        ai_settings_label.pack(pady=(5, 3))
         
         # Model selection frame
         model_frame = ctk.CTkFrame(ai_settings_frame)
         model_frame.pack(fill="x", padx=10, pady=5)
         
         model_label = ctk.CTkLabel(model_frame, text="Model:", width=60)
-        model_label.pack(side="left", padx=(10, 5), pady=10)
+        model_label.pack(side="left", padx=(10, 5), pady=5)
         
         self.model_dropdown = ctk.CTkOptionMenu(
             model_frame,
             values=["No models available"],
             width=150
         )
-        self.model_dropdown.pack(side="left", padx=5, pady=10)
+        self.model_dropdown.pack(side="left", padx=5, pady=5)
         
         # Model control buttons
         self.refresh_models_button = ctk.CTkButton(
             model_frame,
             text="Refresh",
             command=self.refresh_models,
-            width=60,
+            width=50,
             height=25
         )
-        self.refresh_models_button.pack(side="left", padx=5, pady=10)
+        self.refresh_models_button.pack(side="left", padx=5, pady=5)
         
         self.download_model_button = ctk.CTkButton(
             model_frame,
@@ -332,7 +372,7 @@ class EditPanel(ctk.CTkFrame):
             width=60,
             height=25
         )
-        self.download_model_button.pack(side="left", padx=5, pady=10)
+        self.download_model_button.pack(side="left", padx=5, pady=5)
         
         # Prompt section
         prompt_frame = ctk.CTkFrame(self)
@@ -340,7 +380,7 @@ class EditPanel(ctk.CTkFrame):
         
         prompt_label = ctk.CTkLabel(prompt_frame, text="Prompt:", 
                                   font=ctk.CTkFont(size=12, weight="bold"))
-        prompt_label.pack(pady=(10, 5))
+        prompt_label.pack(pady=(5, 3))
         
         self.prompt_text = ctk.CTkTextbox(
             prompt_frame,
@@ -354,7 +394,7 @@ class EditPanel(ctk.CTkFrame):
         
         context_label = ctk.CTkLabel(context_frame, text="Context:", 
                                    font=ctk.CTkFont(size=12, weight="bold"))
-        context_label.pack(pady=(10, 5))
+        context_label.pack(pady=(5, 3))
         
         self.use_entire_table_var = tk.BooleanVar(value=False)
         self.use_entire_table_checkbox = ctk.CTkCheckBox(
@@ -370,7 +410,7 @@ class EditPanel(ctk.CTkFrame):
             text="Context: Selected item only",
             font=ctk.CTkFont(size=10)
         )
-        self.context_info_label.pack(padx=10, pady=(0, 10))
+        self.context_info_label.pack(padx=10, pady=(0, 5))
         
         # Preview section
         preview_frame = ctk.CTkFrame(self)
@@ -378,7 +418,7 @@ class EditPanel(ctk.CTkFrame):
         
         preview_label = ctk.CTkLabel(preview_frame, text="AI Suggestions:", 
                                    font=ctk.CTkFont(size=12, weight="bold"))
-        preview_label.pack(pady=(10, 5))
+        preview_label.pack(pady=(5, 3))
         
         self.preview_listbox = tk.Listbox(
             preview_frame,
@@ -389,14 +429,14 @@ class EditPanel(ctk.CTkFrame):
         
         # Action buttons
         button_frame = ctk.CTkFrame(self)
-        button_frame.pack(fill="x", padx=10, pady=10)
+        button_frame.pack(fill="x", padx=10, pady=5)
         
         self.preview_button = ctk.CTkButton(
             button_frame,
-            text="Generate Preview",
+            text="Generate",
             command=self.generate_preview,
-            width=120,
-            height=35,
+            width=80,
+            height=30,
             state="disabled"
         )
         self.preview_button.pack(side="left", padx=5)
@@ -405,8 +445,8 @@ class EditPanel(ctk.CTkFrame):
             button_frame,
             text="Apply",
             command=self.apply_ai_suggestion,
-            width=80,
-            height=35,
+            width=60,
+            height=30,
             state="disabled"
         )
         self.apply_ai_button.pack(side="left", padx=5)
@@ -419,6 +459,24 @@ class EditPanel(ctk.CTkFrame):
         # Don't refresh models immediately - wait for main window to be fully initialized
         # Models will be refreshed when user clicks refresh button or when needed
         pass
+    
+    def refresh_models_on_startup(self):
+        """Refresh AI models after main window is fully initialized."""
+        if self.main_window and hasattr(self.main_window, 'status_label'):
+            self.refresh_models()
+            # Load previously selected model from config
+            self.load_selected_model_from_config()
+    
+    def load_selected_model_from_config(self):
+        """Load previously selected model from config."""
+        if self.main_window and hasattr(self.main_window, 'config_manager'):
+            config_manager = self.main_window.config_manager
+            selected_model = config_manager.get_selected_model()
+            
+            if selected_model and selected_model in self.available_models:
+                self.model_dropdown.set(selected_model)
+                if self.main_window and hasattr(self.main_window, 'status_label'):
+                    self.main_window.update_status(f"Loaded AI model: {selected_model}")
     
     def refresh_models(self):
         """Refresh the list of available models."""
@@ -602,12 +660,29 @@ class EditPanel(ctk.CTkFrame):
         # Remove numbering and clean up
         suggestion = suggestion_text.split('. ', 1)[-1] if '. ' in suggestion_text else suggestion_text
         
-        # Apply to User ERP Name
-        self.tree_view.update_user_erp_name(self.selected_row_id, suggestion)
+        # Show confirmation dialog
+        current_name = self.user_erp_name_entry.get()
+        if current_name:
+            response = messagebox.askyesno(
+                "Confirm AI Application", 
+                f"Current User ERP Name: '{current_name}'\n\nAI Suggestion: '{suggestion}'\n\nDo you want to apply this AI suggestion?"
+            )
+        else:
+            response = messagebox.askyesno(
+                "Confirm AI Application", 
+                f"AI Suggestion: '{suggestion}'\n\nDo you want to apply this AI suggestion?"
+            )
         
-        # Update the input field
-        self.user_erp_name_entry.delete(0, tk.END)
-        self.user_erp_name_entry.insert(0, suggestion)
-        
-        if self.main_window and hasattr(self.main_window, 'status_label'):
-            self.main_window.update_status(f"Applied AI suggestion: {suggestion}")
+        if response:
+            # Apply to User ERP Name
+            self.tree_view.update_user_erp_name(self.selected_row_id, suggestion)
+            
+            # Update the input field
+            self.user_erp_name_entry.delete(0, tk.END)
+            self.user_erp_name_entry.insert(0, suggestion)
+            
+            if self.main_window and hasattr(self.main_window, 'status_label'):
+                self.main_window.update_status(f"Applied AI suggestion: {suggestion}")
+        else:
+            if self.main_window and hasattr(self.main_window, 'status_label'):
+                self.main_window.update_status("AI suggestion application cancelled")
