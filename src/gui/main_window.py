@@ -152,9 +152,9 @@ class MainWindow:
         self.content_frame.pack(fill="both", expand=True)
         
         # Create right panel for editing first (to ensure it gets space)
-        self.right_panel = ctk.CTkFrame(self.content_frame)
-        self.right_panel.pack(side="right", fill="y", padx=(5, 10), pady=10)
-        self.right_panel.configure(width=350, fg_color=("gray90", "gray15"))  # Fixed width with distinct color
+        self.right_panel = ctk.CTkScrollableFrame(self.content_frame)
+        self.right_panel.pack(side="right", fill="both", padx=(5, 10), pady=10)
+        self.right_panel.configure(width=700, fg_color=("gray90", "gray15"))  # Fixed width with distinct color
         
         # Create left panel for tree view
         self.left_panel = ctk.CTkFrame(self.content_frame)
