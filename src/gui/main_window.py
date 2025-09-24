@@ -139,8 +139,6 @@ class MainWindow:
                 self.column_visibility_button.configure(state="normal")
                 self.save_view_button.configure(state="normal")
                 
-                messagebox.showinfo("Success", f"File loaded successfully: {os.path.basename(file_path)}")
-                
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load file: {str(e)}")
                 
@@ -151,7 +149,6 @@ class MainWindow:
                 # Get data from tree view
                 data = self.tree_view.get_data()
                 self.excel_handler.save_file(self.current_file_path, data)
-                messagebox.showinfo("Success", "File saved successfully")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save file: {str(e)}")
         else:
@@ -172,7 +169,6 @@ class MainWindow:
                     data = self.tree_view.get_data()
                     self.excel_handler.save_file(file_path, data)
                     self.current_file_path = file_path
-                    messagebox.showinfo("Success", f"File saved as: {os.path.basename(file_path)}")
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to save file: {str(e)}")
         else:
@@ -194,7 +190,6 @@ class MainWindow:
             
             # Save to config
             self.config_manager.save_column_visibility(visible_columns)
-            messagebox.showinfo("Success", "View settings saved successfully")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save view: {str(e)}")
             
