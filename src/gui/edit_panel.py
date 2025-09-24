@@ -489,15 +489,15 @@ class EditPanel(ctk.CTkFrame):
                 self.available_models = self.ollama_handler.get_available_models()
                 if self.available_models:
                     # Update UI in main thread
-                    self.after(0, self.update_model_dropdown)
+                    self.main_window.root.after(0, self.update_model_dropdown)
                     if self.main_window and hasattr(self.main_window, 'status_label'):
                         self.main_window.update_status(f"Found {len(self.available_models)} AI models")
                 else:
-                    self.after(0, lambda: self.update_model_dropdown(show_error=True))
+                    self.main_window.root.after(0, lambda: self.update_model_dropdown(show_error=True))
                     if self.main_window and hasattr(self.main_window, 'status_label'):
                         self.main_window.update_status("No AI models found")
             else:
-                self.after(0, lambda: self.update_model_dropdown(show_error=True))
+                self.main_window.root.after(0, lambda: self.update_model_dropdown(show_error=True))
                 if self.main_window and hasattr(self.main_window, 'status_label'):
                     self.main_window.update_status("Ollama service not running")
         
@@ -528,7 +528,7 @@ class EditPanel(ctk.CTkFrame):
             # Run download in separate thread
             def download_thread():
                 success = self.ollama_handler.pull_model(model_name)
-                self.after(0, lambda: self.download_complete(success, model_name))
+                self.main_window.root.after(0, lambda: self.download_complete(success, model_name))
             
             threading.Thread(target=download_thread, daemon=True).start()
     
@@ -591,10 +591,10 @@ class EditPanel(ctk.CTkFrame):
                 )
                 
                 # Update UI in main thread
-                self.after(0, lambda: self.update_preview_list(suggestions))
+                self.main_window.root.after(0, lambda: self.update_preview_list(suggestions))
                 
             except Exception as e:
-                self.after(0, lambda: self.generation_error(str(e)))
+                self.main_window.root.after(0, lambda: self.generation_error(str(e)))
         
         threading.Thread(target=generate_thread, daemon=True).start()
     
