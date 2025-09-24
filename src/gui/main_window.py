@@ -35,6 +35,9 @@ class MainWindow:
         # Current file path
         self.current_file_path = None
         
+        # Track view changes
+        self.view_has_changes = False
+        
         # Setup the GUI
         self.setup_gui()
         
@@ -117,6 +120,9 @@ class MainWindow:
         # Load column visibility settings
         self.tree_view.load_column_visibility(self.config_manager)
         
+        # Update Save View button state
+        self.update_save_view_button_state()
+        
     def open_file(self):
         """Open an Excel file."""
         file_path = filedialog.askopenfilename(
@@ -177,8 +183,10 @@ class MainWindow:
     def open_column_visibility(self):
         """Open the column visibility dialog."""
         if hasattr(self, 'tree_view') and self.tree_view.has_data():
-            dialog = ColumnVisibilityDialog(self.root, self.tree_view, self.config_manager)
+            dialog = ColumnVisibilityDialog(self.root, self.tree_view, self.config_manager, self)
             self.root.wait_window(dialog.dialog)
+            # Update Save View button state after dialog closes
+            self.update_save_view_button_state()
         else:
             messagebox.showwarning("Warning", "Please open a file first")
             
@@ -190,8 +198,35 @@ class MainWindow:
             
             # Save to config
             self.config_manager.save_column_visibility(visible_columns)
+            
+            # Reset view changes flag
+            self.view_has_changes = False
+            self.update_save_view_button_state()
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save view: {str(e)}")
+    
+    def update_save_view_button_state(self):
+        """Update the Save View button state based on whether there are unsaved changes."""
+        if not hasattr(self, 'save_view_button'):
+            return
+            
+        # Check if current view differs from saved settings
+        current_visibility = self.tree_view.get_visible_columns()
+        saved_visibility = self.config_manager.get_column_visibility()
+        
+        # Compare current and saved visibility
+        if current_visibility and saved_visibility:
+            has_changes = set(current_visibility) != set(saved_visibility)
+        else:
+            has_changes = bool(current_visibility) and not bool(saved_visibility)
+        
+        # Update button state
+        if has_changes:
+            self.save_view_button.configure(state="normal")
+            self.view_has_changes = True
+        else:
+            self.save_view_button.configure(state="disabled")
+            self.view_has_changes = False
             
     def run(self):
         """Run the main application loop."""

@@ -52,6 +52,9 @@
 - Column visibility dialog must show all available columns regardless of current visibility state
 - Column visibility settings must persist between application sessions
 - Changes to column visibility must be immediately reflected in the tree view
+- "Apply" button in column visibility dialog must only update view temporarily (not save to config)
+- "Save View" button must be grayed out when there are no differences between current view and saved settings
+- Proper separation between temporary view changes and persistent settings
 
 ## Dependencies
 - customtkinter

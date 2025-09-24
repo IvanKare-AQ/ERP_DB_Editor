@@ -11,11 +11,12 @@ from tkinter import ttk
 class ColumnVisibilityDialog:
     """Dialog for managing column visibility settings."""
     
-    def __init__(self, parent, tree_view, config_manager):
+    def __init__(self, parent, tree_view, config_manager, main_window=None):
         """Initialize the column visibility dialog."""
         self.parent = parent
         self.tree_view = tree_view
         self.config_manager = config_manager
+        self.main_window = main_window
         
         # Create dialog window
         self.dialog = ctk.CTkToplevel(parent)
@@ -110,11 +111,12 @@ class ColumnVisibilityDialog:
         # Get selected columns
         visible_columns = [col for col, var in self.column_states.items() if var.get()]
         
-        # Apply to tree view
+        # Apply to tree view only (don't save to config)
         self.tree_view.set_visible_columns(visible_columns)
         
-        # Save to config
-        self.config_manager.save_column_visibility(visible_columns)
+        # Notify main window that view has changed
+        if self.main_window:
+            self.main_window.view_has_changes = True
         
         # Close dialog
         self.dialog.destroy()
