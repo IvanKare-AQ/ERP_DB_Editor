@@ -26,5 +26,12 @@
             "Electronics"
         ]
     },
-    "view_settings": {}
+    "view_settings": {
+        "filters": {
+            "Electronics": {
+                "value": "Electronics",
+                "type": "contains"
+            }
+        }
+    }
 }

@@ -65,6 +65,9 @@
 - Clear individual filters and clear all filters functionality
 - Real-time filter application with immediate tree view updates
 - Filters must preserve hierarchical tree structure
+- Filter settings must be saved and restored with Save View functionality
+- Filters must be automatically loaded from settings file when application starts
+- Filter state must be properly synchronized with Save View button state
 
 ## Dependencies
 - customtkinter

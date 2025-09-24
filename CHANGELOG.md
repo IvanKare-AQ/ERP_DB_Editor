@@ -43,6 +43,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Real-time filter application with immediate tree view updates
 - Integration with column visibility settings
 - Hierarchical tree structure preservation during filtering
+- Filter settings persistence with Save View functionality
+- Automatic filter loading from settings file on application startup
+- Filter state synchronization with Save View button management
+
+### Fixed
+- Fixed filter loading timing - filters now load after data is available
+- Fixed Save View button state updates when filters are changed
+- Fixed filter persistence and restoration functionality
 
 ### Technical
 - Backend components moved under src/backend/ for better organization

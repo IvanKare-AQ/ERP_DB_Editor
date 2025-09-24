@@ -11,10 +11,11 @@ from tkinter import ttk
 class FilterDialog:
     """Dialog for managing column filters."""
     
-    def __init__(self, parent, tree_view):
+    def __init__(self, parent, tree_view, main_window=None):
         """Initialize the filter dialog."""
         self.parent = parent
         self.tree_view = tree_view
+        self.main_window = main_window
         
         # Create dialog window
         self.dialog = ctk.CTkToplevel(parent)
@@ -156,6 +157,11 @@ class FilterDialog:
             
             if filter_value:  # Only apply if there's a value
                 self.tree_view.apply_filter(column, filter_value, filter_type)
+        
+        # Notify main window that filters have changed
+        if self.main_window:
+            self.main_window.view_has_changes = True
+            self.main_window.update_save_view_button_state()
         
         # Close dialog
         self.dialog.destroy()

@@ -97,3 +97,15 @@ class ConfigManager:
         """Update available columns in configuration."""
         self.config["rows"] = columns
         self.save_config()
+    
+    def save_filters(self, filters: Dict[str, Dict[str, Any]]) -> None:
+        """Save filter settings."""
+        if "view_settings" not in self.config:
+            self.config["view_settings"] = {}
+        
+        self.config["view_settings"]["filters"] = filters
+        self.save_config()
+    
+    def get_filters(self) -> Dict[str, Dict[str, Any]]:
+        """Get saved filter settings."""
+        return self.config.get("view_settings", {}).get("filters", {})

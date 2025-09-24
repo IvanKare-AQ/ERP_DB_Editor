@@ -373,3 +373,13 @@ class TreeViewWidget(ctk.CTkFrame):
         
         unique_values = self.data[data_column].dropna().unique()
         return sorted([str(val) for val in unique_values if val != ''])
+    
+    def get_current_filters(self):
+        """Get current active filters."""
+        return self.active_filters.copy()
+    
+    def load_filters(self, filters):
+        """Load saved filters."""
+        self.active_filters = filters.copy()
+        if self.active_filters:
+            self.refresh_view()

@@ -162,6 +162,14 @@ class MainWindow:
                 # Update tree view with data
                 self.tree_view.load_data(self.excel_handler.get_data())
                 
+                # Load saved filters after data is loaded
+                saved_filters = self.config_manager.get_filters()
+                if saved_filters:
+                    self.tree_view.load_filters(saved_filters)
+                
+                # Update Save View button state after loading data and filters
+                self.update_save_view_button_state()
+                
                 # Enable buttons
                 self.save_button.configure(state="normal")
                 self.save_as_button.configure(state="normal")
@@ -221,8 +229,14 @@ class MainWindow:
             # Get current column visibility from tree view
             visible_columns = self.tree_view.get_visible_columns()
             
-            # Save to config
+            # Get current filters from tree view
+            current_filters = self.tree_view.get_current_filters()
+            
+            # Save column visibility to config
             self.config_manager.save_column_visibility(visible_columns)
+            
+            # Save filters to config
+            self.config_manager.save_filters(current_filters)
             
             # Reset view changes flag
             self.view_has_changes = False
@@ -239,13 +253,26 @@ class MainWindow:
         current_visibility = self.tree_view.get_visible_columns()
         saved_visibility = self.config_manager.get_column_visibility()
         
+        # Check if current filters differ from saved filters
+        current_filters = self.tree_view.get_current_filters()
+        saved_filters = self.config_manager.get_filters()
+        
         # Compare current and saved visibility
+        visibility_changed = False
         if current_visibility and saved_visibility:
-            has_changes = set(current_visibility) != set(saved_visibility)
+            visibility_changed = set(current_visibility) != set(saved_visibility)
         else:
-            has_changes = bool(current_visibility) and not bool(saved_visibility)
+            visibility_changed = bool(current_visibility) and not bool(saved_visibility)
+        
+        # Compare current and saved filters
+        filters_changed = False
+        if current_filters and saved_filters:
+            filters_changed = current_filters != saved_filters
+        else:
+            filters_changed = bool(current_filters) and not bool(saved_filters)
         
         # Update button state
+        has_changes = visibility_changed or filters_changed
         if has_changes:
             self.save_view_button.configure(state="normal")
             self.view_has_changes = True
@@ -257,7 +284,7 @@ class MainWindow:
         """Open the filter dialog."""
         if hasattr(self, 'tree_view') and self.tree_view.has_data():
             from src.gui.filter_dialog import FilterDialog
-            dialog = FilterDialog(self.root, self.tree_view)
+            dialog = FilterDialog(self.root, self.tree_view, self)
             self.root.wait_window(dialog.dialog)
         else:
             messagebox.showwarning("Warning", "Please open a file first")
@@ -266,6 +293,9 @@ class MainWindow:
         """Clear all active filters."""
         if hasattr(self, 'tree_view') and self.tree_view.has_data():
             self.tree_view.clear_all_filters()
+            # Notify that filters have changed
+            self.view_has_changes = True
+            self.update_save_view_button_state()
         else:
             messagebox.showwarning("Warning", "Please open a file first")
             
