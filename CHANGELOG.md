@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Stop Processing Functionality**: Dynamic button state management for AI operations
+  - Buttons convert to "Stop processing" during AI operations
+  - Users can cancel long-running AI operations at any time
+  - Graceful termination with progress preservation
+  - Real-time progress tracking with stop instructions
+  - Safe process termination ensuring no data loss or hanging threads
+- **Enhanced AI Results Display**: Increased AI Results listbox height from 4 to 6 rows for better visibility of 5 suggestions
+- **Improved User Experience**: 
+  - Confirmation dialogs now mention ability to stop processing
+  - Status messages provide clear stop instructions during processing
+  - Progress tracking shows exact number of items processed before stopping
+
+### Removed
+- **Context Selection Checkbox**: Removed "Use entire table as context" checkbox and related functionality
+  - Simplified AI context handling to always use selected item context
+  - Removed `update_context_info()` and `get_entire_table_context()` methods
+  - Streamlined AI generation to focus on individual item context
+
+### Fixed
+- **AI Processing Control**: Implemented proper thread management for AI operations
+  - Fixed potential hanging threads during AI processing
+  - Ensured clean termination of background processes
+  - Improved button state synchronization during processing
+
+### Added
 - Initial project structure with clean architecture
 - CustomTkinter-based GUI framework
 - Excel file handling capabilities (open, save, save as)

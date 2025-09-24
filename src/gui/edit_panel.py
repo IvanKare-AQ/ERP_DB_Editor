@@ -26,6 +26,10 @@ class EditPanel(ctk.CTkFrame):
         self.ollama_handler = OllamaHandler()
         self.available_models = []
         
+        # Processing control
+        self.processing_thread = None
+        self.should_stop_processing = False
+        
         # Configure panel size
         self.configure(width=700)
         
@@ -268,6 +272,8 @@ class EditPanel(ctk.CTkFrame):
             self.update_name_button.configure(state="disabled")
             self.reset_name_button.configure(state="disabled")
             self.reassign_button.configure(state="disabled")
+            self.apply_to_selected_button.configure(state="disabled")
+            self.apply_to_entire_table_button.configure(state="disabled")
             
             # Reset dropdowns
             self.category_dropdown.configure(values=["Select Category..."])
@@ -385,41 +391,18 @@ class EditPanel(ctk.CTkFrame):
         )
         self.prompt_text.pack(fill="x", padx=10, pady=5)
         
-        # Context section
-        context_frame = ctk.CTkFrame(self)
-        context_frame.pack(fill="x", padx=10, pady=5)
-        
-        context_label = ctk.CTkLabel(context_frame, text="Context:", 
-                                   font=ctk.CTkFont(size=12, weight="bold"))
-        context_label.pack(pady=(5, 3))
-        
-        self.use_entire_table_var = tk.BooleanVar(value=False)
-        self.use_entire_table_checkbox = ctk.CTkCheckBox(
-            context_frame,
-            text="Use entire table as context",
-            variable=self.use_entire_table_var,
-            command=self.update_context_info
-        )
-        self.use_entire_table_checkbox.pack(padx=10, pady=5)
-        
-        self.context_info_label = ctk.CTkLabel(
-            context_frame,
-            text="Context: Selected item only",
-            font=ctk.CTkFont(size=10)
-        )
-        self.context_info_label.pack(padx=10, pady=(0, 5))
         
         # Preview section
         preview_frame = ctk.CTkFrame(self)
         preview_frame.pack(fill="x", padx=10, pady=5)
         
-        preview_label = ctk.CTkLabel(preview_frame, text="AI Suggestions:", 
+        preview_label = ctk.CTkLabel(preview_frame, text="AI Results:", 
                                    font=ctk.CTkFont(size=12, weight="bold"))
         preview_label.pack(pady=(5, 3))
         
         self.preview_listbox = tk.Listbox(
             preview_frame,
-            height=4,
+            height=6,  # Increased height for 5 results
             font=("Arial", 10)
         )
         self.preview_listbox.pack(fill="x", padx=10, pady=5)
@@ -447,6 +430,26 @@ class EditPanel(ctk.CTkFrame):
             state="disabled"
         )
         self.apply_ai_button.pack(side="left", padx=5)
+        
+        self.apply_to_selected_button = ctk.CTkButton(
+            button_frame,
+            text="Apply to selected",
+            command=self.apply_ai_to_selected,
+            width=120,
+            height=30,
+            state="disabled"
+        )
+        self.apply_to_selected_button.pack(side="left", padx=5)
+        
+        self.apply_to_entire_table_button = ctk.CTkButton(
+            button_frame,
+            text="Apply to entire table",
+            command=self.apply_ai_to_entire_table,
+            width=140,
+            height=30,
+            state="disabled"
+        )
+        self.apply_to_entire_table_button.pack(side="left", padx=5)
         
         # Load initial models and settings
         self.load_initial_settings()
@@ -540,12 +543,6 @@ class EditPanel(ctk.CTkFrame):
                 self.main_window.update_status(f"Failed to download model '{model_name}'")
             messagebox.showerror("Error", f"Failed to download model '{model_name}'")
     
-    def update_context_info(self):
-        """Update context information label."""
-        if self.use_entire_table_var.get():
-            self.context_info_label.configure(text="Context: Entire table")
-        else:
-            self.context_info_label.configure(text="Context: Selected item only")
     
     def generate_preview(self):
         """Generate AI preview suggestions."""
@@ -586,11 +583,8 @@ class EditPanel(ctk.CTkFrame):
         # Run generation in separate thread
         def generate_thread():
             try:
-                # Prepare context
-                if self.use_entire_table_var.get():
-                    context = self.get_entire_table_context()
-                else:
-                    context = self.get_selected_item_context()
+                # Prepare context (always use selected item context)
+                context = self.get_selected_item_context()
                 
                 # Generate suggestions
                 suggestions = self.ollama_handler.generate_erp_names(
@@ -625,15 +619,6 @@ class EditPanel(ctk.CTkFrame):
         
         return "No item selected"
     
-    def get_entire_table_context(self):
-        """Get context for entire table."""
-        if hasattr(self.tree_view, 'data') and not self.tree_view.data.empty:
-            erp_names = self.tree_view.data['ERP name'].dropna().unique()
-            context = f"Available ERP names in table: {', '.join(erp_names[:10])}"  # Limit to first 10
-            if len(erp_names) > 10:
-                context += f" (and {len(erp_names) - 10} more)"
-            return context
-        return "No table data available"
     
     def update_preview_list(self, suggestions):
         """Update the preview listbox with suggestions."""
@@ -644,11 +629,21 @@ class EditPanel(ctk.CTkFrame):
                 self.preview_listbox.insert(tk.END, f"{i}. {suggestion}")
             self.apply_ai_button.configure(state="normal")
             
+            # Enable "Apply to selected" button if we have selected items
+            if hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items:
+                self.apply_to_selected_button.configure(state="normal")
+            
+            # Enable "Apply to entire table" button if we have data
+            if hasattr(self.tree_view, 'data') and not self.tree_view.data.empty:
+                self.apply_to_entire_table_button.configure(state="normal")
+            
             if self.main_window and hasattr(self.main_window, 'status_label'):
                 self.main_window.update_status(f"Generated {len(suggestions)} AI suggestions")
         else:
             self.preview_listbox.insert(tk.END, "No suggestions generated")
             self.apply_ai_button.configure(state="disabled")
+            self.apply_to_selected_button.configure(state="disabled")
+            self.apply_to_entire_table_button.configure(state="disabled")
             
             if self.main_window and hasattr(self.main_window, 'status_label'):
                 self.main_window.update_status("No AI suggestions generated")
@@ -660,6 +655,8 @@ class EditPanel(ctk.CTkFrame):
         self.preview_listbox.delete(0, tk.END)
         self.preview_listbox.insert(tk.END, f"Error: {error_message}")
         self.apply_ai_button.configure(state="disabled")
+        self.apply_to_selected_button.configure(state="disabled")
+        self.apply_to_entire_table_button.configure(state="disabled")
         self.preview_button.configure(state="normal")
         
         if self.main_window and hasattr(self.main_window, 'status_label'):
@@ -707,3 +704,304 @@ class EditPanel(ctk.CTkFrame):
         else:
             if self.main_window and hasattr(self.main_window, 'status_label'):
                 self.main_window.update_status("AI suggestion application cancelled")
+
+    def apply_ai_to_selected(self):
+        """Apply AI prompt to all selected items individually."""
+        # Check if we're already processing - if so, stop processing
+        if self.processing_thread and self.processing_thread.is_alive():
+            self.stop_processing()
+            return
+        
+        # Check if we have selected items
+        if not (hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items):
+            messagebox.showwarning("Warning", "Please select items in the tree view first")
+            return
+        
+        # Check if we have a prompt
+        prompt = self.prompt_text.get("1.0", "end-1c").strip()
+        if not prompt:
+            messagebox.showwarning("Warning", "Please enter a prompt first")
+            return
+        
+        # Check if we have models available
+        if not self.available_models:
+            messagebox.showwarning("Warning", "No AI models available. Please refresh models.")
+            return
+        
+        # Show confirmation dialog
+        num_items = len(self.tree_view.selected_items)
+        response = messagebox.askyesno(
+            "Confirm AI Application to Selected Items", 
+            f"Apply AI prompt to {num_items} selected items?\n\nThis will generate individual suggestions for each item.\n\nPrompt: '{prompt}'\n\nYou can stop processing at any time by clicking the button again."
+        )
+        
+        if not response:
+            if self.main_window and hasattr(self.main_window, 'status_label'):
+                self.main_window.update_status("AI application to selected items cancelled")
+            return
+        
+        # Start processing for selected items
+        self.start_processing_selected(prompt, num_items)
+    
+    def start_processing_selected(self, prompt, num_items):
+        """Start the AI processing for selected items."""
+        # Reset stop flag
+        self.should_stop_processing = False
+        
+        # Get model name
+        model_name = self.model_dropdown.get()
+        
+        # Update button to show stop functionality
+        self.apply_to_selected_button.configure(
+            text="Stop processing",
+            state="normal"
+        )
+        
+        # Update status
+        if self.main_window and hasattr(self.main_window, 'status_label'):
+            self.main_window.update_status(f"Processing AI prompt for {num_items} selected items... Click 'Stop processing' to cancel.")
+        
+        # Run in separate thread
+        def apply_thread():
+            try:
+                successful_applications = 0
+                
+                for i, (item_data, row_id) in enumerate(self.tree_view.selected_items):
+                    # Check if we should stop processing
+                    if self.should_stop_processing:
+                        if self.main_window and hasattr(self.main_window, 'status_label'):
+                            self.main_window.root.after(0, lambda: 
+                                self.main_window.update_status(f"Processing stopped by user. Processed {successful_applications}/{num_items} items."))
+                        break
+                    
+                    try:
+                        # Prepare context for this specific item
+                        context = f"Current ERP name: {item_data.get('ERP name', 'Unknown')}"
+                        
+                        # Generate suggestion for this item
+                        suggestions = self.ollama_handler.generate_erp_names(
+                            prompt, context, model_name, 1
+                        )
+                        
+                        if suggestions and not self.should_stop_processing:
+                            # Use the first (and only) suggestion
+                            suggestion = suggestions[0].split('. ', 1)[-1] if '. ' in suggestions[0] else suggestions[0]
+                            
+                            # Apply to User ERP Name
+                            self.tree_view.update_user_erp_name(row_id, suggestion)
+                            successful_applications += 1
+                        
+                        # Update status for this item (only if not stopped)
+                        if not self.should_stop_processing and self.main_window and hasattr(self.main_window, 'status_label'):
+                            self.main_window.root.after(0, lambda i=i+1, total=num_items: 
+                                self.main_window.update_status(f"Processing item {i}/{total}... (Click 'Stop processing' to cancel)"))
+                        
+                    except Exception as e:
+                        print(f"Error processing item {i+1}: {e}")
+                        continue
+                
+                # Update final status (only if not stopped)
+                if not self.should_stop_processing:
+                    if self.main_window and hasattr(self.main_window, 'status_label'):
+                        self.main_window.root.after(0, lambda: 
+                            self.main_window.update_status(f"Applied AI prompt to {successful_applications}/{num_items} items successfully"))
+                else:
+                    if self.main_window and hasattr(self.main_window, 'status_label'):
+                        self.main_window.root.after(0, lambda: 
+                            self.main_window.update_status(f"Processing cancelled. Applied AI prompt to {successful_applications}/{num_items} items."))
+                
+            except Exception as e:
+                if self.main_window and hasattr(self.main_window, 'status_label'):
+                    self.main_window.root.after(0, lambda: 
+                        self.main_window.update_status(f"Error applying AI prompt: {str(e)}"))
+            
+            finally:
+                # Reset button state
+                self.main_window.root.after(0, lambda: self.reset_selected_processing_button())
+        
+        # Store the thread reference
+        self.processing_thread = threading.Thread(target=apply_thread, daemon=True)
+        self.processing_thread.start()
+    
+    def reset_selected_processing_button(self):
+        """Reset the processing buttons to their normal state."""
+        self.apply_to_entire_table_button.configure(
+            text="Apply to entire table",
+            state="normal"
+        )
+        self.apply_to_selected_button.configure(
+            text="Apply to selected",
+            state="normal"
+        )
+        
+        # Reset processing state
+        self.processing_thread = None
+        self.should_stop_processing = False
+
+    def apply_ai_to_entire_table(self):
+        """Apply AI prompt to all items in the table."""
+        # Check if we're already processing - if so, stop processing
+        if self.processing_thread and self.processing_thread.is_alive():
+            self.stop_processing()
+            return
+        
+        # Check if we have a prompt
+        prompt = self.prompt_text.get("1.0", "end-1c").strip()
+        if not prompt:
+            messagebox.showwarning("Warning", "Please enter a prompt first")
+            return
+        
+        # Check if we have models available
+        if not self.available_models:
+            messagebox.showwarning("Warning", "No AI models available. Please refresh models.")
+            return
+        
+        # Check if we have data
+        if not hasattr(self.tree_view, 'data') or self.tree_view.data.empty:
+            messagebox.showwarning("Warning", "No data available")
+            return
+        
+        # Count total items
+        total_items = len(self.tree_view.data)
+        
+        # Show confirmation dialog
+        response = messagebox.askyesno(
+            "Confirm AI Application to Entire Table", 
+            f"Apply AI prompt to all {total_items} items in the table?\n\nThis will generate individual suggestions for each item.\n\nPrompt: '{prompt}'\n\nThis may take a while...\n\nYou can stop processing at any time by clicking the button again."
+        )
+        
+        if not response:
+            if self.main_window and hasattr(self.main_window, 'status_label'):
+                self.main_window.update_status("AI application to entire table cancelled")
+            return
+        
+        # Start processing
+        self.start_processing(prompt, total_items)
+    
+    def start_processing(self, prompt, total_items):
+        """Start the AI processing for entire table."""
+        # Reset stop flag
+        self.should_stop_processing = False
+        
+        # Get model name
+        model_name = self.model_dropdown.get()
+        
+        # Update button to show stop functionality
+        self.apply_to_entire_table_button.configure(
+            text="Stop processing",
+            state="normal"
+        )
+        
+        # Update status
+        if self.main_window and hasattr(self.main_window, 'status_label'):
+            self.main_window.update_status(f"Processing AI prompt for {total_items} items... Click 'Stop processing' to cancel.")
+        
+        # Run in separate thread
+        def apply_thread():
+            try:
+                successful_applications = 0
+                
+                for i, (_, row) in enumerate(self.tree_view.data.iterrows()):
+                    # Check if we should stop processing
+                    if self.should_stop_processing:
+                        if self.main_window and hasattr(self.main_window, 'status_label'):
+                            self.main_window.root.after(0, lambda: 
+                                self.main_window.update_status(f"Processing stopped by user. Processed {successful_applications}/{total_items} items."))
+                        break
+                    
+                    try:
+                        # Get row ID for this item
+                        delimiter = "◆◆◆"
+                        row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel ', '')}"
+                        
+                        # Prepare context for this specific item
+                        context = f"Current ERP name: {row.get('ERP name', 'Unknown')}"
+                        
+                        # Generate suggestion for this item
+                        suggestions = self.ollama_handler.generate_erp_names(
+                            prompt, context, model_name, 1
+                        )
+                        
+                        if suggestions and not self.should_stop_processing:
+                            # Use the first (and only) suggestion
+                            suggestion = suggestions[0].split('. ', 1)[-1] if '. ' in suggestions[0] else suggestions[0]
+                            
+                            # Apply to User ERP Name
+                            self.tree_view.update_user_erp_name(row_id, suggestion)
+                            successful_applications += 1
+                        
+                        # Update status for this item (only if not stopped)
+                        if not self.should_stop_processing and self.main_window and hasattr(self.main_window, 'status_label'):
+                            self.main_window.root.after(0, lambda i=i+1, total=total_items: 
+                                self.main_window.update_status(f"Processing item {i}/{total}... (Click 'Stop processing' to cancel)"))
+                        
+                    except Exception as e:
+                        print(f"Error processing item {i+1}: {e}")
+                        continue
+                
+                # Update final status (only if not stopped)
+                if not self.should_stop_processing:
+                    if self.main_window and hasattr(self.main_window, 'status_label'):
+                        self.main_window.root.after(0, lambda: 
+                            self.main_window.update_status(f"Applied AI prompt to {successful_applications}/{total_items} items successfully"))
+                else:
+                    if self.main_window and hasattr(self.main_window, 'status_label'):
+                        self.main_window.root.after(0, lambda: 
+                            self.main_window.update_status(f"Processing cancelled. Applied AI prompt to {successful_applications}/{total_items} items."))
+                
+            except Exception as e:
+                if self.main_window and hasattr(self.main_window, 'status_label'):
+                    self.main_window.root.after(0, lambda: 
+                        self.main_window.update_status(f"Error applying AI prompt: {str(e)}"))
+            
+            finally:
+                # Reset button state
+                self.main_window.root.after(0, lambda: self.reset_processing_button())
+        
+        # Store the thread reference
+        self.processing_thread = threading.Thread(target=apply_thread, daemon=True)
+        self.processing_thread.start()
+    
+    def stop_processing(self):
+        """Stop the current AI processing."""
+        self.should_stop_processing = True
+        
+        # Update buttons immediately to show we're stopping
+        self.apply_to_entire_table_button.configure(
+            text="Stopping...",
+            state="disabled"
+        )
+        self.apply_to_selected_button.configure(
+            text="Stopping...",
+            state="disabled"
+        )
+        
+        # Update status
+        if self.main_window and hasattr(self.main_window, 'status_label'):
+            self.main_window.update_status("Stopping AI processing...")
+    
+    def reset_processing_button(self):
+        """Reset the processing buttons to their normal state."""
+        self.apply_to_entire_table_button.configure(
+            text="Apply to entire table",
+            state="normal"
+        )
+        self.apply_to_selected_button.configure(
+            text="Apply to selected",
+            state="normal"
+        )
+        
+        # Reset processing state
+        self.processing_thread = None
+        self.should_stop_processing = False
+
+    def update_apply_to_selected_button_state(self):
+        """Update the state of the Apply to selected button based on current selection and AI results."""
+        # Enable if we have selected items and AI suggestions are available
+        if (hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items and 
+            self.preview_listbox.size() > 0 and 
+            not self.preview_listbox.get(0, tk.END)[0].startswith("No suggestions") and
+            not self.preview_listbox.get(0, tk.END)[0].startswith("Error:")):
+            self.apply_to_selected_button.configure(state="normal")
+        else:
+            self.apply_to_selected_button.configure(state="disabled")

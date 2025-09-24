@@ -434,16 +434,21 @@ class MainWindow:
                 
                 # Enable clear button if we have ERP items selected
                 self.clear_user_erp_button.configure(state="normal")
+                
+                # Update apply to selected button state
+                self.edit_panel.update_apply_to_selected_button_state()
             else:
                 # No ERP items selected
                 self.edit_panel.set_selected_item(None, None)
                 self.tree_view.selected_items = []
                 self.clear_user_erp_button.configure(state="disabled")
+                self.edit_panel.update_apply_to_selected_button_state()
                 self.update_status("Ready")
         else:
             self.edit_panel.set_selected_item(None, None)
             self.tree_view.selected_items = []
             self.clear_user_erp_button.configure(state="disabled")
+            self.edit_panel.update_apply_to_selected_button_state()
     
     def find_row_id_from_tree_item(self, item_text, item_values):
         """Find the row ID for a tree item."""

@@ -540,7 +540,7 @@ class TreeViewWidget(ctk.CTkFrame):
         if row_id not in self.user_modifications:
             self.user_modifications[row_id] = {}
         self.user_modifications[row_id]['user_erp_name'] = user_erp_name
-        self.refresh_view()
+        self.update_tree_item_user_erp_name(row_id, user_erp_name)
     
     def reassign_item(self, row_id, new_category, new_subcategory, new_sublevel):
         """Reassign an item to a new category, subcategory, and sublevel."""
@@ -550,6 +550,33 @@ class TreeViewWidget(ctk.CTkFrame):
         self.user_modifications[row_id]['new_subcategory'] = new_subcategory
         self.user_modifications[row_id]['new_sublevel'] = new_sublevel
         self.refresh_view()
+    
+    def update_tree_item_user_erp_name(self, row_id, user_erp_name):
+        """Update the User ERP Name column for a specific tree item without refreshing the entire view."""
+        # Find the tree item with the matching row_id
+        for item in self.tree.get_children():
+            # Check ERP items recursively
+            if self._update_item_user_erp_name_recursive(item, row_id, user_erp_name):
+                break
+    
+    def _update_item_user_erp_name_recursive(self, item, row_id, user_erp_name):
+        """Recursively search for and update the User ERP Name for a specific item."""
+        # Check if this item has the matching row_id
+        tags = self.tree.item(item, "tags")
+        if tags and len(tags) >= 2 and tags[1] == row_id:
+            # Found the item, update its values
+            current_values = list(self.tree.item(item, "values"))
+            if len(current_values) > 0:
+                current_values[0] = user_erp_name  # User ERP Name is the first column after #0
+                self.tree.item(item, values=current_values)
+            return True
+        
+        # Check children recursively
+        for child in self.tree.get_children(item):
+            if self._update_item_user_erp_name_recursive(child, row_id, user_erp_name):
+                return True
+        
+        return False
     
     def get_user_modifications(self):
         """Get all user modifications."""

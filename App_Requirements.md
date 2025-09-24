@@ -120,16 +120,21 @@
 - Model refresh functionality to detect newly installed models
 - Model download capability for pulling new models
 - Prompt input field for custom AI instructions
-- Context selection: entire table or selected items only
-- AI Results section (formerly AI Suggestions) for displaying generated names
+- AI Results section for displaying generated names (increased height for 5 results)
 - Preview functionality showing up to 5 AI-generated ERP name suggestions
 - Apply functionality to set selected AI suggestion as User ERP Name
 - "Apply to selected" button to apply AI prompt to all selected items individually
+- "Apply to entire table" button to apply AI prompt to all items in the table
+- Dynamic button state management: buttons convert to "Stop processing" during AI operations
+- Stop processing functionality allowing users to cancel long-running AI operations
+- Graceful termination of background AI processing with progress preservation
 - AI model selection persistence in configuration file
 - Automatic AI model refresh on application startup
 - Threading for AI operations to prevent UI freezing
 - Confirmation dialog before applying AI suggestions to prevent accidental changes
 - Support for both single item and multiple item selection in AI operations
+- Real-time progress tracking with stop instructions during processing
+- Safe process termination ensuring no data loss or hanging threads
 
 ## Dependencies
 - customtkinter
