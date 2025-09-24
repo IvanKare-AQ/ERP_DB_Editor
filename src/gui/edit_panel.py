@@ -421,19 +421,10 @@ class EditPanel(ctk.CTkFrame):
         )
         self.preview_button.pack(side="left", padx=5)
         
-        self.apply_ai_button = ctk.CTkButton(
-            button_frame,
-            text="Apply",
-            command=self.apply_ai_suggestion,
-            width=60,
-            height=30,
-            state="disabled"
-        )
-        self.apply_ai_button.pack(side="left", padx=5)
         
         self.apply_to_selected_button = ctk.CTkButton(
             button_frame,
-            text="Apply to selected",
+            text="Process Selected",
             command=self.apply_ai_to_selected,
             width=120,
             height=30,
@@ -443,7 +434,7 @@ class EditPanel(ctk.CTkFrame):
         
         self.apply_to_entire_table_button = ctk.CTkButton(
             button_frame,
-            text="Apply to entire table",
+            text="Process entire table",
             command=self.apply_ai_to_entire_table,
             width=140,
             height=30,
@@ -627,13 +618,12 @@ class EditPanel(ctk.CTkFrame):
         if suggestions:
             for i, suggestion in enumerate(suggestions, 1):
                 self.preview_listbox.insert(tk.END, f"{i}. {suggestion}")
-            self.apply_ai_button.configure(state="normal")
             
-            # Enable "Apply to selected" button if we have selected items
+            # Enable "Process Selected" button if we have selected items
             if hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items:
                 self.apply_to_selected_button.configure(state="normal")
             
-            # Enable "Apply to entire table" button if we have data
+            # Enable "Process entire table" button if we have data
             if hasattr(self.tree_view, 'data') and not self.tree_view.data.empty:
                 self.apply_to_entire_table_button.configure(state="normal")
             
@@ -641,7 +631,6 @@ class EditPanel(ctk.CTkFrame):
                 self.main_window.update_status(f"Generated {len(suggestions)} AI suggestions")
         else:
             self.preview_listbox.insert(tk.END, "No suggestions generated")
-            self.apply_ai_button.configure(state="disabled")
             self.apply_to_selected_button.configure(state="disabled")
             self.apply_to_entire_table_button.configure(state="disabled")
             
@@ -654,7 +643,6 @@ class EditPanel(ctk.CTkFrame):
         """Handle generation error."""
         self.preview_listbox.delete(0, tk.END)
         self.preview_listbox.insert(tk.END, f"Error: {error_message}")
-        self.apply_ai_button.configure(state="disabled")
         self.apply_to_selected_button.configure(state="disabled")
         self.apply_to_entire_table_button.configure(state="disabled")
         self.preview_button.configure(state="normal")
@@ -662,48 +650,6 @@ class EditPanel(ctk.CTkFrame):
         if self.main_window and hasattr(self.main_window, 'status_label'):
             self.main_window.update_status("Error generating AI suggestions")
     
-    def apply_ai_suggestion(self):
-        """Apply selected AI suggestion to User ERP Name."""
-        selection = self.preview_listbox.curselection()
-        if not selection:
-            messagebox.showwarning("Warning", "Please select a suggestion to apply")
-            return
-        
-        if not self.selected_row_id:
-            messagebox.showwarning("Warning", "No item selected")
-            return
-        
-        # Get the selected suggestion
-        suggestion_text = self.preview_listbox.get(selection[0])
-        # Remove numbering and clean up
-        suggestion = suggestion_text.split('. ', 1)[-1] if '. ' in suggestion_text else suggestion_text
-        
-        # Show confirmation dialog
-        current_name = self.user_erp_name_entry.get()
-        if current_name:
-            response = messagebox.askyesno(
-                "Confirm AI Application", 
-                f"Current User ERP Name: '{current_name}'\n\nAI Suggestion: '{suggestion}'\n\nDo you want to apply this AI suggestion?"
-            )
-        else:
-            response = messagebox.askyesno(
-                "Confirm AI Application", 
-                f"AI Suggestion: '{suggestion}'\n\nDo you want to apply this AI suggestion?"
-            )
-        
-        if response:
-            # Apply to User ERP Name
-            self.tree_view.update_user_erp_name(self.selected_row_id, suggestion)
-            
-            # Update the input field
-            self.user_erp_name_entry.delete(0, tk.END)
-            self.user_erp_name_entry.insert(0, suggestion)
-            
-            if self.main_window and hasattr(self.main_window, 'status_label'):
-                self.main_window.update_status(f"Applied AI suggestion: {suggestion}")
-        else:
-            if self.main_window and hasattr(self.main_window, 'status_label'):
-                self.main_window.update_status("AI suggestion application cancelled")
 
     def apply_ai_to_selected(self):
         """Apply AI prompt to all selected items individually."""
@@ -826,11 +772,11 @@ class EditPanel(ctk.CTkFrame):
     def reset_selected_processing_button(self):
         """Reset the processing buttons to their normal state."""
         self.apply_to_entire_table_button.configure(
-            text="Apply to entire table",
+            text="Process entire table",
             state="normal"
         )
         self.apply_to_selected_button.configure(
-            text="Apply to selected",
+            text="Process Selected",
             state="normal"
         )
         
@@ -983,11 +929,11 @@ class EditPanel(ctk.CTkFrame):
     def reset_processing_button(self):
         """Reset the processing buttons to their normal state."""
         self.apply_to_entire_table_button.configure(
-            text="Apply to entire table",
+            text="Process entire table",
             state="normal"
         )
         self.apply_to_selected_button.configure(
-            text="Apply to selected",
+            text="Process Selected",
             state="normal"
         )
         
@@ -996,7 +942,7 @@ class EditPanel(ctk.CTkFrame):
         self.should_stop_processing = False
 
     def update_apply_to_selected_button_state(self):
-        """Update the state of the Apply to selected button based on current selection and AI results."""
+        """Update the state of the Process Selected button based on current selection and AI results."""
         # Enable if we have selected items and AI suggestions are available
         if (hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items and 
             self.preview_listbox.size() > 0 and 

@@ -122,9 +122,8 @@
 - Prompt input field for custom AI instructions
 - AI Results section for displaying generated names (increased height for 5 results)
 - Preview functionality showing up to 5 AI-generated ERP name suggestions
-- Apply functionality to set selected AI suggestion as User ERP Name
-- "Apply to selected" button to apply AI prompt to all selected items individually
-- "Apply to entire table" button to apply AI prompt to all items in the table
+- "Process Selected" button to apply AI prompt to all selected items individually
+- "Process entire table" button to apply AI prompt to all items in the table
 - Dynamic button state management: buttons convert to "Stop processing" during AI operations
 - Stop processing functionality allowing users to cancel long-running AI operations
 - Graceful termination of background AI processing with progress preservation
@@ -135,6 +134,15 @@
 - Support for both single item and multiple item selection in AI operations
 - Real-time progress tracking with stop instructions during processing
 - Safe process termination ensuring no data loss or hanging threads
+
+## Data Cleaning Requirements
+- Multiline cell conversion functionality to convert multiline Excel cells to single line entries
+- "NEN" prefix removal functionality to remove "NEN" and subsequent spaces from all cells
+- Data cleaning buttons in toolbar for easy access to cleaning operations
+- Confirmation dialogs for irreversible data cleaning operations
+- Progress tracking and statistics for data cleaning operations
+- Automatic tree view refresh after data cleaning operations
+- Real-time status updates during data cleaning processes
 
 ## Dependencies
 - customtkinter

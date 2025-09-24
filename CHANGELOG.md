@@ -5,6 +5,39 @@ All notable changes to the ERP Database Editor project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2024-12-19
+
+### Added
+- **Data Cleaning Functionality**: Comprehensive data cleaning tools for Excel processing
+  - "Convert Multiline" button to convert multiline Excel cells to single line entries
+  - "Remove NEN" button to remove "NEN" prefix and subsequent spaces from all cells
+  - Automatic tree view refresh after data cleaning operations
+  - Detailed statistics and progress tracking for cleaning operations
+  - Confirmation dialogs for irreversible data cleaning operations
+- **Enhanced AI Processing**: Improved AI-powered ERP name editing capabilities
+  - Dynamic button state management (Apply → Stop processing)
+  - Graceful termination of background AI processing with progress preservation
+  - Real-time progress tracking with stop instructions during processing
+  - Safe process termination ensuring no data loss or hanging threads
+- **Improved User Experience**: Enhanced interface and workflow
+  - Renamed buttons for clarity: "Process Selected" and "Process entire table"
+  - Increased AI Results display height for better visibility of 5 suggestions
+  - Enhanced status messages and confirmation dialogs
+  - Better progress tracking and user feedback
+
+### Removed
+- **Redundant UI Elements**: Streamlined interface by removing unnecessary components
+  - Removed redundant "Apply" button (functionality covered by other buttons)
+  - Removed "Use entire table as context" checkbox for simplified AI operations
+  - Cleaned up context selection functionality
+
+### Fixed
+- **AI Processing Control**: Improved thread management and process control
+  - Fixed potential hanging threads during AI processing
+  - Ensured clean termination of background processes
+  - Improved button state synchronization during processing
+  - Fixed tree view update issues after data cleaning operations
+
 ## [Unreleased]
 
 ### Added

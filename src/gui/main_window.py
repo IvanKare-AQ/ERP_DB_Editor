@@ -146,6 +146,25 @@ class MainWindow:
         )
         self.clear_user_erp_button.pack(side="left", padx=5, pady=5)
         
+        # Data cleaning section
+        self.convert_multiline_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Convert Multiline",
+            command=self.convert_multiline_cells,
+            width=120,
+            state="disabled"
+        )
+        self.convert_multiline_button.pack(side="left", padx=5, pady=5)
+        
+        self.remove_nen_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Remove NEN",
+            command=self.remove_nen_prefix,
+            width=100,
+            state="disabled"
+        )
+        self.remove_nen_button.pack(side="left", padx=5, pady=5)
+        
     def create_content_area(self):
         """Create the main content area with tree view and edit panel."""
         self.content_frame = ctk.CTkFrame(self.main_frame)
@@ -251,6 +270,8 @@ class MainWindow:
                 self.save_view_button.configure(state="normal")
                 self.filter_button.configure(state="normal")
                 self.clear_filters_button.configure(state="normal")
+                self.convert_multiline_button.configure(state="normal")
+                self.remove_nen_button.configure(state="normal")
                 
                 # Update status and file info
                 self.update_status("File loaded successfully")
@@ -562,6 +583,105 @@ class MainWindow:
                         data.loc[mask, sublevel_col] = mods['new_sublevel']
         
         return data
+    
+    def convert_multiline_cells(self):
+        """Convert multiline cells to single line entries."""
+        if not hasattr(self, 'excel_handler') or self.excel_handler is None:
+            messagebox.showwarning("Warning", "No data loaded. Please open an Excel file first.")
+            return
+        
+        # Show confirmation dialog
+        response = messagebox.askyesno(
+            "Convert Multiline Cells", 
+            "This will convert all multiline cells to single line entries.\n\n"
+            "Multiline content will be converted to single lines with spaces.\n"
+            "This operation cannot be undone.\n\n"
+            "Do you want to continue?"
+        )
+        
+        if not response:
+            self.update_status("Multiline conversion cancelled")
+            return
+        
+        # Show progress
+        self.update_status("Converting multiline cells to single line...")
+        
+        # Perform the conversion
+        try:
+            result = self.excel_handler.convert_multiline_to_single_line()
+            
+            # Reload the tree view with the updated data from Excel handler
+            self.tree_view.load_data(self.excel_handler.get_data())
+            
+            # Update status with results
+            if result["converted"] > 0:
+                self.update_status(
+                    f"Converted {result['converted']} multiline cells to single line "
+                    f"({result['percentage']:.1f}% of total cells)"
+                )
+                messagebox.showinfo(
+                    "Conversion Complete", 
+                    f"Successfully converted {result['converted']} multiline cells to single line.\n\n"
+                    f"Total cells processed: {result['total_cells']}\n"
+                    f"Percentage converted: {result['percentage']:.1f}%"
+                )
+            else:
+                self.update_status("No multiline cells found to convert")
+                messagebox.showinfo("No Conversion Needed", "No multiline cells were found in the data.")
+                
+        except Exception as e:
+            error_msg = f"Error converting multiline cells: {str(e)}"
+            self.update_status(error_msg)
+            messagebox.showerror("Conversion Error", error_msg)
+    
+    def remove_nen_prefix(self):
+        """Remove 'NEN' prefix and subsequent spaces from all cells."""
+        if not hasattr(self, 'excel_handler') or self.excel_handler is None:
+            messagebox.showwarning("Warning", "No data loaded. Please open an Excel file first.")
+            return
+        
+        # Show confirmation dialog
+        response = messagebox.askyesno(
+            "Remove NEN Prefix", 
+            "This will remove 'NEN' prefix and subsequent spaces from all cells.\n\n"
+            "This operation cannot be undone.\n\n"
+            "Do you want to continue?"
+        )
+        
+        if not response:
+            self.update_status("NEN removal cancelled")
+            return
+        
+        # Show progress
+        self.update_status("Removing 'NEN' prefix from cells...")
+        
+        # Perform the removal
+        try:
+            result = self.excel_handler.remove_nen_prefix()
+            
+            # Reload the tree view with the updated data from Excel handler
+            self.tree_view.load_data(self.excel_handler.get_data())
+            
+            # Update status with results
+            if result["converted"] > 0:
+                self.update_status(
+                    f"Removed 'NEN' prefix from {result['converted']} cells "
+                    f"({result['percentage']:.1f}% of total cells)"
+                )
+                messagebox.showinfo(
+                    "NEN Removal Complete", 
+                    f"Successfully removed 'NEN' prefix from {result['converted']} cells.\n\n"
+                    f"Total cells processed: {result['total_cells']}\n"
+                    f"Percentage converted: {result['percentage']:.1f}%"
+                )
+            else:
+                self.update_status("No cells with 'NEN' prefix found")
+                messagebox.showinfo("No NEN Prefix Found", "No cells starting with 'NEN' were found in the data.")
+                
+        except Exception as e:
+            error_msg = f"Error removing 'NEN' prefix: {str(e)}"
+            self.update_status(error_msg)
+            messagebox.showerror("NEN Removal Error", error_msg)
             
     def run(self):
         """Run the main application loop."""
