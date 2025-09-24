@@ -34,8 +34,12 @@ class EditPanel(ctk.CTkFrame):
         
     def setup_edit_panel(self):
         """Setup the edit panel components."""
+        # Create scrollable frame
+        self.scrollable_frame = ctk.CTkScrollableFrame(self)
+        self.scrollable_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
         # Title
-        title_label = ctk.CTkLabel(self, text="Edit Selected Item", 
+        title_label = ctk.CTkLabel(self.scrollable_frame, text="Edit Selected Item", 
                                  font=ctk.CTkFont(size=16, weight="bold"))
         title_label.pack(pady=(5, 10))
         
@@ -43,14 +47,14 @@ class EditPanel(ctk.CTkFrame):
         self.setup_user_erp_name_section()
         
         # Separator
-        separator1 = ctk.CTkFrame(self, height=2)
+        separator1 = ctk.CTkFrame(self.scrollable_frame, height=2)
         separator1.pack(fill="x", padx=10, pady=10)
         
         # Reassignment section
         self.setup_reassignment_section()
         
         # Separator
-        separator2 = ctk.CTkFrame(self, height=2)
+        separator2 = ctk.CTkFrame(self.scrollable_frame, height=2)
         separator2.pack(fill="x", padx=10, pady=10)
         
         # AI Editing section
@@ -59,13 +63,13 @@ class EditPanel(ctk.CTkFrame):
     def setup_user_erp_name_section(self):
         """Setup the User ERP Name editing section."""
         # Section title
-        section_title = ctk.CTkLabel(self, text="User ERP Name", 
+        section_title = ctk.CTkLabel(self.scrollable_frame, text="User ERP Name", 
                                    font=ctk.CTkFont(size=14, weight="bold"))
         section_title.pack(pady=(0, 5))
         
         # Input field
         self.user_erp_name_entry = ctk.CTkEntry(
-            self,
+            self.scrollable_frame,
             placeholder_text="Enter User ERP Name...",
             width=300,
             height=35
@@ -73,7 +77,7 @@ class EditPanel(ctk.CTkFrame):
         self.user_erp_name_entry.pack(pady=(0, 5))
         
         # Update and Reset buttons frame
-        button_frame = ctk.CTkFrame(self)
+        button_frame = ctk.CTkFrame(self.scrollable_frame)
         button_frame.pack(pady=(0, 5))
         
         # Update button
@@ -101,12 +105,12 @@ class EditPanel(ctk.CTkFrame):
     def setup_reassignment_section(self):
         """Setup the reassignment section."""
         # Section title
-        section_title = ctk.CTkLabel(self, text="Reassign Item", 
+        section_title = ctk.CTkLabel(self.scrollable_frame, text="Reassign Item", 
                                    font=ctk.CTkFont(size=14, weight="bold"))
         section_title.pack(pady=(0, 5))
         
         # Category dropdown
-        category_frame = ctk.CTkFrame(self)
+        category_frame = ctk.CTkFrame(self.scrollable_frame)
         category_frame.pack(fill="x", padx=10, pady=5)
         
         category_label = ctk.CTkLabel(category_frame, text="Category:", width=100)
@@ -121,7 +125,7 @@ class EditPanel(ctk.CTkFrame):
         self.category_dropdown.pack(side="left", padx=5, pady=5)
         
         # Subcategory dropdown
-        subcategory_frame = ctk.CTkFrame(self)
+        subcategory_frame = ctk.CTkFrame(self.scrollable_frame)
         subcategory_frame.pack(fill="x", padx=10, pady=5)
         
         subcategory_label = ctk.CTkLabel(subcategory_frame, text="Subcategory:", width=100)
@@ -136,7 +140,7 @@ class EditPanel(ctk.CTkFrame):
         self.subcategory_dropdown.pack(side="left", padx=5, pady=5)
         
         # Sublevel dropdown
-        sublevel_frame = ctk.CTkFrame(self)
+        sublevel_frame = ctk.CTkFrame(self.scrollable_frame)
         sublevel_frame.pack(fill="x", padx=10, pady=5)
         
         sublevel_label = ctk.CTkLabel(sublevel_frame, text="Sublevel:", width=100)
@@ -151,7 +155,7 @@ class EditPanel(ctk.CTkFrame):
         
         # Reassign button
         self.reassign_button = ctk.CTkButton(
-            self,
+            self.scrollable_frame,
             text="Reassign",
             command=self.reassign_item,
             width=100,
@@ -329,12 +333,12 @@ class EditPanel(ctk.CTkFrame):
     def setup_ai_editing_section(self):
         """Setup the AI editing section."""
         # Section title
-        section_title = ctk.CTkLabel(self, text="AI Editing", 
+        section_title = ctk.CTkLabel(self.scrollable_frame, text="AI Editing", 
                                    font=ctk.CTkFont(size=14, weight="bold"))
         section_title.pack(pady=(0, 5))
         
         # AI Settings subsection
-        ai_settings_frame = ctk.CTkFrame(self)
+        ai_settings_frame = ctk.CTkFrame(self.scrollable_frame)
         ai_settings_frame.pack(fill="x", padx=10, pady=5)
         
         ai_settings_label = ctk.CTkLabel(ai_settings_frame, text="AI Settings:", 
