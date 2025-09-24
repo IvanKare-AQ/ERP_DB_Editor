@@ -109,3 +109,24 @@ class ConfigManager:
     def get_filters(self) -> Dict[str, Dict[str, Any]]:
         """Get saved filter settings."""
         return self.config.get("view_settings", {}).get("filters", {})
+    
+    def get_ai_settings(self) -> Dict[str, Any]:
+        """Get AI settings."""
+        return self.config.get("ai_settings", {})
+    
+    def save_ai_settings(self, settings: Dict[str, Any]) -> None:
+        """Save AI settings."""
+        self.config["ai_settings"] = settings
+        self.save_config()
+    
+    def get_selected_model(self) -> Optional[str]:
+        """Get selected AI model."""
+        return self.config.get("ai_settings", {}).get("selected_model")
+    
+    def save_selected_model(self, model_name: str) -> None:
+        """Save selected AI model."""
+        if "ai_settings" not in self.config:
+            self.config["ai_settings"] = {}
+        
+        self.config["ai_settings"]["selected_model"] = model_name
+        self.save_config()

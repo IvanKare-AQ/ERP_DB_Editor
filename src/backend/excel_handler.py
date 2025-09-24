@@ -35,18 +35,18 @@ class ExcelHandler:
             # Fill NaN values with empty strings
             self.data = self.data.fillna('')
             
-            # Handle duplicate column names by renaming them
-            columns = list(self.data.columns)
-            for i, col in enumerate(columns):
-                if columns.count(col) > 1:
-                    # Find all occurrences of this column name
-                    indices = [j for j, x in enumerate(columns) if x == col]
-                    # Keep the first one as is, rename the others
-                    for j, idx in enumerate(indices[1:], 1):
-                        columns[idx] = f"{col}_{j}"
+            # Handle duplicate column names by keeping only the first occurrence
+            columns_to_keep = []
+            seen_columns = set()
             
-            # Update column names
-            self.data.columns = columns
+            for col in self.data.columns:
+                base_name = col.strip()  # Remove any trailing spaces
+                if base_name not in seen_columns:
+                    columns_to_keep.append(col)
+                    seen_columns.add(base_name)
+            
+            # Filter data to keep only unique columns
+            self.data = self.data[columns_to_keep]
             
             # Ensure required columns exist
             required_columns = [

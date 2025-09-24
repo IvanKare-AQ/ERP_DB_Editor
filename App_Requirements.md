@@ -35,13 +35,14 @@
 
 ### Data Editing and Modification
 - Right panel edit section for modifying selected ERP items
-- Input field that populates with ERP name when item is selected
+- Input field that populates with priority: user modifications > existing "User ERP Name" > "ERP name"
 - User can modify ERP names and save changes
 - Category, subcategory, and sublevel dropdowns for item reassignment
 - "Update Name" button to save user ERP name modifications
 - "Reassign Item" button to move items to different categories
 - All user modifications tracked in memory until saved
 - Save functionality applies all modifications to Excel file
+- Existing "User ERP Name" values from Excel files are preserved and displayed
 
 ## Technical Requirements
 - Python GUI application using CustomTkinter as GUI framework
@@ -88,6 +89,8 @@
 - Column reordering must preserve all existing data during save operations
 - Save functionality must handle both scenarios: existing column in wrong position and missing column
 - Consistent column order must be maintained across all save operations
+- Duplicate columns must be cleaned up during save operations (keep only first occurrence)
+- Existing "User ERP Name" values must be preserved when saving Excel files
 
 ## User Interface Requirements
 - Status message bar at the bottom of the application window

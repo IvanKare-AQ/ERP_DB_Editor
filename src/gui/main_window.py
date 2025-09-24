@@ -428,8 +428,8 @@ class MainWindow:
                 subcategory = parts[2]
                 sublevel = parts[3]
                 
-                # Handle the Article Sublevel column issue (there are two columns)
-                sublevel_col = 'Article Sublevel ' if 'Article Sublevel ' in self.tree_view.data.columns else 'Article Sublevel'
+                # Use the clean column name (without duplicates)
+                sublevel_col = 'Article Sublevel'
                 matching_rows = self.tree_view.data[
                     (self.tree_view.data['ERP name'] == erp_name) &
                     (self.tree_view.data['Article Category'] == category) &
@@ -446,6 +446,19 @@ class MainWindow:
         
         # Start with original data
         data = self.tree_view.get_data().copy()
+        
+        # Clean up duplicate columns - keep only the first occurrence of each column
+        columns_to_keep = []
+        seen_columns = set()
+        
+        for col in data.columns:
+            base_name = col.split('_')[0] if '_' in col else col
+            if base_name not in seen_columns:
+                columns_to_keep.append(col)
+                seen_columns.add(base_name)
+        
+        # Filter data to keep only unique columns
+        data = data[columns_to_keep]
         
         # Ensure User ERP Name column exists and is positioned correctly
         if 'User ERP Name' in data.columns:
@@ -479,8 +492,8 @@ class MainWindow:
                 subcategory = parts[2]
                 sublevel = parts[3]
                 
-                # Handle the Article Sublevel column issue (there are two columns)
-                sublevel_col = 'Article Sublevel ' if 'Article Sublevel ' in data.columns else 'Article Sublevel'
+                # Use the clean column name (without duplicates)
+                sublevel_col = 'Article Sublevel'
                 # Find matching row
                 mask = (
                     (data['ERP name'] == erp_name) &

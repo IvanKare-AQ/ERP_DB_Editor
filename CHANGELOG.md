@@ -81,6 +81,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File information display showing current loaded file name
 - Comprehensive user feedback for all major operations
 - Smart column reordering logic for consistent Excel file structure
+- AI-powered ERP name editing with Ollama integration
+- Model management (refresh, download) for AI functionality
+- AI prompt input with context selection (entire table vs selected item)
+- AI-generated preview suggestions for ERP names
+- Threading support for non-blocking AI operations
+
+### Fixed
+- Fixed duplicate "Article Sublevel" column issue in save operations
+- Fixed "User ERP Name" column population from existing Excel data
+- Fixed edit panel input field to use priority: user modifications > existing "User ERP Name" > "ERP name"
+- Fixed column cleanup during save operations (keep only first occurrence of duplicate columns)
+- Fixed application startup issues with CTkTextbox parameter compatibility
+- Fixed status bar initialization order to prevent AttributeError
+- Fixed Ollama integration with proper error handling and status updates
 
 ### Technical
 - Backend components moved under src/backend/ for better organization

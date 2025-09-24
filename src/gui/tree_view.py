@@ -125,8 +125,8 @@ class TreeViewWidget(ctk.CTkFrame):
                     
                     # Add ERP Name items under sublevel
                     for _, row in sublevel_data.iterrows():
-                        # Create row ID for this item (use the first Article Sublevel column)
-                        sublevel = row.get('Article Sublevel ', '') or row.get('Article Sublevel', '')
+                        # Create row ID for this item (use the clean Article Sublevel column)
+                        sublevel = row.get('Article Sublevel', '')
                         row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
                         
                         erp_name = row.get('ERP name', '')
@@ -143,8 +143,10 @@ class TreeViewWidget(ctk.CTkFrame):
                         procurement_method = row.get('Procurement Method (Buy/Make)', '')
                         remark = row.get('REMARK', '')
                         
-                        # Get user ERP name if modified
-                        user_erp_name = self.user_modifications.get(row_id, {}).get('user_erp_name', '')
+                        # Get user ERP name - first check if it exists in original data, then check modifications
+                        user_erp_name = row.get('User ERP Name', '')
+                        if row_id in self.user_modifications and 'user_erp_name' in self.user_modifications[row_id]:
+                            user_erp_name = self.user_modifications[row_id]['user_erp_name']
                         
                         # Create ERP item node with row ID stored in tags
                         self.tree.insert(sublevel_node, "end", 
@@ -269,10 +271,12 @@ class TreeViewWidget(ctk.CTkFrame):
                         values = []
                         for col in columns_to_use:
                             if col == "User ERP Name":
-                                # Check if user has modified this value
-                                sublevel = row.get('Article Sublevel ', '') or row.get('Article Sublevel', '')
+                                # Get user ERP name - first check if it exists in original data, then check modifications
+                                sublevel = row.get('Article Sublevel', '')
                                 row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
-                                user_value = self.user_modifications.get(row_id, {}).get('user_erp_name', '')
+                                user_value = row.get('User ERP Name', '')
+                                if row_id in self.user_modifications and 'user_erp_name' in self.user_modifications[row_id]:
+                                    user_value = self.user_modifications[row_id]['user_erp_name']
                                 values.append(user_value)
                             elif col == "ERP Name":
                                 values.append(row.get('ERP name', ''))
@@ -303,8 +307,8 @@ class TreeViewWidget(ctk.CTkFrame):
                             else:
                                 values.append('')
                         
-                        # Create row ID for this item (use the first Article Sublevel column)
-                        sublevel = row.get('Article Sublevel ', '') or row.get('Article Sublevel', '')
+                        # Create row ID for this item (use the clean Article Sublevel column)
+                        sublevel = row.get('Article Sublevel', '')
                         row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
                         
                         # Create ERP item node with row ID stored in tags
@@ -480,6 +484,6 @@ class TreeViewWidget(ctk.CTkFrame):
         if subcategory:
             filtered_data = filtered_data[filtered_data['Article Subcategory'] == subcategory]
         
-        # Handle the Article Sublevel column issue (use the first one with data)
-        sublevel_col = 'Article Sublevel ' if 'Article Sublevel ' in filtered_data.columns else 'Article Sublevel'
+        # Use the clean Article Sublevel column
+        sublevel_col = 'Article Sublevel'
         return sorted(filtered_data[sublevel_col].dropna().unique().tolist())
