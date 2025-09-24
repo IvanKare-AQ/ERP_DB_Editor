@@ -1,0 +1,30 @@
+{
+    "rows": [
+        "SN",
+        "SKU NR",
+        "KEN NAME",
+        "ERP name",
+        "CAD name",
+        "Electronics",
+        "Article Category",
+        "Article Subcategory",
+        "Article Sublevel",
+        "Product Value",
+        "Manufacturer",
+        "SKU",
+        "EAN 13",
+        "Unit",
+        "Supplier",
+        "Expiry Date (Y/N)",
+        "Tracking Method",
+        "Procurement Method (Buy/Make)",
+        "REMARK"
+    ],
+    "column_visibility": {
+        "visible_columns": [
+            "ERP Name",
+            "Electronics"
+        ]
+    },
+    "view_settings": {}
+}

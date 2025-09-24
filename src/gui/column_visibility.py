@@ -78,13 +78,15 @@ class ColumnVisibilityDialog:
         
     def create_column_checkboxes(self):
         """Create checkboxes for each column."""
-        # Get available columns from tree view
-        columns = self.tree_view.tree["columns"]
+        # Get all available columns (not just currently visible ones)
+        all_columns = ("ERP Name", "CAD Name", "Electronics", "Product Value", 
+                      "Manufacturer", "SKU", "EAN 13", "Unit", "Supplier", 
+                      "Expiry Date", "Tracking Method", "Procurement Method", "Remark")
         
         # Load current visibility settings
         current_visibility = self.config_manager.get_column_visibility()
         
-        for column in columns:
+        for column in all_columns:
             # Create frame for each checkbox
             checkbox_frame = ctk.CTkFrame(self.scrollable_frame)
             checkbox_frame.pack(fill="x", pady=2)

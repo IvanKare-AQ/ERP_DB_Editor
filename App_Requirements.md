@@ -47,6 +47,12 @@
 ## Documentation Requirements
 - CHANGELOG.md will contain all changes throughout development step
 
+## Column Visibility Requirements
+- Column visibility functionality must properly hide/show columns in tree view
+- Column visibility dialog must show all available columns regardless of current visibility state
+- Column visibility settings must persist between application sessions
+- Changes to column visibility must be immediately reflected in the tree view
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)

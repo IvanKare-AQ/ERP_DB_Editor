@@ -81,12 +81,16 @@ class TreeViewWidget(ctk.CTkFrame):
         self.clear_tree()
         
         if data is not None and not data.empty:
-            # Group data by hierarchy
-            self.populate_tree(data)
-            
             # Apply column visibility settings if they exist
             if self.visible_columns:
-                self.set_visible_columns(self.visible_columns)
+                self.setup_columns_with_visibility(self.visible_columns)
+                self.populate_tree_with_visibility(data, self.visible_columns)
+            else:
+                # Group data by hierarchy with all columns
+                self.populate_tree(data)
+            
+            # Expand all nodes
+            self.expand_all()
             
     def clear_tree(self):
         """Clear all items from the tree."""
@@ -178,21 +182,102 @@ class TreeViewWidget(ctk.CTkFrame):
         """Set the visible columns."""
         self.visible_columns = visible_columns
         
-        # Hide/show columns based on visibility settings
-        if visible_columns:
-            # Get all available columns
-            all_columns = self.tree["columns"]
+        # Recreate tree view with only visible columns
+        if visible_columns and self.data is not None:
+            # Store current data
+            current_data = self.data
             
-            # Hide columns that are not in visible_columns
-            for column in all_columns:
-                if column not in visible_columns:
-                    self.tree.column(column, width=0, minwidth=0)
-                else:
-                    # Restore column width if it was hidden
-                    self.tree.column(column, width=100, minwidth=80)
+            # Clear and recreate tree with new columns
+            self.clear_tree()
+            self.setup_columns_with_visibility(visible_columns)
             
-            # Update the tree view to reflect changes
-            self.tree.update()
+            # Reload data with new column structure
+            self.populate_tree_with_visibility(current_data, visible_columns)
+            
+            # Expand all nodes
+            self.expand_all()
+    
+    def setup_columns_with_visibility(self, visible_columns):
+        """Setup tree view columns with only visible columns."""
+        # Set only visible columns
+        self.tree["columns"] = visible_columns
+        
+        # Configure column headings
+        self.tree.heading("#0", text="Hierarchy", anchor="w")
+        for col in visible_columns:
+            self.tree.heading(col, text=col)
+        
+        # Configure column widths
+        self.tree.column("#0", width=200, minwidth=150)
+        for col in visible_columns:
+            self.tree.column(col, width=100, minwidth=80)
+    
+    def populate_tree_with_visibility(self, data, visible_columns):
+        """Populate the tree with only visible columns."""
+        # Group by Article Category
+        categories = data.groupby('Article Category')
+        
+        for category_name, category_data in categories:
+            # Create category node
+            category_node = self.tree.insert("", "end", text=category_name, 
+                                           values=("",) * len(visible_columns))
+            
+            # Group by Article Subcategory within category
+            subcategories = category_data.groupby('Article Subcategory')
+            
+            for subcategory_name, subcategory_data in subcategories:
+                # Create subcategory node
+                subcategory_node = self.tree.insert(category_node, "end", 
+                                                  text=subcategory_name,
+                                                  values=("",) * len(visible_columns))
+                
+                # Group by Article Sublevel within subcategory
+                sublevels = subcategory_data.groupby('Article Sublevel')
+                
+                for sublevel_name, sublevel_data in sublevels:
+                    # Create sublevel node
+                    sublevel_node = self.tree.insert(subcategory_node, "end", 
+                                                   text=sublevel_name,
+                                                   values=("",) * len(visible_columns))
+                    
+                    # Add ERP Name items under sublevel
+                    for _, row in sublevel_data.iterrows():
+                        # Create values tuple with only visible columns
+                        values = []
+                        for col in visible_columns:
+                            if col == "ERP Name":
+                                values.append(row.get('ERP name', ''))
+                            elif col == "CAD Name":
+                                values.append(row.get('CAD name', ''))
+                            elif col == "Electronics":
+                                values.append(row.get('Electronics', ''))
+                            elif col == "Product Value":
+                                values.append(row.get('Product Value', ''))
+                            elif col == "Manufacturer":
+                                values.append(row.get('Manufacturer', ''))
+                            elif col == "SKU":
+                                values.append(row.get('SKU', ''))
+                            elif col == "EAN 13":
+                                values.append(row.get('EAN 13', ''))
+                            elif col == "Unit":
+                                values.append(row.get('Unit', ''))
+                            elif col == "Supplier":
+                                values.append(row.get('Supplier', ''))
+                            elif col == "Expiry Date":
+                                values.append(row.get('Expiry Date (Y/N)', ''))
+                            elif col == "Tracking Method":
+                                values.append(row.get('Tracking Method', ''))
+                            elif col == "Procurement Method":
+                                values.append(row.get('Procurement Method (Buy/Make)', ''))
+                            elif col == "Remark":
+                                values.append(row.get('REMARK', ''))
+                            else:
+                                values.append('')
+                        
+                        # Create ERP item node
+                        self.tree.insert(sublevel_node, "end", 
+                                       text=row.get('ERP name', ''),
+                                       values=tuple(values))
     
     def load_column_visibility(self, config_manager):
         """Load column visibility settings from config manager."""
