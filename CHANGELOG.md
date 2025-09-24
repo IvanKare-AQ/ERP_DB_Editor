@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed column visibility functionality - changes now properly reflected in table view
 - Implemented proper column hiding/showing in tree view widget
 - Added column visibility loading from configuration on startup
+- Removed modal success messages from file operations for better user experience
 
 ### Technical
 - Backend components moved under src/backend/ for better organization
