@@ -17,6 +17,7 @@ from src.backend.excel_handler import ExcelHandler
 from src.backend.config_manager import ConfigManager
 from src.gui.tree_view import TreeViewWidget
 from src.gui.column_visibility import ColumnVisibilityDialog
+from src.gui.edit_panel import EditPanel
 
 
 class MainWindow:
@@ -26,7 +27,8 @@ class MainWindow:
         """Initialize the main window."""
         self.root = ctk.CTk()
         self.root.title("ERP Database Editor")
-        self.root.geometry("1200x800")
+        self.root.geometry("1800x1000")  # Even wider to ensure edit panel visibility
+        self.root.minsize(1400, 800)  # Increased minimum width and height
         
         # Initialize backend components
         self.excel_handler = ExcelHandler()
@@ -132,13 +134,29 @@ class MainWindow:
         self.clear_filters_button.pack(side="left", padx=5, pady=5)
         
     def create_content_area(self):
-        """Create the main content area with tree view."""
+        """Create the main content area with tree view and edit panel."""
         self.content_frame = ctk.CTkFrame(self.main_frame)
         self.content_frame.pack(fill="both", expand=True)
         
+        # Create right panel for editing first (to ensure it gets space)
+        self.right_panel = ctk.CTkFrame(self.content_frame)
+        self.right_panel.pack(side="right", fill="y", padx=(5, 10), pady=10)
+        self.right_panel.configure(width=350, fg_color=("gray90", "gray15"))  # Fixed width with distinct color
+        
+        # Create left panel for tree view
+        self.left_panel = ctk.CTkFrame(self.content_frame)
+        self.left_panel.pack(side="left", fill="both", expand=True, padx=(10, 5), pady=10)
+        
         # Create tree view widget
-        self.tree_view = TreeViewWidget(self.content_frame)
-        self.tree_view.pack(fill="both", expand=True, padx=10, pady=10)
+        self.tree_view = TreeViewWidget(self.left_panel)
+        self.tree_view.pack(fill="both", expand=True)
+        
+        # Bind tree view selection event
+        self.tree_view.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
+        
+        # Create edit panel
+        self.edit_panel = EditPanel(self.right_panel, self.tree_view)
+        self.edit_panel.pack(fill="both", expand=True)
         
         # Load column visibility settings
         self.tree_view.load_column_visibility(self.config_manager)
@@ -185,8 +203,8 @@ class MainWindow:
         """Save the current file."""
         if self.current_file_path:
             try:
-                # Get data from tree view
-                data = self.tree_view.get_data()
+                # Get data with user modifications applied
+                data = self.get_data_with_modifications()
                 self.excel_handler.save_file(self.current_file_path, data)
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save file: {str(e)}")
@@ -204,8 +222,8 @@ class MainWindow:
             
             if file_path:
                 try:
-                    # Get data from tree view
-                    data = self.tree_view.get_data()
+                    # Get data with user modifications applied
+                    data = self.get_data_with_modifications()
                     self.excel_handler.save_file(file_path, data)
                     self.current_file_path = file_path
                 except Exception as e:
@@ -298,6 +316,108 @@ class MainWindow:
             self.update_save_view_button_state()
         else:
             messagebox.showwarning("Warning", "Please open a file first")
+    
+    def on_tree_select(self, event):
+        """Handle tree view selection events."""
+        selection = self.tree_view.tree.selection()
+        if selection:
+            item = selection[0]
+            # Get item tags to check if this is an ERP item
+            tags = self.tree_view.tree.item(item, "tags")
+            
+            # Only process ERP items (items with "erp_item" tag)
+            if tags and len(tags) >= 2 and tags[0] == "erp_item":
+                row_id = tags[1]  # Row ID is stored as the second tag
+                # Get original row data
+                original_data = self.get_original_row_data(row_id)
+                self.edit_panel.set_selected_item(original_data, row_id)
+            else:
+                # Not an ERP item (category, subcategory, or sublevel node)
+                self.edit_panel.set_selected_item(None, None)
+        else:
+            self.edit_panel.set_selected_item(None, None)
+    
+    def find_row_id_from_tree_item(self, item_text, item_values):
+        """Find the row ID for a tree item."""
+        # This is a simplified approach - in a real implementation,
+        # you might want to store row IDs in tree items
+        if not self.tree_view.data.empty:
+            # Find matching row in data
+            matching_rows = self.tree_view.data[
+                (self.tree_view.data['ERP name'] == item_text)
+            ]
+            if not matching_rows.empty:
+                row = matching_rows.iloc[0]
+                return f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{row.get('Article Sublevel', '')}"
+        return None
+    
+    def get_original_row_data(self, row_id):
+        """Get original row data for a row ID."""
+        if not self.tree_view.data.empty:
+            # Parse row ID to find matching data
+            parts = row_id.split('_')
+            if len(parts) >= 4:
+                erp_name = parts[0]
+                category = parts[1]
+                subcategory = parts[2]
+                sublevel = parts[3]
+                
+                # Handle the Article Sublevel column issue (there are two columns)
+                sublevel_col = 'Article Sublevel ' if 'Article Sublevel ' in self.tree_view.data.columns else 'Article Sublevel'
+                matching_rows = self.tree_view.data[
+                    (self.tree_view.data['ERP name'] == erp_name) &
+                    (self.tree_view.data['Article Category'] == category) &
+                    (self.tree_view.data['Article Subcategory'] == subcategory) &
+                    (self.tree_view.data[sublevel_col] == sublevel)
+                ]
+                if not matching_rows.empty:
+                    return matching_rows.iloc[0].to_dict()
+        return None
+    
+    def get_data_with_modifications(self):
+        """Get data with user modifications applied."""
+        import pandas as pd
+        
+        # Start with original data
+        data = self.tree_view.get_data().copy()
+        
+        # Apply user modifications
+        modifications = self.tree_view.get_user_modifications()
+        
+        for row_id, mods in modifications.items():
+            # Find the row in data
+            parts = row_id.split('_')
+            if len(parts) >= 4:
+                erp_name = parts[0]
+                category = parts[1]
+                subcategory = parts[2]
+                sublevel = parts[3]
+                
+                # Handle the Article Sublevel column issue (there are two columns)
+                sublevel_col = 'Article Sublevel ' if 'Article Sublevel ' in data.columns else 'Article Sublevel'
+                # Find matching row
+                mask = (
+                    (data['ERP name'] == erp_name) &
+                    (data['Article Category'] == category) &
+                    (data['Article Subcategory'] == subcategory) &
+                    (data[sublevel_col] == sublevel)
+                )
+                
+                if mask.any():
+                    # Apply User ERP Name modification
+                    if 'user_erp_name' in mods:
+                        # Add User ERP Name column if it doesn't exist
+                        if 'User ERP Name' not in data.columns:
+                            data['User ERP Name'] = ''
+                        data.loc[mask, 'User ERP Name'] = mods['user_erp_name']
+                    
+                    # Apply reassignment modifications
+                    if 'new_category' in mods and 'new_subcategory' in mods and 'new_sublevel' in mods:
+                        data.loc[mask, 'Article Category'] = mods['new_category']
+                        data.loc[mask, 'Article Subcategory'] = mods['new_subcategory']
+                        data.loc[mask, 'Article Sublevel'] = mods['new_sublevel']
+        
+        return data
             
     def run(self):
         """Run the main application loop."""

@@ -52,6 +52,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Save View button state updates when filters are changed
 - Fixed filter persistence and restoration functionality
 
+### Added
+- User ERP Name column for editing ERP item names
+- Right panel edit section with input field and dropdowns
+- Item selection functionality with proper data population
+- Category, subcategory, and sublevel dropdowns for reassignment
+- User modification tracking system for changes before save
+- Hierarchical dropdown population based on data relationships
+- Item reassignment functionality with category/subcategory/sublevel changes
+- Enhanced save functionality to apply all user modifications
+
+### Fixed
+- Fixed item selection to only respond to ERP items (not hierarchy nodes)
+- Fixed row ID generation to handle duplicate Article Sublevel columns
+- Fixed column visibility to respect saved settings properly
+- Fixed data mapping issues between display columns and source data
+- Fixed edit panel population with correct ERP names and dropdown values
+- Fixed duplicate column handling in Excel data loading
+- Fixed User ERP Name column visibility based on settings
+
 ### Technical
 - Backend components moved under src/backend/ for better organization
 - Clean separation between GUI and backend layers

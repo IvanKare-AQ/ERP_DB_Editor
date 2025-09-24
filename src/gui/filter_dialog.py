@@ -30,7 +30,7 @@ class FilterDialog:
         # Filter controls
         self.filter_controls = {}
         self.available_columns = [
-            "ERP Name", "CAD Name", "Electronics", "Product Value", 
+            "User ERP Name", "ERP Name", "CAD Name", "Electronics", "Product Value", 
             "Manufacturer", "SKU", "EAN 13", "Unit", "Supplier", 
             "Expiry Date", "Tracking Method", "Procurement Method", "Remark"
         ]

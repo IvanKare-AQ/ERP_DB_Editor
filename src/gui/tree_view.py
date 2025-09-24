@@ -22,6 +22,10 @@ class TreeViewWidget(ctk.CTkFrame):
         self.filtered_data = None
         self.active_filters = {}
         
+        # User modifications tracking
+        self.user_modifications = {}
+        self.selected_item = None
+        
         # Create the tree view
         self.create_tree_view()
         
@@ -52,12 +56,13 @@ class TreeViewWidget(ctk.CTkFrame):
     def setup_columns(self):
         """Setup the tree view columns."""
         # Define the hierarchy columns
-        self.tree["columns"] = ("ERP Name", "CAD Name", "Electronics", "Product Value", 
+        self.tree["columns"] = ("User ERP Name", "ERP Name", "CAD Name", "Electronics", "Product Value", 
                               "Manufacturer", "SKU", "EAN 13", "Unit", "Supplier", 
                               "Expiry Date", "Tracking Method", "Procurement Method", "Remark")
         
         # Configure column headings
         self.tree.heading("#0", text="Hierarchy", anchor="w")
+        self.tree.heading("User ERP Name", text="User ERP Name")
         self.tree.heading("ERP Name", text="ERP Name")
         self.tree.heading("CAD Name", text="CAD Name")
         self.tree.heading("Electronics", text="Electronics")
@@ -74,7 +79,8 @@ class TreeViewWidget(ctk.CTkFrame):
         
         # Configure column widths
         self.tree.column("#0", width=200, minwidth=150)
-        for col in self.tree["columns"]:
+        self.tree.column("User ERP Name", width=150, minwidth=120)
+        for col in self.tree["columns"][1:]:  # Skip User ERP Name as it's already configured
             self.tree.column(col, width=100, minwidth=80)
             
     def load_data(self, data):
@@ -97,7 +103,7 @@ class TreeViewWidget(ctk.CTkFrame):
         for category_name, category_data in categories:
             # Create category node
             category_node = self.tree.insert("", "end", text=category_name, 
-                                           values=("", "", "", "", "", "", "", "", "", "", "", "", ""))
+                                           values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""))
             
             # Group by Article Subcategory within category
             subcategories = category_data.groupby('Article Subcategory')
@@ -106,7 +112,7 @@ class TreeViewWidget(ctk.CTkFrame):
                 # Create subcategory node
                 subcategory_node = self.tree.insert(category_node, "end", 
                                                   text=subcategory_name,
-                                                  values=("", "", "", "", "", "", "", "", "", "", "", "", ""))
+                                                  values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""))
                 
                 # Group by Article Sublevel within subcategory
                 sublevels = subcategory_data.groupby('Article Sublevel')
@@ -115,10 +121,14 @@ class TreeViewWidget(ctk.CTkFrame):
                     # Create sublevel node
                     sublevel_node = self.tree.insert(subcategory_node, "end", 
                                                    text=sublevel_name,
-                                                   values=("", "", "", "", "", "", "", "", "", "", "", "", ""))
+                                                   values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""))
                     
                     # Add ERP Name items under sublevel
                     for _, row in sublevel_data.iterrows():
+                        # Create row ID for this item (use the first Article Sublevel column)
+                        sublevel = row.get('Article Sublevel ', '') or row.get('Article Sublevel', '')
+                        row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
+                        
                         erp_name = row.get('ERP name', '')
                         cad_name = row.get('CAD name', '')
                         electronics = row.get('Electronics', '')
@@ -133,12 +143,16 @@ class TreeViewWidget(ctk.CTkFrame):
                         procurement_method = row.get('Procurement Method (Buy/Make)', '')
                         remark = row.get('REMARK', '')
                         
-                        # Create ERP item node
+                        # Get user ERP name if modified
+                        user_erp_name = self.user_modifications.get(row_id, {}).get('user_erp_name', '')
+                        
+                        # Create ERP item node with row ID stored in tags
                         self.tree.insert(sublevel_node, "end", 
                                        text=erp_name,
-                                       values=(erp_name, cad_name, electronics, product_value,
+                                       values=(user_erp_name, erp_name, cad_name, electronics, product_value,
                                               manufacturer, sku, ean13, unit, supplier,
-                                              expiry_date, tracking_method, procurement_method, remark))
+                                              expiry_date, tracking_method, procurement_method, remark),
+                                       tags=("erp_item", row_id))
         
         # Expand all nodes by default
         self.expand_all()
@@ -191,28 +205,45 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def setup_columns_with_visibility(self, visible_columns):
         """Setup tree view columns with only visible columns."""
+        # Create a copy to avoid modifying the original list
+        columns_to_use = visible_columns.copy()
+        
+        # Add User ERP Name column if it's not in visible columns
+        if "User ERP Name" not in columns_to_use:
+            columns_to_use = ["User ERP Name"] + columns_to_use
+        
         # Set only visible columns
-        self.tree["columns"] = visible_columns
+        self.tree["columns"] = columns_to_use
         
         # Configure column headings
         self.tree.heading("#0", text="Hierarchy", anchor="w")
-        for col in visible_columns:
+        for col in columns_to_use:
             self.tree.heading(col, text=col)
         
         # Configure column widths
         self.tree.column("#0", width=200, minwidth=150)
-        for col in visible_columns:
-            self.tree.column(col, width=100, minwidth=80)
+        for col in columns_to_use:
+            if col == "User ERP Name":
+                self.tree.column(col, width=150, minwidth=120)
+            else:
+                self.tree.column(col, width=100, minwidth=80)
     
     def populate_tree_with_visibility(self, data, visible_columns):
         """Populate the tree with only visible columns."""
+        # Create a copy to avoid modifying the original list
+        columns_to_use = visible_columns.copy()
+        
+        # Add User ERP Name column if it's not in visible columns
+        if "User ERP Name" not in columns_to_use:
+            columns_to_use = ["User ERP Name"] + columns_to_use
+        
         # Group by Article Category
         categories = data.groupby('Article Category')
         
         for category_name, category_data in categories:
             # Create category node
             category_node = self.tree.insert("", "end", text=category_name, 
-                                           values=("",) * len(visible_columns))
+                                           values=("",) * len(columns_to_use))
             
             # Group by Article Subcategory within category
             subcategories = category_data.groupby('Article Subcategory')
@@ -221,7 +252,7 @@ class TreeViewWidget(ctk.CTkFrame):
                 # Create subcategory node
                 subcategory_node = self.tree.insert(category_node, "end", 
                                                   text=subcategory_name,
-                                                  values=("",) * len(visible_columns))
+                                                  values=("",) * len(columns_to_use))
                 
                 # Group by Article Sublevel within subcategory
                 sublevels = subcategory_data.groupby('Article Sublevel')
@@ -230,14 +261,20 @@ class TreeViewWidget(ctk.CTkFrame):
                     # Create sublevel node
                     sublevel_node = self.tree.insert(subcategory_node, "end", 
                                                    text=sublevel_name,
-                                                   values=("",) * len(visible_columns))
+                                                   values=("",) * len(columns_to_use))
                     
                     # Add ERP Name items under sublevel
                     for _, row in sublevel_data.iterrows():
                         # Create values tuple with only visible columns
                         values = []
-                        for col in visible_columns:
-                            if col == "ERP Name":
+                        for col in columns_to_use:
+                            if col == "User ERP Name":
+                                # Check if user has modified this value
+                                sublevel = row.get('Article Sublevel ', '') or row.get('Article Sublevel', '')
+                                row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
+                                user_value = self.user_modifications.get(row_id, {}).get('user_erp_name', '')
+                                values.append(user_value)
+                            elif col == "ERP Name":
                                 values.append(row.get('ERP name', ''))
                             elif col == "CAD Name":
                                 values.append(row.get('CAD name', ''))
@@ -266,10 +303,15 @@ class TreeViewWidget(ctk.CTkFrame):
                             else:
                                 values.append('')
                         
-                        # Create ERP item node
-                        self.tree.insert(sublevel_node, "end", 
-                                       text=row.get('ERP name', ''),
-                                       values=tuple(values))
+                        # Create row ID for this item (use the first Article Sublevel column)
+                        sublevel = row.get('Article Sublevel ', '') or row.get('Article Sublevel', '')
+                        row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
+                        
+                        # Create ERP item node with row ID stored in tags
+                        item = self.tree.insert(sublevel_node, "end", 
+                                               text=row.get('ERP name', ''),
+                                               values=tuple(values),
+                                               tags=("erp_item", row_id))
     
     def load_column_visibility(self, config_manager):
         """Load column visibility settings from config manager."""
@@ -326,6 +368,7 @@ class TreeViewWidget(ctk.CTkFrame):
     def get_data_column_name(self, display_column):
         """Map display column names to data column names."""
         column_mapping = {
+            "User ERP Name": "User ERP Name",  # This is a virtual column
             "ERP Name": "ERP name",
             "CAD Name": "CAD name",
             "Electronics": "Electronics",
@@ -383,3 +426,60 @@ class TreeViewWidget(ctk.CTkFrame):
         self.active_filters = filters.copy()
         if self.active_filters:
             self.refresh_view()
+    
+    def get_selected_item_data(self):
+        """Get data for the currently selected item."""
+        return self.selected_item
+    
+    def set_selected_item(self, item_data):
+        """Set the selected item data."""
+        self.selected_item = item_data
+    
+    def update_user_erp_name(self, row_id, user_erp_name):
+        """Update user ERP name for a specific row."""
+        if row_id not in self.user_modifications:
+            self.user_modifications[row_id] = {}
+        self.user_modifications[row_id]['user_erp_name'] = user_erp_name
+        self.refresh_view()
+    
+    def reassign_item(self, row_id, new_category, new_subcategory, new_sublevel):
+        """Reassign an item to a new category, subcategory, and sublevel."""
+        if row_id not in self.user_modifications:
+            self.user_modifications[row_id] = {}
+        self.user_modifications[row_id]['new_category'] = new_category
+        self.user_modifications[row_id]['new_subcategory'] = new_subcategory
+        self.user_modifications[row_id]['new_sublevel'] = new_sublevel
+        self.refresh_view()
+    
+    def get_user_modifications(self):
+        """Get all user modifications."""
+        return self.user_modifications.copy()
+    
+    def get_unique_categories(self):
+        """Get unique categories from data."""
+        if self.data is None or self.data.empty:
+            return []
+        return sorted(self.data['Article Category'].dropna().unique().tolist())
+    
+    def get_unique_subcategories(self, category=None):
+        """Get unique subcategories from data."""
+        if self.data is None or self.data.empty:
+            return []
+        if category:
+            filtered_data = self.data[self.data['Article Category'] == category]
+            return sorted(filtered_data['Article Subcategory'].dropna().unique().tolist())
+        return sorted(self.data['Article Subcategory'].dropna().unique().tolist())
+    
+    def get_unique_sublevels(self, category=None, subcategory=None):
+        """Get unique sublevels from data."""
+        if self.data is None or self.data.empty:
+            return []
+        filtered_data = self.data
+        if category:
+            filtered_data = filtered_data[filtered_data['Article Category'] == category]
+        if subcategory:
+            filtered_data = filtered_data[filtered_data['Article Subcategory'] == subcategory]
+        
+        # Handle the Article Sublevel column issue (use the first one with data)
+        sublevel_col = 'Article Sublevel ' if 'Article Sublevel ' in filtered_data.columns else 'Article Sublevel'
+        return sorted(filtered_data[sublevel_col].dropna().unique().tolist())

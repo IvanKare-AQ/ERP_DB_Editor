@@ -31,6 +31,17 @@
 ### Column Management
 - User will be able to set visible and non-visible columns
 - "Save View" button that will store column visibility settings to default_settings.json
+- "User ERP Name" column added after "Hierarchy" column for user modifications
+
+### Data Editing and Modification
+- Right panel edit section for modifying selected ERP items
+- Input field that populates with ERP name when item is selected
+- User can modify ERP names and save changes
+- Category, subcategory, and sublevel dropdowns for item reassignment
+- "Update Name" button to save user ERP name modifications
+- "Reassign Item" button to move items to different categories
+- All user modifications tracked in memory until saved
+- Save functionality applies all modifications to Excel file
 
 ## Technical Requirements
 - Python GUI application using CustomTkinter as GUI framework
@@ -38,6 +49,9 @@
 - JSON configuration management
 - Tree view implementation for hierarchical data display
 - Column visibility management with persistence
+- Item selection and editing functionality
+- User modification tracking and persistence
+- Hierarchical dropdown population and filtering
 - Use virtual environment (venv) for this application
 
 ## Future Requirements

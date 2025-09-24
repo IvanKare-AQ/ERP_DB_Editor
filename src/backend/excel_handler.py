@@ -35,6 +35,19 @@ class ExcelHandler:
             # Fill NaN values with empty strings
             self.data = self.data.fillna('')
             
+            # Handle duplicate column names by renaming them
+            columns = list(self.data.columns)
+            for i, col in enumerate(columns):
+                if columns.count(col) > 1:
+                    # Find all occurrences of this column name
+                    indices = [j for j, x in enumerate(columns) if x == col]
+                    # Keep the first one as is, rename the others
+                    for j, idx in enumerate(indices[1:], 1):
+                        columns[idx] = f"{col}_{j}"
+            
+            # Update column names
+            self.data.columns = columns
+            
             # Ensure required columns exist
             required_columns = [
                 'Article Category', 'Article Subcategory', 'Article Sublevel', 'ERP name'

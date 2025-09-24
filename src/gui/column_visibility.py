@@ -80,7 +80,7 @@ class ColumnVisibilityDialog:
     def create_column_checkboxes(self):
         """Create checkboxes for each column."""
         # Get all available columns (not just currently visible ones)
-        all_columns = ("ERP Name", "CAD Name", "Electronics", "Product Value", 
+        all_columns = ("User ERP Name", "ERP Name", "CAD Name", "Electronics", "Product Value", 
                       "Manufacturer", "SKU", "EAN 13", "Unit", "Supplier", 
                       "Expiry Date", "Tracking Method", "Procurement Method", "Remark")
         
