@@ -193,7 +193,7 @@ class TreeViewWidget(ctk.CTkFrame):
                                                   tags=("subcategory",))
                 
                 # Group by Article Sublevel within subcategory
-                sublevels = subcategory_data.groupby('Article Sublevel')
+                sublevels = subcategory_data.groupby('Article Sublevel ')
                 
                 for sublevel_name, sublevel_data in sublevels:
                     # Create sublevel node with color tag
@@ -205,8 +205,8 @@ class TreeViewWidget(ctk.CTkFrame):
                     # Add ERP Name items under sublevel with alternating backgrounds
                     erp_items = list(sublevel_data.iterrows())
                     for index, (_, row) in enumerate(erp_items):
-                        # Create row ID for this item (use the clean Article Sublevel column)
-                        sublevel = row.get('Article Sublevel', '')
+                        # Create row ID for this item (use the Article Sublevel column with trailing space)
+                        sublevel = row.get('Article Sublevel ', '')
                         row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
                         
                         erp_name = row.get('ERP name', '')
@@ -342,7 +342,7 @@ class TreeViewWidget(ctk.CTkFrame):
                                                   tags=("subcategory",))
                 
                 # Group by Article Sublevel within subcategory
-                sublevels = subcategory_data.groupby('Article Sublevel')
+                sublevels = subcategory_data.groupby('Article Sublevel ')
                 
                 for sublevel_name, sublevel_data in sublevels:
                     # Create sublevel node with color tag
@@ -394,8 +394,8 @@ class TreeViewWidget(ctk.CTkFrame):
                             else:
                                 values.append('')
                         
-                        # Create row ID for this item (use the clean Article Sublevel column)
-                        sublevel = row.get('Article Sublevel', '')
+                        # Create row ID for this item (use the Article Sublevel column with trailing space)
+                        sublevel = row.get('Article Sublevel ', '')
                         row_id = f"{row.get('ERP name', '')}_{row.get('Article Category', '')}_{row.get('Article Subcategory', '')}_{sublevel}"
                         
                         # Determine alternating background tag
@@ -574,8 +574,8 @@ class TreeViewWidget(ctk.CTkFrame):
         if subcategory:
             filtered_data = filtered_data[filtered_data['Article Subcategory'] == subcategory]
         
-        # Use the clean Article Sublevel column
-        sublevel_col = 'Article Sublevel'
+        # Use the Article Sublevel column with trailing space
+        sublevel_col = 'Article Sublevel '
         return sorted(filtered_data[sublevel_col].dropna().unique().tolist())
     
     def clear_user_erp_names_for_selected(self):

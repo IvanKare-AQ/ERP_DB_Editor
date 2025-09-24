@@ -411,7 +411,7 @@ class MainWindow:
             erp_items = []
             for item in selection:
                 tags = self.tree_view.tree.item(item, "tags")
-                if tags and len(tags) >= 2 and tags[0] == "erp_item":
+                if tags and len(tags) >= 2 and tags[0] in ["erp_item", "erp_item_even", "erp_item_odd"]:
                     row_id = tags[1]
                     original_data = self.get_original_row_data(row_id)
                     if original_data:
@@ -471,7 +471,7 @@ class MainWindow:
                 sublevel = parts[3]
                 
                 # Use the clean column name (without duplicates)
-                sublevel_col = 'Article Sublevel'
+                sublevel_col = 'Article Sublevel '
                 matching_rows = self.tree_view.data[
                     (self.tree_view.data['ERP name'] == erp_name) &
                     (self.tree_view.data['Article Category'] == category) &
@@ -535,7 +535,7 @@ class MainWindow:
                 sublevel = parts[3]
                 
                 # Use the clean column name (without duplicates)
-                sublevel_col = 'Article Sublevel'
+                sublevel_col = 'Article Sublevel '
                 # Find matching row
                 mask = (
                     (data['ERP name'] == erp_name) &
