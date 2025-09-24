@@ -67,7 +67,7 @@ if exist test_installation.py (
     echo [INFO] Running installation test...
     python test_installation.py
     if %errorlevel% neq 0 (
-        echo [WARNING] Installation test failed, but installation may still be successful
+        echo [WARNING] Some tests failed, but installation may still be successful
     ) else (
         echo [SUCCESS] Installation verification completed
     )

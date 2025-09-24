@@ -17,13 +17,19 @@ def test_imports():
     
     print("Testing required module imports...")
     
+    failed_modules = []
     for module in required_modules:
         try:
             importlib.import_module(module)
             print(f"✓ {module} - OK")
         except ImportError as e:
             print(f"✗ {module} - FAILED: {e}")
-            return False
+            failed_modules.append(module)
+    
+    if failed_modules:
+        print(f"\n[INFO] {len(failed_modules)} module(s) not installed: {', '.join(failed_modules)}")
+        print("[INFO] Run 'pip install -r requirements.txt' to install missing modules")
+        return False
     
     return True
 
@@ -36,8 +42,8 @@ def test_project_structure():
         'src/gui/main_window.py',
         'src/gui/tree_view.py', 
         'src/gui/column_visibility.py',
-        'backend/excel_handler.py',
-        'backend/config_manager.py',
+        'src/backend/excel_handler.py',
+        'src/backend/config_manager.py',
         'config/default_settings.json'
     ]
     

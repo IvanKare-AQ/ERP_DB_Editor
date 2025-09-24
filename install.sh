@@ -92,8 +92,11 @@ verify_installation() {
     # Run test script
     if [ -f "test_installation.py" ]; then
         print_status "Running installation test..."
-        python test_installation.py
-        print_success "Installation verification completed"
+        if python test_installation.py; then
+            print_success "Installation verification completed"
+        else
+            print_warning "Some tests failed, but installation may still be successful"
+        fi
     else
         print_warning "Test script not found, skipping verification"
     fi
