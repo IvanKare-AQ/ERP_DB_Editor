@@ -126,7 +126,7 @@ class SavePromptDialog:
         )
         self.preview_text.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self.preview_text.insert("1.0", self.prompt_text)
-        self.preview_text.configure(state="disabled")  # Make read-only
+        # Keep editable for editing functionality
         
         # Buttons frame
         buttons_frame = ctk.CTkFrame(main_frame, height=80)
@@ -135,7 +135,7 @@ class SavePromptDialog:
         
         # Save button
         if self.is_rename:
-            save_button_text = "Rename Prompt"
+            save_button_text = "Save Prompt"
         else:
             save_button_text = "Save Prompt"
             
@@ -219,8 +219,11 @@ class SavePromptDialog:
                 if not response:
                     return
         
+        # Get the current prompt text from the editable area
+        prompt_text = self.preview_text.get("1.0", tk.END).strip()
+        
         # Save the prompt
-        if self.prompt_manager.save_prompt(name, description, self.prompt_text):
+        if self.prompt_manager.save_prompt(name, description, prompt_text):
             if self.is_rename:
                 messagebox.showinfo("Success", f"Prompt renamed to '{name}' successfully!")
             else:

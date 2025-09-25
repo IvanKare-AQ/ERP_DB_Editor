@@ -89,13 +89,14 @@ class PromptSelectionDialog:
                                    font=ctk.CTkFont(size=12, weight="bold"))
         preview_label.pack(pady=(5, 5))
         
-        # Text widget for prompt preview
+        # Text widget for prompt preview (read-only)
         self.preview_text = ctk.CTkTextbox(
             right_frame,
             height=400,
             font=ctk.CTkFont(family="Courier", size=11)
         )
         self.preview_text.pack(fill="both", expand=True, padx=10, pady=5)
+        self.preview_text.configure(state="disabled")  # Make read-only
         
         # Buttons frame
         buttons_frame = ctk.CTkFrame(main_frame)
@@ -112,17 +113,6 @@ class PromptSelectionDialog:
         )
         self.load_button.pack(side="left", padx=(10, 3))
         
-        # Edit Description button
-        self.edit_desc_button = ctk.CTkButton(
-            buttons_frame,
-            text="Edit Description",
-            command=self.edit_description,
-            width=100,
-            height=30,
-            state="disabled"
-        )
-        self.edit_desc_button.pack(side="left", padx=3)
-        
         # Duplicate button
         self.duplicate_button = ctk.CTkButton(
             buttons_frame,
@@ -134,16 +124,16 @@ class PromptSelectionDialog:
         )
         self.duplicate_button.pack(side="left", padx=3)
         
-        # Rename button
-        self.rename_button = ctk.CTkButton(
+        # Edit button
+        self.edit_button = ctk.CTkButton(
             buttons_frame,
-            text="Rename Prompt",
-            command=self.rename_prompt,
+            text="Edit Prompt",
+            command=self.edit_prompt,
             width=100,
             height=30,
             state="disabled"
         )
-        self.rename_button.pack(side="left", padx=3)
+        self.edit_button.pack(side="left", padx=3)
         
         # Delete button
         self.delete_button = ctk.CTkButton(
@@ -245,9 +235,8 @@ class PromptSelectionDialog:
         
         self.selected_prompt = name
         self.load_button.configure(state="normal")
-        self.edit_desc_button.configure(state="normal")
         self.duplicate_button.configure(state="normal")
-        self.rename_button.configure(state="normal")
+        self.edit_button.configure(state="normal")
         self.delete_button.configure(state="normal")
         
         # Highlight selected prompt
@@ -256,8 +245,10 @@ class PromptSelectionDialog:
         # Load and display the prompt
         prompt_text = self.prompt_manager.get_prompt(name)
         if prompt_text:
+            self.preview_text.configure(state="normal")  # Enable editing temporarily
             self.preview_text.delete("1.0", tk.END)
             self.preview_text.insert("1.0", prompt_text)
+            self.preview_text.configure(state="disabled")  # Make read-only again
     
     def load_to_editor(self):
         """Load the current prompt to the main editor and close dialog."""
@@ -283,9 +274,8 @@ class PromptSelectionDialog:
                 messagebox.showinfo("Success", "Prompt deleted successfully.")
                 self.selected_prompt = None
                 self.load_button.configure(state="disabled")
-                self.edit_desc_button.configure(state="disabled")
                 self.duplicate_button.configure(state="disabled")
-                self.rename_button.configure(state="disabled")
+                self.edit_button.configure(state="disabled")
                 self.delete_button.configure(state="disabled")
                 self.preview_text.delete("1.0", tk.END)
                 self.load_prompts()  # Reload the list
@@ -293,8 +283,8 @@ class PromptSelectionDialog:
                 messagebox.showerror("Error", "Failed to delete prompt.")
     
     
-    def rename_prompt(self):
-        """Rename the selected prompt."""
+    def edit_prompt(self):
+        """Edit the selected prompt."""
         if not self.selected_prompt:
             return
         
@@ -304,7 +294,7 @@ class PromptSelectionDialog:
         current_description = current_prompt_data.get("description", "")
         current_prompt_text = current_prompt_data.get("prompt", "")
         
-        # Open save prompt dialog with current data
+        # Open edit prompt dialog with current data
         from src.gui.save_prompt_dialog import SavePromptDialog
         save_dialog = SavePromptDialog(
             self.dialog,
@@ -344,33 +334,6 @@ class PromptSelectionDialog:
         else:
             messagebox.showerror("Error", "Failed to duplicate prompt.")
     
-    def edit_description(self):
-        """Edit the description of the selected prompt."""
-        if not self.selected_prompt:
-            return
-        
-        # Get current prompt data
-        prompts = self.prompt_manager.get_prompts()
-        current_prompt_data = prompts.get(self.selected_prompt, {})
-        current_description = current_prompt_data.get("description", "")
-        
-        # Open a simple dialog for editing description
-        from tkinter import simpledialog
-        new_description = simpledialog.askstring(
-            "Edit Description",
-            f"Enter new description for prompt '{self.selected_prompt}':",
-            initialvalue=current_description
-        )
-        
-        if new_description is not None and new_description.strip():
-            # Update the prompt with new description
-            current_prompt_text = current_prompt_data.get("prompt", "")
-            if self.prompt_manager.save_prompt(self.selected_prompt, new_description.strip(), current_prompt_text):
-                messagebox.showinfo("Success", "Description updated successfully!")
-                self.load_prompts()  # Reload to show changes
-            else:
-                messagebox.showerror("Error", "Failed to update description.")
-    
     def on_prompt_saved(self):
         """Callback when a prompt is saved."""
         # Clear highlighting
@@ -382,9 +345,8 @@ class PromptSelectionDialog:
         # Clear selection
         self.selected_prompt = None
         self.load_button.configure(state="disabled")
-        self.edit_desc_button.configure(state="disabled")
         self.duplicate_button.configure(state="disabled")
-        self.rename_button.configure(state="disabled")
+        self.edit_button.configure(state="disabled")
         self.delete_button.configure(state="disabled")
         self.preview_text.delete("1.0", tk.END)
     

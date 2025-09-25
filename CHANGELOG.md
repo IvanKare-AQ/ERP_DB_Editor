@@ -106,6 +106,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added Duplicate button with smart naming (adds " - Copy" suffix and handles conflicts)
   - Enhanced button state management for all prompt operations
   - Improved user experience with compact, professional interface design
+  - Removed Edit Description button for streamlined interface
+  - Renamed Rename Prompt to Edit Prompt for clarity
+  - Made Prompt Preview read-only for safe viewing
+  - Enhanced Edit Prompt window with full text editing capability
+  - Standardized Save Prompt button naming across create/edit modes
 
 ## [0.1.1] - 2024-12-19
 
@@ -145,6 +150,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Better separation of concerns between prompt creation and management
   - Streamlined user workflow for prompt operations
   - Consistent styling and behavior across all UI components
+
+### Interface Refinements
+- **Streamlined Button Interface**: Removed redundant Edit Description button
+- **Clear Functionality Separation**: Read-only preview vs. editable edit window
+- **Enhanced Editing Experience**: Full text editing capability in Edit Prompt window
+- **Consistent Naming**: Standardized "Save Prompt" button across create/edit modes
+- **Improved User Safety**: Read-only prompt preview prevents accidental editing
+- **Better Workflow**: Clear distinction between viewing and editing modes
 - **Stop Processing Functionality**: Dynamic button state management for AI operations
   - Buttons convert to "Stop processing" during AI operations
   - Users can cancel long-running AI operations at any time

@@ -8,9 +8,9 @@
       "description": "Standardize ERP names to follow company naming conventions",
       "prompt": "Please standardize the following ERP item name to follow our company naming conventions. The name should be consistent with our existing product naming standards.\n\nOriginal name: {erp_name}\nCategory: {category}\nSubcategory: {subcategory}\nSublevel: {sublevel}\n\nPlease provide a standardized name that follows our conventions."
     },
-    "sdfsdf": {
-      "description": "sdfsdf",
-      "prompt": "sdf"
+    "Prompt test 1": {
+      "description": "Standardize ERP names to follow company naming conventions",
+      "prompt": "Please standardize the following ERP item name to follow our company naming conventions. The name should be consistent with our existing product naming standards.\n\nOriginal name: {erp_name}\nCategory: {category}\nSubcategory: {subcategory}\nSublevel: {sublevel}\n\nPlease provide a standardized name that follows our conventions."
     }
   }
 }

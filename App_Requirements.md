@@ -187,9 +187,9 @@
 - Real-time status updates for prompt operations
 - Enhanced prompt selection dialog with additional management features
 - Load to Editor functionality within selection dialog for modified prompts
-- Edit Description functionality with simple dialog for quick description updates
+- Edit Prompt functionality with full prompt text editing capability
 - Duplicate functionality to create copies of prompts with " - Copy" suffix
-- Rename Prompt functionality with name and description editing
+- Delete Prompt functionality with confirmation dialogs
 - Increased dialog height to accommodate all management buttons
 - Prompt modification capabilities without leaving selection dialog
 - Clear separation between prompt loading (Select AI Prompt dialog) and prompt saving (main application)
@@ -198,6 +198,9 @@
 - Compact button layout with optimized sizing for better space utilization
 - Smart duplicate naming system with conflict resolution (" - Copy", " - Copy (1)", etc.)
 - Enhanced button state management for all prompt operations
+- Read-only prompt preview in selection dialog for safe viewing
+- Full text editing capability in Edit Prompt window
+- Streamlined button interface with clear functionality separation
 
 ### Recent Enhancements (v0.1.1)
 - **AI Prompt Management System**: Complete prompt save/load/edit/duplicate functionality
@@ -205,6 +208,7 @@
 - **Smart Duplication**: Intelligent naming system for prompt copies
 - **Professional Styling**: Consistent color scheme and button sizing
 - **Improved Workflow**: Streamlined prompt management operations
+- **Interface Refinements**: Read-only preview, editable edit window, streamlined buttons
 
 ## Dependencies
 - customtkinter
