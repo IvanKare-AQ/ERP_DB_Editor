@@ -580,6 +580,20 @@ class TreeViewWidget(ctk.CTkFrame):
         self.user_modifications[row_id]['user_erp_name'] = user_erp_name
         self.update_tree_item_user_erp_name(row_id, user_erp_name)
     
+    def update_manufacturer(self, row_id, manufacturer):
+        """Update manufacturer for a specific row."""
+        if row_id not in self.user_modifications:
+            self.user_modifications[row_id] = {}
+        self.user_modifications[row_id]['manufacturer'] = manufacturer
+        # Note: Manufacturer updates will be reflected in tree view when data is refreshed
+    
+    def update_remark(self, row_id, remark):
+        """Update remark for a specific row."""
+        if row_id not in self.user_modifications:
+            self.user_modifications[row_id] = {}
+        self.user_modifications[row_id]['remark'] = remark
+        # Note: Remark updates will be reflected in tree view when data is refreshed
+    
     def reassign_item(self, row_id, new_category, new_subcategory, new_sublevel):
         """Reassign an item to a new category, subcategory, and sublevel."""
         if row_id not in self.user_modifications:

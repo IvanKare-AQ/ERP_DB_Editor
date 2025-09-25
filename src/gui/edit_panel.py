@@ -8,6 +8,9 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 from src.backend.ollama_handler import OllamaHandler
+from src.backend.prompt_manager import PromptManager
+from src.gui.prompt_dialog import PromptSelectionDialog
+from src.gui.save_prompt_dialog import SavePromptDialog
 
 
 class EditPanel(ctk.CTkFrame):
@@ -25,6 +28,9 @@ class EditPanel(ctk.CTkFrame):
         # Initialize Ollama handler
         self.ollama_handler = OllamaHandler()
         self.available_models = []
+        
+        # Initialize prompt manager
+        self.prompt_manager = PromptManager()
         
         # Processing control
         self.processing_thread = None
@@ -62,33 +68,22 @@ class EditPanel(ctk.CTkFrame):
         
     def setup_user_erp_name_section(self):
         """Setup the User ERP Name editing section."""
-        # Input field and buttons frame
-        input_frame = ctk.CTkFrame(self)
-        input_frame.pack(pady=(0, 5))
+        # User ERP Name input field and buttons frame
+        user_erp_frame = ctk.CTkFrame(self)
+        user_erp_frame.pack(pady=(0, 5))
         
-        # Input field
+        # User ERP Name input field
         self.user_erp_name_entry = ctk.CTkEntry(
-            input_frame,
+            user_erp_frame,
             placeholder_text="Enter User ERP Name...",
             width=400,
             height=35
         )
         self.user_erp_name_entry.pack(side="left", padx=(0, 10))
         
-        # Update button
-        self.update_name_button = ctk.CTkButton(
-            input_frame,
-            text="Update",
-            command=self.update_user_erp_name,
-            width=80,
-            height=30,
-            state="disabled"
-        )
-        self.update_name_button.pack(side="left", padx=(0, 5))
-        
-        # Reset button
+        # Reset button for User ERP Name
         self.reset_name_button = ctk.CTkButton(
-            input_frame,
+            user_erp_frame,
             text="Reset",
             command=self.reset_user_erp_name,
             width=60,
@@ -96,6 +91,69 @@ class EditPanel(ctk.CTkFrame):
             state="disabled"
         )
         self.reset_name_button.pack(side="left")
+        
+        # Manufacturer input field and buttons frame
+        manufacturer_frame = ctk.CTkFrame(self)
+        manufacturer_frame.pack(pady=(0, 5))
+        
+        # Manufacturer input field
+        self.manufacturer_entry = ctk.CTkEntry(
+            manufacturer_frame,
+            placeholder_text="Enter Manufacturer...",
+            width=400,
+            height=35
+        )
+        self.manufacturer_entry.pack(side="left", padx=(0, 10))
+        
+        # Reset button for Manufacturer
+        self.reset_manufacturer_button = ctk.CTkButton(
+            manufacturer_frame,
+            text="Reset",
+            command=self.reset_manufacturer,
+            width=60,
+            height=30,
+            state="disabled"
+        )
+        self.reset_manufacturer_button.pack(side="left")
+        
+        # REMARK input field and buttons frame
+        remark_frame = ctk.CTkFrame(self)
+        remark_frame.pack(pady=(0, 5))
+        
+        # REMARK input field
+        self.remark_entry = ctk.CTkEntry(
+            remark_frame,
+            placeholder_text="Enter REMARK...",
+            width=400,
+            height=35
+        )
+        self.remark_entry.pack(side="left", padx=(0, 10))
+        
+        # Reset button for REMARK
+        self.reset_remark_button = ctk.CTkButton(
+            remark_frame,
+            text="Reset",
+            command=self.reset_remark,
+            width=60,
+            height=30,
+            state="disabled"
+        )
+        self.reset_remark_button.pack(side="left")
+        
+        # Update button frame (moved to bottom)
+        update_frame = ctk.CTkFrame(self)
+        update_frame.pack(pady=(5, 10))
+        
+        # Update button
+        self.update_name_button = ctk.CTkButton(
+            update_frame,
+            text="Update All Fields",
+            command=self.update_all_fields,
+            width=120,
+            height=35,
+            state="disabled"
+        )
+        self.update_name_button.pack()
         
     def setup_reassignment_section(self):
         """Setup the reassignment section."""
@@ -232,9 +290,27 @@ class EditPanel(ctk.CTkFrame):
             self.user_erp_name_entry.delete(0, tk.END)
             self.user_erp_name_entry.insert(0, current_user_name)
             
+            # Populate Manufacturer field - priority: user modifications > original Manufacturer
+            current_manufacturer = self.tree_view.user_modifications.get(row_id, {}).get('manufacturer', '')
+            if not current_manufacturer:
+                current_manufacturer = item_data.get('Manufacturer', '')
+            
+            self.manufacturer_entry.delete(0, tk.END)
+            self.manufacturer_entry.insert(0, current_manufacturer)
+            
+            # Populate REMARK field - priority: user modifications > original REMARK
+            current_remark = self.tree_view.user_modifications.get(row_id, {}).get('remark', '')
+            if not current_remark:
+                current_remark = item_data.get('REMARK', '')
+            
+            self.remark_entry.delete(0, tk.END)
+            self.remark_entry.insert(0, current_remark)
+            
             # Enable buttons when item is selected
             self.update_name_button.configure(state="normal")
             self.reset_name_button.configure(state="normal")
+            self.reset_manufacturer_button.configure(state="normal")
+            self.reset_remark_button.configure(state="normal")
             
             # Set the dropdowns to current item's category/subcategory/sublevel
             current_category = item_data.get('Article Category', '')
@@ -261,16 +337,21 @@ class EditPanel(ctk.CTkFrame):
                                 self.sublevel_dropdown.set(current_sublevel)
             
             # Enable buttons
-            self.update_name_button.configure(state="normal")
             self.reassign_button.configure(state="normal")
         else:
             # Clear fields and disable buttons
             self.user_erp_name_entry.delete(0, tk.END)
             self.user_erp_name_entry.insert(0, "")
+            self.manufacturer_entry.delete(0, tk.END)
+            self.manufacturer_entry.insert(0, "")
+            self.remark_entry.delete(0, tk.END)
+            self.remark_entry.insert(0, "")
             
             # Disable buttons when no item is selected
             self.update_name_button.configure(state="disabled")
             self.reset_name_button.configure(state="disabled")
+            self.reset_manufacturer_button.configure(state="disabled")
+            self.reset_remark_button.configure(state="disabled")
             self.reassign_button.configure(state="disabled")
             self.apply_to_selected_button.configure(state="disabled")
             self.apply_to_entire_table_button.configure(state="disabled")
@@ -280,20 +361,35 @@ class EditPanel(ctk.CTkFrame):
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
             self.sublevel_dropdown.configure(values=["Select Sublevel..."])
             
-    def update_user_erp_name(self):
-        """Update the user ERP name for the selected item."""
+    def update_all_fields(self):
+        """Update all fields (User ERP Name, Manufacturer, REMARK) for the selected item."""
         if not self.selected_row_id:
             return
             
+        # Get values from all input fields
         user_erp_name = self.user_erp_name_entry.get().strip()
+        manufacturer = self.manufacturer_entry.get().strip()
+        remark = self.remark_entry.get().strip()
+        
+        # Update all fields in tree view
         self.tree_view.update_user_erp_name(self.selected_row_id, user_erp_name)
+        self.tree_view.update_manufacturer(self.selected_row_id, manufacturer)
+        self.tree_view.update_remark(self.selected_row_id, remark)
         
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
+            updated_fields = []
             if user_erp_name:
-                self.main_window.update_status(f"Updated ERP name: {user_erp_name}")
+                updated_fields.append(f"ERP name: {user_erp_name}")
+            if manufacturer:
+                updated_fields.append(f"Manufacturer: {manufacturer}")
+            if remark:
+                updated_fields.append(f"REMARK: {remark}")
+            
+            if updated_fields:
+                self.main_window.update_status(f"Updated: {', '.join(updated_fields)}")
             else:
-                self.main_window.update_status("Cleared user ERP name")
+                self.main_window.update_status("Cleared all field values")
     
     def reset_user_erp_name(self):
         """Reset the user ERP name for the selected item to original ERP name."""
@@ -313,6 +409,44 @@ class EditPanel(ctk.CTkFrame):
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
             self.main_window.update_status(f"Reset ERP name to original: {original_erp_name}")
+    
+    def reset_manufacturer(self):
+        """Reset the manufacturer for the selected item to original value."""
+        if not self.selected_row_id or not self.selected_item:
+            return
+            
+        # Get original manufacturer
+        original_manufacturer = self.selected_item.get('Manufacturer', '')
+        
+        # Clear the entry and insert original manufacturer
+        self.manufacturer_entry.delete(0, tk.END)
+        self.manufacturer_entry.insert(0, original_manufacturer)
+        
+        # Update the tree view
+        self.tree_view.update_manufacturer(self.selected_row_id, original_manufacturer)
+        
+        # Update status if main window is available
+        if self.main_window and hasattr(self.main_window, 'status_label'):
+            self.main_window.update_status(f"Reset Manufacturer to: {original_manufacturer}")
+    
+    def reset_remark(self):
+        """Reset the remark for the selected item to original value."""
+        if not self.selected_row_id or not self.selected_item:
+            return
+            
+        # Get original remark
+        original_remark = self.selected_item.get('REMARK', '')
+        
+        # Clear the entry and insert original remark
+        self.remark_entry.delete(0, tk.END)
+        self.remark_entry.insert(0, original_remark)
+        
+        # Update the tree view
+        self.tree_view.update_remark(self.selected_row_id, original_remark)
+        
+        # Update status if main window is available
+        if self.main_window and hasattr(self.main_window, 'status_label'):
+            self.main_window.update_status(f"Reset REMARK to: {original_remark}")
         
     def reassign_item(self):
         """Reassign the selected item to new category, subcategory, and sublevel."""
@@ -390,6 +524,33 @@ class EditPanel(ctk.CTkFrame):
             height=80
         )
         self.prompt_text.pack(fill="x", padx=10, pady=5)
+        
+        # Bind text change event to update button states
+        self.prompt_text.bind('<KeyRelease>', self.on_prompt_text_change)
+        self.prompt_text.bind('<Button-1>', self.on_prompt_text_change)
+        
+        # Prompt management buttons
+        prompt_buttons_frame = ctk.CTkFrame(prompt_frame)
+        prompt_buttons_frame.pack(fill="x", padx=10, pady=(0, 5))
+        
+        self.save_prompt_button = ctk.CTkButton(
+            prompt_buttons_frame,
+            text="Save Prompt",
+            command=self.save_prompt,
+            width=100,
+            height=30,
+            state="disabled"
+        )
+        self.save_prompt_button.pack(side="left", padx=(0, 5))
+        
+        self.select_prompt_button = ctk.CTkButton(
+            prompt_buttons_frame,
+            text="Select Prompt",
+            command=self.select_prompt,
+            width=100,
+            height=30
+        )
+        self.select_prompt_button.pack(side="left", padx=5)
         
         
         # Preview section
@@ -951,3 +1112,59 @@ class EditPanel(ctk.CTkFrame):
             self.apply_to_selected_button.configure(state="normal")
         else:
             self.apply_to_selected_button.configure(state="disabled")
+    
+    def on_prompt_text_change(self, event=None):
+        """Handle prompt text changes to update button states."""
+        prompt_text = self.prompt_text.get("1.0", tk.END).strip()
+        
+        # Enable save button only if there's content in the prompt
+        if prompt_text:
+            self.save_prompt_button.configure(state="normal")
+        else:
+            self.save_prompt_button.configure(state="disabled")
+    
+    def save_prompt(self):
+        """Open the save prompt dialog."""
+        prompt_text = self.prompt_text.get("1.0", tk.END).strip()
+        
+        if not prompt_text:
+            messagebox.showwarning("Warning", "Please enter a prompt before saving.")
+            return
+        
+        # Open save prompt dialog
+        save_dialog = SavePromptDialog(
+            self.main_window.root,
+            prompt_text,
+            on_prompt_saved=self.on_prompt_saved
+        )
+    
+    def select_prompt(self):
+        """Open the prompt selection dialog."""
+        # Open prompt selection dialog
+        select_dialog = PromptSelectionDialog(
+            self.main_window.root,
+            on_prompt_selected=self.on_prompt_selected
+        )
+    
+    def on_prompt_saved(self):
+        """Callback when a prompt is saved."""
+        # Update status if main window is available
+        if self.main_window and hasattr(self.main_window, 'status_label'):
+            self.main_window.update_status("Prompt saved successfully")
+    
+    def on_prompt_selected(self, prompt_text: str):
+        """Callback when a prompt is selected.
+        
+        Args:
+            prompt_text: The selected prompt text
+        """
+        # Set the prompt text
+        self.prompt_text.delete("1.0", tk.END)
+        self.prompt_text.insert("1.0", prompt_text)
+        
+        # Update button states
+        self.on_prompt_text_change()
+        
+        # Update status if main window is available
+        if self.main_window and hasattr(self.main_window, 'status_label'):
+            self.main_window.update_status("Prompt selected and loaded")

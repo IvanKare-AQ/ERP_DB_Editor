@@ -152,6 +152,60 @@
 - Consistent column naming and structure throughout all operations
 - User modifications must be applied to tree view data for immediate display
 
+## Extended Field Editing Requirements
+- Additional input fields for "Manufacturer" and "REMARK" columns
+- Individual reset buttons for each input field (User ERP Name, Manufacturer, REMARK)
+- Consolidated "Update All Fields" button to update all three fields simultaneously
+- Priority system for field population: user modifications > original column values
+- Real-time status updates for all field modifications
+- Proper integration with save functionality to persist all field changes
+- Individual field validation and error handling
+- Consistent UI layout with inline reset buttons for each field
+
+## User ERP Name Application Requirements
+- "Apply User ERP Names" button to permanently move User ERP Name values to ERP name column
+- Destructive operation that replaces existing ERP name values with User ERP Name values
+- Clears User ERP Name column after successful application
+- Confirmation dialog with clear warning about permanent nature of operation
+- Real-time count of User ERP Names available for application
+- Immediate tree view update to reflect changes
+- Proper error handling and status feedback
+- Integration with existing save functionality
+
+## AI Prompt Management Requirements
+- "Save Prompt" and "Select Prompt" buttons in AI Settings section
+- Dynamic button state management based on prompt content
+- Save Prompt button disabled when prompt field is empty
+- Save Prompt button enabled when prompt field contains text
+- Prompt selection dialog with two-panel layout (list + preview)
+- Left panel showing prompt names and descriptions
+- Right panel showing full prompt text preview
+- Prompt deletion functionality with confirmation
+- JSON-based prompt storage in config/prompts.json file
+- Git integration for prompt file version control
+- Prompt overwrite protection with user confirmation
+- Real-time status updates for prompt operations
+- Enhanced prompt selection dialog with additional management features
+- Load to Editor functionality within selection dialog for modified prompts
+- Edit Description functionality with simple dialog for quick description updates
+- Duplicate functionality to create copies of prompts with " - Copy" suffix
+- Rename Prompt functionality with name and description editing
+- Increased dialog height to accommodate all management buttons
+- Prompt modification capabilities without leaving selection dialog
+- Clear separation between prompt loading (Select AI Prompt dialog) and prompt saving (main application)
+- Visual highlighting of selected prompts with subtle gray colors for better user experience
+- Streamlined interface with Load to Editor as primary selection method
+- Compact button layout with optimized sizing for better space utilization
+- Smart duplicate naming system with conflict resolution (" - Copy", " - Copy (1)", etc.)
+- Enhanced button state management for all prompt operations
+
+### Recent Enhancements (v0.1.1)
+- **AI Prompt Management System**: Complete prompt save/load/edit/duplicate functionality
+- **Enhanced User Interface**: Subtle highlighting, compact buttons, improved layouts
+- **Smart Duplication**: Intelligent naming system for prompt copies
+- **Professional Styling**: Consistent color scheme and button sizing
+- **Improved Workflow**: Streamlined prompt management operations
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)

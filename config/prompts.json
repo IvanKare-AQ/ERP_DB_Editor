@@ -1,0 +1,16 @@
+{
+  "prompts": {
+    "example_rename": {
+      "description": "Rename ERP items to be more descriptive and user-friendly",
+      "prompt": "Please rename the following ERP item to be more descriptive and user-friendly while maintaining technical accuracy. The name should be clear and easy to understand for end users.\n\nOriginal name: {erp_name}\nCategory: {category}\nSubcategory: {subcategory}\nSublevel: {sublevel}"
+    },
+    "example_standardize": {
+      "description": "Standardize ERP names to follow company naming conventions",
+      "prompt": "Please standardize the following ERP item name to follow our company naming conventions. The name should be consistent with our existing product naming standards.\n\nOriginal name: {erp_name}\nCategory: {category}\nSubcategory: {subcategory}\nSublevel: {sublevel}\n\nPlease provide a standardized name that follows our conventions."
+    },
+    "sdfsdf": {
+      "description": "sdfsdf",
+      "prompt": "sdf"
+    }
+  }
+}

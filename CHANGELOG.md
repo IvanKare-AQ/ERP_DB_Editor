@@ -43,10 +43,108 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed user modifications not being applied to tree view data for real-time display
   - Fixed duplicate column handling with trailing spaces in Excel data processing
   - Improved column cleanup logic to properly identify and remove duplicate columns
+- **Apply User ERP Names Functionality**: Fixed detection and processing of existing User ERP Name values
+  - Fixed "Apply User ERP Names" button to detect User ERP Name values from original Excel data
+  - Previously only checked user modifications, now checks both user modifications and original data
+  - Proper handling of Excel files that already contain "User ERP Name" column with values
+  - Accurate count display in confirmation dialog for all available User ERP Names
+  - Fixed double counting bug in confirmation dialog when user modifications exist alongside original data
+  - Implemented unique row tracking to prevent counting the same User ERP Name multiple times
 
 ## [Unreleased]
 
 ### Added
+- **Extended Field Editing**: Enhanced edit panel with additional input fields
+  - Added "Manufacturer" input field with individual reset functionality
+  - Added "REMARK" input field with individual reset functionality
+  - Consolidated "Update All Fields" button to update all three fields simultaneously
+  - Individual reset buttons for User ERP Name, Manufacturer, and REMARK fields
+  - Priority-based field population (user modifications > original values)
+  - Real-time status updates for all field modifications
+  - Proper integration with save functionality to persist all field changes
+- **User ERP Name Application**: Permanent move operation for User ERP Names
+  - Added "Apply User ERP Names" button to toolbar for permanent value transfer
+  - Destructive operation that moves User ERP Name values to ERP name column
+  - Replaces existing ERP name values with User ERP Name values
+  - Clears User ERP Name column after successful application
+  - Confirmation dialog with clear warning about permanent nature
+  - Real-time count display of available User ERP Names for application
+  - Immediate tree view update to reflect changes
+  - Comprehensive error handling and status feedback
+  - Supports both user modifications and existing User ERP Name values from Excel files
+- **AI Prompt Management System**: Complete prompt storage and selection functionality
+  - Added "Save Prompt" and "Select Prompt" buttons to AI Settings section
+  - Dynamic button state management based on prompt content
+  - Save Prompt button disabled when prompt field is empty, enabled when content exists
+  - Prompt selection dialog with two-panel layout (prompt list + preview)
+  - Left panel displays prompt names and descriptions for easy browsing
+  - Right panel shows full prompt text preview for detailed review
+  - Prompt deletion functionality with confirmation dialogs
+  - JSON-based prompt storage in config/prompts.json file
+  - Git integration for prompt file version control and sharing
+  - Prompt overwrite protection with user confirmation
+  - Real-time status updates for all prompt operations
+  - Example prompts included for common ERP naming tasks
+  - Enhanced prompt selection dialog with additional management features
+  - Load to Editor functionality within selection dialog for modified prompts
+  - Edit Description functionality with simple dialog for quick description updates
+  - Duplicate functionality to create copies of prompts with " - Copy" suffix
+  - Rename Prompt functionality with name and description editing
+  - Increased dialog height (800x700) to accommodate all management buttons
+  - Prompt modification capabilities without leaving selection dialog
+  - Clear separation between prompt loading (Select AI Prompt dialog) and prompt saving (main application)
+  - Visual highlighting of selected prompts with subtle gray colors for better user experience
+  - Streamlined interface with Load to Editor as primary selection method
+  - Improved user workflow for prompt management and editing
+  - Fixed SavePromptDialog variable reference errors for proper initialization
+  - Fixed button reference errors in prompt dialog after interface updates
+  - Ensured Save button is properly configured in Save AI Prompt dialog
+  - Increased Save AI Prompt dialog size (700x600) for better visibility
+  - Enhanced Save and Cancel button styling with larger size and bold fonts
+  - Improved button layout with proper spacing and padding for better user experience
+  - Reduced button sizes in Select AI Prompt dialog to accommodate new Duplicate button
+  - Added Duplicate button with smart naming (adds " - Copy" suffix and handles conflicts)
+  - Enhanced button state management for all prompt operations
+  - Improved user experience with compact, professional interface design
+
+## [0.1.1] - 2024-12-19
+
+### Added
+- **AI Prompt Management System**: Complete prompt management functionality
+  - Save Prompt button in main application for creating new prompts
+  - Select AI Prompt dialog with comprehensive management features
+  - Load to Editor functionality for quick prompt loading
+  - Edit Description functionality with simple dialog interface
+  - Duplicate functionality with intelligent naming system
+  - Rename Prompt functionality with full name/description editing
+  - Delete Prompt functionality with confirmation dialogs
+  - Visual highlighting of selected prompts with subtle gray colors
+  - Smart duplicate naming with conflict resolution (" - Copy", " - Copy (1)", etc.)
+
+### Enhanced
+- **User Interface Improvements**:
+  - Subtle gray highlighting instead of aggressive blue colors
+  - Compact button layout with optimized sizing (100x30px for most buttons, 80x30px for Duplicate)
+  - Increased Save AI Prompt dialog size (700x600) for better visibility
+  - Enhanced Save and Cancel button styling with larger size and bold fonts
+  - Professional color scheme throughout the application
+  - Improved button state management and user feedback
+
+### Fixed
+- **Bug Fixes**:
+  - Fixed SavePromptDialog variable reference errors for proper initialization
+  - Fixed button reference errors in prompt dialog after interface updates
+  - Ensured Save button is properly configured and visible in Save AI Prompt dialog
+  - Resolved persistent method reference issues in prompt dialog
+  - Fixed button state management across all prompt operations
+
+### Technical Improvements
+- **Code Quality**:
+  - Enhanced error handling for prompt operations
+  - Improved button state management across all dialogs
+  - Better separation of concerns between prompt creation and management
+  - Streamlined user workflow for prompt operations
+  - Consistent styling and behavior across all UI components
 - **Stop Processing Functionality**: Dynamic button state management for AI operations
   - Buttons convert to "Stop processing" during AI operations
   - Users can cancel long-running AI operations at any time

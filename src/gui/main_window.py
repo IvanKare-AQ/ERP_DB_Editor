@@ -146,6 +146,15 @@ class MainWindow:
         )
         self.clear_user_erp_button.pack(side="left", padx=5, pady=5)
         
+        self.apply_user_erp_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Apply User ERP Names",
+            command=self.apply_user_erp_names,
+            width=150,
+            state="disabled"
+        )
+        self.apply_user_erp_button.pack(side="left", padx=5, pady=5)
+        
         # Data cleaning section
         self.convert_multiline_button = ctk.CTkButton(
             self.toolbar_frame,
@@ -272,6 +281,7 @@ class MainWindow:
                 self.clear_filters_button.configure(state="normal")
                 self.convert_multiline_button.configure(state="normal")
                 self.remove_nen_button.configure(state="normal")
+                self.apply_user_erp_button.configure(state="normal")
                 
                 # Update status and file info
                 self.update_status("File loaded successfully")
@@ -577,6 +587,14 @@ class MainWindow:
                     if 'user_erp_name' in mods:
                         data.loc[mask, 'User ERP Name'] = mods['user_erp_name']
                     
+                    # Apply Manufacturer modification
+                    if 'manufacturer' in mods:
+                        data.loc[mask, 'Manufacturer'] = mods['manufacturer']
+                    
+                    # Apply REMARK modification
+                    if 'remark' in mods:
+                        data.loc[mask, 'REMARK'] = mods['remark']
+                    
                     # Apply reassignment modifications
                     if 'new_category' in mods and 'new_subcategory' in mods and 'new_sublevel' in mods:
                         data.loc[mask, 'Article Category'] = mods['new_category']
@@ -683,6 +701,136 @@ class MainWindow:
             error_msg = f"Error removing 'NEN' prefix: {str(e)}"
             self.update_status(error_msg)
             messagebox.showerror("NEN Removal Error", error_msg)
+    
+    def apply_user_erp_names(self):
+        """Apply User ERP Name values to ERP name column (move operation)."""
+        if not hasattr(self, 'excel_handler') or self.excel_handler is None:
+            messagebox.showwarning("Warning", "No data loaded. Please open an Excel file first.")
+            return
+        
+        # Get current data with modifications
+        data = self.get_data_with_modifications()
+        if data is None:
+            messagebox.showerror("Error", "No data available to process.")
+            return
+        
+        # Check for User ERP Names in both user modifications and original data
+        user_modifications = self.tree_view.get_user_modifications()
+        
+        # Create a set to track rows that have User ERP Names (avoid double counting)
+        rows_with_user_erp_names = set()
+        
+        # Count User ERP Names from user modifications
+        for row_id, mods in user_modifications.items():
+            if 'user_erp_name' in mods and mods['user_erp_name'].strip():
+                rows_with_user_erp_names.add(row_id)
+        
+        # Count User ERP Names from original data (excluding rows already counted in modifications)
+        if 'User ERP Name' in data.columns:
+            for index, row in data.iterrows():
+                user_erp_name = row.get('User ERP Name', '').strip()
+                if user_erp_name:
+                    # Create row_id for this row to check if it's already in user modifications
+                    erp_name = row.get('ERP name', '')
+                    category = row.get('Article Category', '')
+                    subcategory = row.get('Article Subcategory', '')
+                    sublevel = row.get('Article Sublevel ', '')
+                    
+                    if erp_name and category and subcategory:
+                        row_id = f"{erp_name}◆◆◆{category}◆◆◆{subcategory}◆◆◆{sublevel}"
+                        if row_id not in rows_with_user_erp_names:
+                            rows_with_user_erp_names.add(row_id)
+        
+        user_erp_names_count = len(rows_with_user_erp_names)
+        
+        if user_erp_names_count == 0:
+            messagebox.showinfo("Info", "No User ERP Names found to apply.")
+            self.update_status("No User ERP Names to apply")
+            return
+        
+        # Show confirmation dialog
+        response = messagebox.askyesno(
+            "Apply User ERP Names", 
+            f"This will permanently move {user_erp_names_count} User ERP Name values to the ERP name column.\n\n"
+            "This operation will:\n"
+            "• Replace existing ERP name values with User ERP Name values\n"
+            "• Clear the User ERP Name column\n"
+            "• Cannot be undone without reloading the file\n\n"
+            "Do you want to continue?"
+        )
+        
+        if not response:
+            self.update_status("Apply User ERP Names cancelled")
+            return
+        
+        try:
+            self.update_status("Applying User ERP Names...")
+            
+            # Get current data with modifications
+            data = self.get_data_with_modifications()
+            if data is None:
+                messagebox.showerror("Error", "No data available to process.")
+                return
+            
+            # Apply the move operation
+            moved_count = 0
+            
+            # First, handle User ERP Names from user modifications
+            for row_id, mods in user_modifications.items():
+                if 'user_erp_name' in mods and mods['user_erp_name'].strip():
+                    # Parse row_id to find the original row
+                    parts = row_id.split('◆◆◆')
+                    if len(parts) >= 4:
+                        erp_name = parts[0]
+                        category = parts[1]
+                        subcategory = parts[2]
+                        sublevel = parts[3]
+                        
+                        # Find matching row
+                        mask = (
+                            (data['ERP name'] == erp_name) &
+                            (data['Article Category'] == category) &
+                            (data['Article Subcategory'] == subcategory) &
+                            (data['Article Sublevel '] == sublevel)
+                        )
+                        
+                        if mask.any():
+                            # Move User ERP Name to ERP name
+                            data.loc[mask, 'ERP name'] = mods['user_erp_name']
+                            # Clear User ERP Name
+                            data.loc[mask, 'User ERP Name'] = ''
+                            moved_count += 1
+            
+            # Then, handle User ERP Names from original data
+            if 'User ERP Name' in data.columns:
+                # Find rows with non-empty User ERP Name values
+                user_erp_mask = data['User ERP Name'].fillna('').str.strip().ne('')
+                
+                if user_erp_mask.any():
+                    # Move User ERP Name values to ERP name for these rows
+                    data.loc[user_erp_mask, 'ERP name'] = data.loc[user_erp_mask, 'User ERP Name']
+                    # Clear User ERP Name column
+                    data.loc[user_erp_mask, 'User ERP Name'] = ''
+                    moved_count += user_erp_mask.sum()
+            
+            # Clear user modifications for user_erp_name
+            for row_id in user_modifications:
+                if 'user_erp_name' in user_modifications[row_id]:
+                    del user_modifications[row_id]['user_erp_name']
+            
+            # Update the Excel handler with the new data
+            self.excel_handler.data = data
+            
+            # Reload the tree view with updated data
+            self.tree_view.load_data(data)
+            
+            # Update status
+            self.update_status(f"Successfully applied {moved_count} User ERP Names to ERP name column")
+            messagebox.showinfo("Success", f"Successfully applied {moved_count} User ERP Names to the ERP name column.\n\nThe User ERP Name column has been cleared.")
+            
+        except Exception as e:
+            self.update_status("Error applying User ERP Names")
+            messagebox.showerror("Error", f"Failed to apply User ERP Names: {str(e)}")
             
     def run(self):
         """Run the main application loop."""
