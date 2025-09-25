@@ -144,6 +144,14 @@
 - Automatic tree view refresh after data cleaning operations
 - Real-time status updates during data cleaning processes
 
+## Data Integrity and Display Requirements
+- Immediate visual updates after item reassignment operations
+- Tree view must reflect user modifications in real-time without requiring file reload
+- Proper handling of duplicate columns with trailing spaces in Excel data
+- Clean Excel file output without duplicate columns during save operations
+- Consistent column naming and structure throughout all operations
+- User modifications must be applied to tree view data for immediate display
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)

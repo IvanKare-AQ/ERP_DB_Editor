@@ -50,11 +50,13 @@ class ExcelHandler:
             
             # Ensure required columns exist
             required_columns = [
-                'Article Category', 'Article Subcategory', 'Article Sublevel', 'ERP name'
+                'Article Category', 'Article Subcategory', 'Article Sublevel ', 'ERP name'
             ]
             
             for col in required_columns:
-                if col not in self.data.columns:
+                # Check if column exists (with or without trailing spaces)
+                col_exists = any(existing_col.strip() == col.strip() for existing_col in self.data.columns)
+                if not col_exists:
                     self.data[col] = ''
                     
     def save_file(self, file_path: str, data: Optional[pd.DataFrame] = None) -> None:

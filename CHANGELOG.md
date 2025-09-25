@@ -37,6 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ensured clean termination of background processes
   - Improved button state synchronization during processing
   - Fixed tree view update issues after data cleaning operations
+- **Data Display and Integrity Issues**: Fixed critical display and save operation problems
+  - Fixed tree view not updating immediately after item reassignment operations
+  - Fixed "Save As" creating duplicate "Article Sublevel" columns in Excel files
+  - Fixed user modifications not being applied to tree view data for real-time display
+  - Fixed duplicate column handling with trailing spaces in Excel data processing
+  - Improved column cleanup logic to properly identify and remove duplicate columns
 
 ## [Unreleased]
 

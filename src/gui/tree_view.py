@@ -443,7 +443,10 @@ class TreeViewWidget(ctk.CTkFrame):
         if not self.data is not None or self.data.empty:
             return None
         
-        filtered_data = self.data.copy()
+        # Get data with user modifications applied
+        filtered_data = self.get_data_with_modifications()
+        if filtered_data is None:
+            return None
         
         for column, filter_info in self.active_filters.items():
             filter_value = filter_info['value']
@@ -464,6 +467,41 @@ class TreeViewWidget(ctk.CTkFrame):
                 filtered_data = filtered_data[filtered_data[data_column].astype(str).str.endswith(str(filter_value), na=False)]
         
         return filtered_data
+    
+    def get_data_with_modifications(self):
+        """Get data with user modifications applied."""
+        if self.data is None or self.data.empty:
+            return None
+        
+        # Start with original data
+        data = self.data.copy()
+        
+        # Apply user modifications
+        for row_id, mods in self.user_modifications.items():
+            # Parse row_id to find the original row
+            parts = row_id.split('◆◆◆')
+            if len(parts) >= 4:
+                erp_name = parts[0]
+                category = parts[1]
+                subcategory = parts[2]
+                sublevel = parts[3]
+                
+                # Find matching row
+                mask = (
+                    (data['ERP name'] == erp_name) &
+                    (data['Article Category'] == category) &
+                    (data['Article Subcategory'] == subcategory) &
+                    (data['Article Sublevel '] == sublevel)
+                )
+                
+                if mask.any():
+                    # Apply reassignment modifications
+                    if 'new_category' in mods and 'new_subcategory' in mods and 'new_sublevel' in mods:
+                        data.loc[mask, 'Article Category'] = mods['new_category']
+                        data.loc[mask, 'Article Subcategory'] = mods['new_subcategory']
+                        data.loc[mask, 'Article Sublevel '] = mods['new_sublevel']
+        
+        return data
     
     def get_data_column_name(self, display_column):
         """Map display column names to data column names."""

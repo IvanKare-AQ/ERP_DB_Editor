@@ -521,7 +521,8 @@ class MainWindow:
         seen_columns = set()
         
         for col in data.columns:
-            base_name = col.split('_')[0] if '_' in col else col
+            # Remove trailing spaces to identify duplicate columns
+            base_name = col.strip()
             if base_name not in seen_columns:
                 columns_to_keep.append(col)
                 seen_columns.add(base_name)
