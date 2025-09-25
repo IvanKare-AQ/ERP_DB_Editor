@@ -755,19 +755,26 @@ class EditPanel(ctk.CTkFrame):
         """Get context for selected item(s) only."""
         # Check for single selected item
         if self.selected_item:
-            return f"Current ERP name: {self.selected_item.get('ERP name', 'Unknown')}"
+            erp_name = self.selected_item.get('ERP name', 'Unknown')
+            category = self.selected_item.get('Article Category', 'Unknown')
+            subcategory = self.selected_item.get('Article Subcategory', 'Unknown')
+            sublevel = self.selected_item.get('Article Sublevel ', 'Unknown')
+            return f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sublevel: {sublevel}"
         
         # Check for multiple selected items
         if hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items:
-            erp_names = []
+            contexts = []
             for item_data, row_id in self.tree_view.selected_items:
                 erp_name = item_data.get('ERP name', 'Unknown')
-                erp_names.append(erp_name)
+                category = item_data.get('Article Category', 'Unknown')
+                subcategory = item_data.get('Article Subcategory', 'Unknown')
+                sublevel = item_data.get('Article Sublevel ', 'Unknown')
+                contexts.append(f"ERP: {erp_name}, Cat: {category}, Sub: {subcategory}, Level: {sublevel}")
             
-            if len(erp_names) == 1:
-                return f"Current ERP name: {erp_names[0]}"
+            if len(contexts) == 1:
+                return f"Current item: {contexts[0]}"
             else:
-                return f"Selected ERP names: {', '.join(erp_names)}"
+                return f"Selected items: {'; '.join(contexts)}"
         
         return "No item selected"
     
@@ -882,8 +889,13 @@ class EditPanel(ctk.CTkFrame):
                         break
                     
                     try:
-                        # Prepare context for this specific item
-                        context = f"Current ERP name: {item_data.get('ERP name', 'Unknown')}"
+                        # Prepare context for this specific item with all required fields
+                        erp_name = item_data.get('ERP name', 'Unknown')
+                        category = item_data.get('Article Category', 'Unknown')
+                        subcategory = item_data.get('Article Subcategory', 'Unknown')
+                        sublevel = item_data.get('Article Sublevel ', 'Unknown')
+                        
+                        context = f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sublevel: {sublevel}"
                         
                         # Generate suggestion for this item
                         suggestions = self.ollama_handler.generate_erp_names(
@@ -1021,8 +1033,13 @@ class EditPanel(ctk.CTkFrame):
                         delimiter = "◆◆◆"
                         row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel ', '')}"
                         
-                        # Prepare context for this specific item
-                        context = f"Current ERP name: {row.get('ERP name', 'Unknown')}"
+                        # Prepare context for this specific item with all required fields
+                        erp_name = row.get('ERP name', 'Unknown')
+                        category = row.get('Article Category', 'Unknown')
+                        subcategory = row.get('Article Subcategory', 'Unknown')
+                        sublevel = row.get('Article Sublevel ', 'Unknown')
+                        
+                        context = f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sublevel: {sublevel}"
                         
                         # Generate suggestion for this item
                         suggestions = self.ollama_handler.generate_erp_names(

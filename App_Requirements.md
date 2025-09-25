@@ -201,14 +201,18 @@
 - Read-only prompt preview in selection dialog for safe viewing
 - Full text editing capability in Edit Prompt window
 - Streamlined button interface with clear functionality separation
+- Complete AI context generation with all ERP item fields (ERP name, category, subcategory, sublevel)
+- Robust AI processing for both selected items and entire table operations
 
-### Recent Enhancements (v0.1.1)
+### Recent Enhancements (v1.0.0)
 - **AI Prompt Management System**: Complete prompt save/load/edit/duplicate functionality
 - **Enhanced User Interface**: Subtle highlighting, compact buttons, improved layouts
 - **Smart Duplication**: Intelligent naming system for prompt copies
 - **Professional Styling**: Consistent color scheme and button sizing
 - **Improved Workflow**: Streamlined prompt management operations
 - **Interface Refinements**: Read-only preview, editable edit window, streamlined buttons
+- **AI Context Processing**: Complete ERP item context generation for accurate AI suggestions
+- **Robust AI Operations**: Fixed context parsing for both selected items and entire table processing
 
 ## Dependencies
 - customtkinter
