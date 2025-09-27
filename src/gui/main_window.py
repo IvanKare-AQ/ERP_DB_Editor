@@ -508,7 +508,7 @@ class MainWindow:
                 sublevel = parts[3]
                 
                 # Use the clean column name (without duplicates)
-                sublevel_col = 'Article Sublevel '
+                sublevel_col = 'Article Sublevel'
                 matching_rows = self.tree_view.data[
                     (self.tree_view.data['ERP name'] == erp_name) &
                     (self.tree_view.data['Article Category'] == category) &
@@ -573,7 +573,7 @@ class MainWindow:
                 sublevel = parts[3]
                 
                 # Use the clean column name (without duplicates)
-                sublevel_col = 'Article Sublevel '
+                sublevel_col = 'Article Sublevel'
                 # Find matching row
                 mask = (
                     (data['ERP name'] == erp_name) &
@@ -734,7 +734,7 @@ class MainWindow:
                     erp_name = row.get('ERP name', '')
                     category = row.get('Article Category', '')
                     subcategory = row.get('Article Subcategory', '')
-                    sublevel = row.get('Article Sublevel ', '')
+                    sublevel = row.get('Article Sublevel', '')
                     
                     if erp_name and category and subcategory:
                         row_id = f"{erp_name}◆◆◆{category}◆◆◆{subcategory}◆◆◆{sublevel}"
@@ -791,7 +791,7 @@ class MainWindow:
                             (data['ERP name'] == erp_name) &
                             (data['Article Category'] == category) &
                             (data['Article Subcategory'] == subcategory) &
-                            (data['Article Sublevel '] == sublevel)
+                            (data['Article Sublevel'] == sublevel)
                         )
                         
                         if mask.any():

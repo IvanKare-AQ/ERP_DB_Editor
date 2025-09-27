@@ -53,6 +53,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Excel File Loading Issue**: Resolved "Failed to load file: 'Article Sublevel '" error
+  - Root cause: Inconsistent column name handling throughout codebase
+  - Some parts used 'Article Sublevel ' (with trailing space), others used 'Article Sublevel' (without space)
+  - Standardized all column references to use 'Article Sublevel' (without trailing space)
+  - Fixed in files: excel_handler.py, edit_panel.py, tree_view.py, main_window.py
+  - Excel files now load properly without column name mismatch errors
+
 ### Added
 - **Extended Field Editing**: Enhanced edit panel with additional input fields
   - Added "Manufacturer" input field with individual reset functionality

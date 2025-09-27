@@ -315,7 +315,7 @@ class EditPanel(ctk.CTkFrame):
             # Set the dropdowns to current item's category/subcategory/sublevel
             current_category = item_data.get('Article Category', '')
             current_subcategory = item_data.get('Article Subcategory', '')
-            current_sublevel = item_data.get('Article Sublevel ', '')
+            current_sublevel = item_data.get('Article Sublevel', '')
             
             # Load categories first
             self.load_categories()
@@ -758,7 +758,7 @@ class EditPanel(ctk.CTkFrame):
             erp_name = self.selected_item.get('ERP name', 'Unknown')
             category = self.selected_item.get('Article Category', 'Unknown')
             subcategory = self.selected_item.get('Article Subcategory', 'Unknown')
-            sublevel = self.selected_item.get('Article Sublevel ', 'Unknown')
+            sublevel = self.selected_item.get('Article Sublevel', 'Unknown')
             return f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sublevel: {sublevel}"
         
         # Check for multiple selected items
@@ -768,7 +768,7 @@ class EditPanel(ctk.CTkFrame):
                 erp_name = item_data.get('ERP name', 'Unknown')
                 category = item_data.get('Article Category', 'Unknown')
                 subcategory = item_data.get('Article Subcategory', 'Unknown')
-                sublevel = item_data.get('Article Sublevel ', 'Unknown')
+                sublevel = item_data.get('Article Sublevel', 'Unknown')
                 contexts.append(f"ERP: {erp_name}, Cat: {category}, Sub: {subcategory}, Level: {sublevel}")
             
             if len(contexts) == 1:
@@ -893,7 +893,7 @@ class EditPanel(ctk.CTkFrame):
                         erp_name = item_data.get('ERP name', 'Unknown')
                         category = item_data.get('Article Category', 'Unknown')
                         subcategory = item_data.get('Article Subcategory', 'Unknown')
-                        sublevel = item_data.get('Article Sublevel ', 'Unknown')
+                        sublevel = item_data.get('Article Sublevel', 'Unknown')
                         
                         context = f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sublevel: {sublevel}"
                         
@@ -1031,13 +1031,13 @@ class EditPanel(ctk.CTkFrame):
                     try:
                         # Get row ID for this item
                         delimiter = "◆◆◆"
-                        row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel ', '')}"
+                        row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel', '')}"
                         
                         # Prepare context for this specific item with all required fields
                         erp_name = row.get('ERP name', 'Unknown')
                         category = row.get('Article Category', 'Unknown')
                         subcategory = row.get('Article Subcategory', 'Unknown')
-                        sublevel = row.get('Article Sublevel ', 'Unknown')
+                        sublevel = row.get('Article Sublevel', 'Unknown')
                         
                         context = f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sublevel: {sublevel}"
                         

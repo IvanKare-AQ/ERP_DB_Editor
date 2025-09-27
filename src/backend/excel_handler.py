@@ -50,7 +50,7 @@ class ExcelHandler:
             
             # Ensure required columns exist
             required_columns = [
-                'Article Category', 'Article Subcategory', 'Article Sublevel ', 'ERP name'
+                'Article Category', 'Article Subcategory', 'Article Sublevel', 'ERP name'
             ]
             
             for col in required_columns:
