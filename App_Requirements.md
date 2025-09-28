@@ -214,6 +214,15 @@
 - **AI Context Processing**: Complete ERP item context generation for accurate AI suggestions
 - **Robust AI Operations**: Fixed context parsing for both selected items and entire table processing
 
+### Latest Enhancements (v1.1.0)
+- **Item Deletion Functionality**: Added "Delete Selected Item" button with confirmation dialog
+- **Input Field Labels**: Added descriptive labels for User ERP Name, Manufacturer, and REMARK fields
+- **Streamlined AI Interface**: Moved "Prompt Tool" button to AI Settings section for better organization
+- **Removed Prompt Section**: Eliminated redundant prompt text area for cleaner interface
+- **Enhanced Prompt Management**: "Load to Editor" functionality now works with stored prompts
+- **Visual Prompt Status**: Added status label showing currently loaded prompt name
+- **Improved User Experience**: Better organization and visual feedback throughout the interface
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)

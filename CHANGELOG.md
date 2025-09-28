@@ -53,6 +53,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Item Deletion Functionality**: Complete item removal system
+  - Added "Delete Selected Item" button under "Edit Selected Item" section
+  - Red color scheme to indicate destructive action
+  - Confirmation dialog with detailed item information before deletion
+  - Proper cleanup of user modifications and data removal
+  - Real-time tree view updates after deletion
+  - Status feedback for successful deletion operations
+- **Input Field Labels**: Enhanced edit panel with descriptive labels
+  - Added "User ERP Name:" label for ERP name input field
+  - Added "Manufacturer:" label for manufacturer input field
+  - Added "REMARK:" label for remark input field
+  - Consistent styling with bold font and proper spacing
+  - Improved user experience with clear field identification
+- **Streamlined AI Interface**: Reorganized AI functionality for better workflow
+  - Moved "Prompt Tool" button from removed Prompt section to AI Settings
+  - Renamed "Select Prompt" to "Prompt Tool" for clarity
+  - Integrated prompt tool with other AI Settings controls
+  - Removed redundant Prompt section for cleaner interface
+- **Enhanced Prompt Management**: Improved prompt selection and usage
+  - Fixed "Load to Editor" functionality after prompt section removal
+  - Added prompt storage system for AI operations
+  - Visual status label showing currently loaded prompt name
+  - Proper fallback to default prompt when none selected
+  - Enhanced user feedback with prompt name display
+
 ### Fixed
 - **Excel File Loading Issue**: Resolved "Failed to load file: 'Article Sublevel '" error
   - Root cause: Inconsistent column name handling throughout codebase
@@ -60,6 +86,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Standardized all column references to use 'Article Sublevel' (without trailing space)
   - Fixed in files: excel_handler.py, edit_panel.py, tree_view.py, main_window.py
   - Excel files now load properly without column name mismatch errors
+- **Prompt Management Workflow**: Fixed "Load to Editor" functionality
+  - Resolved issue where removing prompt text area broke prompt loading
+  - Implemented proper prompt storage and retrieval system
+  - Updated AI operations to use stored prompts instead of default
+  - Enhanced visual feedback with prompt name display
+  - Maintained backward compatibility with existing functionality
 
 ### Added
 - **Extended Field Editing**: Enhanced edit panel with additional input fields

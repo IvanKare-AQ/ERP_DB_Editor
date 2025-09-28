@@ -36,6 +36,9 @@ class EditPanel(ctk.CTkFrame):
         self.processing_thread = None
         self.should_stop_processing = False
         
+        # Store selected prompt
+        self.selected_prompt = None
+        
         # Configure panel size
         self.configure(width=700)
         
@@ -48,6 +51,19 @@ class EditPanel(ctk.CTkFrame):
         title_label = ctk.CTkLabel(self, text="Edit Selected Item", 
                                  font=ctk.CTkFont(size=16, weight="bold"))
         title_label.pack(pady=(5, 10))
+        
+        # Delete button
+        self.delete_button = ctk.CTkButton(
+            self,
+            text="Delete Selected Item",
+            command=self.delete_selected_item,
+            width=150,
+            height=35,
+            fg_color="#d32f2f",  # Red color for delete action
+            hover_color="#b71c1c",
+            state="disabled"
+        )
+        self.delete_button.pack(pady=(0, 10))
         
         # User ERP Name section
         self.setup_user_erp_name_section()
@@ -71,6 +87,15 @@ class EditPanel(ctk.CTkFrame):
         # User ERP Name input field and buttons frame
         user_erp_frame = ctk.CTkFrame(self)
         user_erp_frame.pack(pady=(0, 5))
+        
+        # User ERP Name label
+        user_erp_label = ctk.CTkLabel(
+            user_erp_frame,
+            text="User ERP Name:",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            width=120
+        )
+        user_erp_label.pack(side="left", padx=(10, 5))
         
         # User ERP Name input field
         self.user_erp_name_entry = ctk.CTkEntry(
@@ -96,6 +121,15 @@ class EditPanel(ctk.CTkFrame):
         manufacturer_frame = ctk.CTkFrame(self)
         manufacturer_frame.pack(pady=(0, 5))
         
+        # Manufacturer label
+        manufacturer_label = ctk.CTkLabel(
+            manufacturer_frame,
+            text="Manufacturer:",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            width=120
+        )
+        manufacturer_label.pack(side="left", padx=(10, 5))
+        
         # Manufacturer input field
         self.manufacturer_entry = ctk.CTkEntry(
             manufacturer_frame,
@@ -119,6 +153,15 @@ class EditPanel(ctk.CTkFrame):
         # REMARK input field and buttons frame
         remark_frame = ctk.CTkFrame(self)
         remark_frame.pack(pady=(0, 5))
+        
+        # REMARK label
+        remark_label = ctk.CTkLabel(
+            remark_frame,
+            text="REMARK:",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            width=120
+        )
+        remark_label.pack(side="left", padx=(10, 5))
         
         # REMARK input field
         self.remark_entry = ctk.CTkEntry(
@@ -311,6 +354,7 @@ class EditPanel(ctk.CTkFrame):
             self.reset_name_button.configure(state="normal")
             self.reset_manufacturer_button.configure(state="normal")
             self.reset_remark_button.configure(state="normal")
+            self.delete_button.configure(state="normal")
             
             # Set the dropdowns to current item's category/subcategory/sublevel
             current_category = item_data.get('Article Category', '')
@@ -352,6 +396,7 @@ class EditPanel(ctk.CTkFrame):
             self.reset_name_button.configure(state="disabled")
             self.reset_manufacturer_button.configure(state="disabled")
             self.reset_remark_button.configure(state="disabled")
+            self.delete_button.configure(state="disabled")
             self.reassign_button.configure(state="disabled")
             self.apply_to_selected_button.configure(state="disabled")
             self.apply_to_entire_table_button.configure(state="disabled")
@@ -360,6 +405,34 @@ class EditPanel(ctk.CTkFrame):
             self.category_dropdown.configure(values=["Select Category..."])
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
             self.sublevel_dropdown.configure(values=["Select Sublevel..."])
+            
+    def delete_selected_item(self):
+        """Delete the selected item from the tree view."""
+        if not self.selected_row_id or not self.selected_item:
+            return
+            
+        # Show confirmation dialog
+        result = messagebox.askyesno(
+            "Delete Item",
+            f"Are you sure you want to delete this item?\n\n"
+            f"ERP Name: {self.selected_item.get('ERP name', 'Unknown')}\n"
+            f"Category: {self.selected_item.get('Article Category', 'Unknown')}\n"
+            f"Subcategory: {self.selected_item.get('Article Subcategory', 'Unknown')}\n"
+            f"Sublevel: {self.selected_item.get('Article Sublevel', 'Unknown')}\n\n"
+            f"This action cannot be undone.",
+            icon="warning"
+        )
+        
+        if result:
+            # Delete the item from tree view
+            self.tree_view.delete_item(self.selected_row_id)
+            
+            # Clear the edit panel
+            self.set_selected_item(None, None)
+            
+            # Update status
+            if self.main_window and hasattr(self.main_window, 'update_status'):
+                self.main_window.update_status("Item deleted successfully")
             
     def update_all_fields(self):
         """Update all fields (User ERP Name, Manufacturer, REMARK) for the selected item."""
@@ -511,47 +584,24 @@ class EditPanel(ctk.CTkFrame):
         )
         self.download_model_button.pack(side="left", padx=5, pady=5)
         
-        # Prompt section
-        prompt_frame = ctk.CTkFrame(self)
-        prompt_frame.pack(fill="x", padx=10, pady=5)
-        
-        prompt_label = ctk.CTkLabel(prompt_frame, text="Prompt:", 
-                                  font=ctk.CTkFont(size=12, weight="bold"))
-        prompt_label.pack(pady=(5, 3))
-        
-        self.prompt_text = ctk.CTkTextbox(
-            prompt_frame,
-            height=80
-        )
-        self.prompt_text.pack(fill="x", padx=10, pady=5)
-        
-        # Bind text change event to update button states
-        self.prompt_text.bind('<KeyRelease>', self.on_prompt_text_change)
-        self.prompt_text.bind('<Button-1>', self.on_prompt_text_change)
-        
-        # Prompt management buttons
-        prompt_buttons_frame = ctk.CTkFrame(prompt_frame)
-        prompt_buttons_frame.pack(fill="x", padx=10, pady=(0, 5))
-        
-        self.save_prompt_button = ctk.CTkButton(
-            prompt_buttons_frame,
-            text="Save Prompt",
-            command=self.save_prompt,
-            width=100,
-            height=30,
-            state="disabled"
-        )
-        self.save_prompt_button.pack(side="left", padx=(0, 5))
-        
-        self.select_prompt_button = ctk.CTkButton(
-            prompt_buttons_frame,
-            text="Select Prompt",
+        # Prompt Tool button in AI Settings
+        self.prompt_tool_button = ctk.CTkButton(
+            model_frame,
+            text="Prompt Tool",
             command=self.select_prompt,
-            width=100,
-            height=30
+            width=80,
+            height=25
         )
-        self.select_prompt_button.pack(side="left", padx=5)
+        self.prompt_tool_button.pack(side="left", padx=5, pady=5)
         
+        # Prompt status label
+        self.prompt_status_label = ctk.CTkLabel(
+            model_frame,
+            text="No prompt loaded",
+            font=ctk.CTkFont(size=10),
+            text_color="gray"
+        )
+        self.prompt_status_label.pack(side="left", padx=(10, 5), pady=5)
         
         # Preview section
         preview_frame = ctk.CTkFrame(self)
@@ -712,7 +762,8 @@ class EditPanel(ctk.CTkFrame):
             return
         
         model_name = self.model_dropdown.get()
-        prompt = self.prompt_text.get("1.0", "end-1c").strip()
+        # Use selected prompt if available, otherwise use default
+        prompt = self.selected_prompt if self.selected_prompt else "Generate a better ERP name for this item based on its category and specifications."
         
         if not prompt:
             messagebox.showwarning("Warning", "Please enter a prompt")
@@ -832,7 +883,8 @@ class EditPanel(ctk.CTkFrame):
             return
         
         # Check if we have a prompt
-        prompt = self.prompt_text.get("1.0", "end-1c").strip()
+        # Use selected prompt if available, otherwise use default
+        prompt = self.selected_prompt if self.selected_prompt else "Generate a better ERP name for this item based on its category and specifications."
         if not prompt:
             messagebox.showwarning("Warning", "Please enter a prompt first")
             return
@@ -965,7 +1017,8 @@ class EditPanel(ctk.CTkFrame):
             return
         
         # Check if we have a prompt
-        prompt = self.prompt_text.get("1.0", "end-1c").strip()
+        # Use selected prompt if available, otherwise use default
+        prompt = self.selected_prompt if self.selected_prompt else "Generate a better ERP name for this item based on its category and specifications."
         if not prompt:
             messagebox.showwarning("Warning", "Please enter a prompt first")
             return
@@ -1132,28 +1185,13 @@ class EditPanel(ctk.CTkFrame):
     
     def on_prompt_text_change(self, event=None):
         """Handle prompt text changes to update button states."""
-        prompt_text = self.prompt_text.get("1.0", tk.END).strip()
-        
-        # Enable save button only if there's content in the prompt
-        if prompt_text:
-            self.save_prompt_button.configure(state="normal")
-        else:
-            self.save_prompt_button.configure(state="disabled")
+        # This method is no longer needed since we removed the prompt text area
+        pass
     
     def save_prompt(self):
         """Open the save prompt dialog."""
-        prompt_text = self.prompt_text.get("1.0", tk.END).strip()
-        
-        if not prompt_text:
-            messagebox.showwarning("Warning", "Please enter a prompt before saving.")
-            return
-        
-        # Open save prompt dialog
-        save_dialog = SavePromptDialog(
-            self.main_window.root,
-            prompt_text,
-            on_prompt_saved=self.on_prompt_saved
-        )
+        # This method is no longer needed since we removed the save prompt button
+        pass
     
     def select_prompt(self):
         """Open the prompt selection dialog."""
@@ -1169,19 +1207,22 @@ class EditPanel(ctk.CTkFrame):
         if self.main_window and hasattr(self.main_window, 'status_label'):
             self.main_window.update_status("Prompt saved successfully")
     
-    def on_prompt_selected(self, prompt_text: str):
+    def on_prompt_selected(self, prompt_name: str, prompt_text: str):
         """Callback when a prompt is selected.
         
         Args:
+            prompt_name: The name of the selected prompt
             prompt_text: The selected prompt text
         """
-        # Set the prompt text
-        self.prompt_text.delete("1.0", tk.END)
-        self.prompt_text.insert("1.0", prompt_text)
+        # Store the selected prompt for use in AI operations
+        self.selected_prompt = prompt_text
         
-        # Update button states
-        self.on_prompt_text_change()
+        # Update the status label to show the prompt name
+        self.prompt_status_label.configure(
+            text=f"Prompt: {prompt_name}",
+            text_color="green"
+        )
         
-        # Update status if main window is available
-        if self.main_window and hasattr(self.main_window, 'status_label'):
-            self.main_window.update_status("Prompt selected and loaded")
+        # Show status message
+        if self.main_window and hasattr(self.main_window, 'update_status'):
+            self.main_window.update_status(f"Prompt '{prompt_name}' loaded successfully")

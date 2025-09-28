@@ -8,7 +8,7 @@
       "description": "Standardize ERP names to follow company naming conventions",
       "prompt": "Please standardize the following ERP item name to follow our company naming conventions. The name should be consistent with our existing product naming standards.\n\nOriginal name: {erp_name}\nCategory: {category}\nSubcategory: {subcategory}\nSublevel: {sublevel}\n\nPlease provide a standardized name that follows our conventions."
     },
-    "Prompt test 1": {
+    "Underscored_names": {
       "description": "Standardize ERP names to follow company naming conventions",
       "prompt": "Standardize the following ERP item name to follow our company naming conventions. The name should be consistent with our existing product naming standards.\n\nOriginal name: {erp_name}\nCategory: {category}\nSubcategory: {subcategory}\nSublevel: {sublevel}\n\nProvide a standardized name that follows this convention:\n- Every name start with type (Screw, Pen, Motor)\n- Second part of name is part number if applicable\n- Third part is one or multiple descriptive parameters\n- Name parts must be separated with \"_\" other space must be replaced with \"-\"\n- If any part of the name can't be properly deduced use web search using original name"
     }

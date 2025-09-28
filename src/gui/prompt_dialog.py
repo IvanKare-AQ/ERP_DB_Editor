@@ -255,7 +255,8 @@ class PromptSelectionDialog:
         if self.selected_prompt and self.on_prompt_selected:
             prompt_text = self.prompt_manager.get_prompt(self.selected_prompt)
             if prompt_text:
-                self.on_prompt_selected(prompt_text)
+                # Pass both prompt name and text
+                self.on_prompt_selected(self.selected_prompt, prompt_text)
                 self.close_dialog()
     
     def delete_prompt(self):

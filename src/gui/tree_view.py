@@ -715,3 +715,64 @@ class TreeViewWidget(ctk.CTkFrame):
         for child in self.tree.get_children():
             self.tree.item(child, tags=self.tree.item(child, "tags")[:-1] if self.tree.item(child, "tags") and self.tree.item(child, "tags")[-1] == "hover" else self.tree.item(child, "tags"))
             self.remove_hover_recursive(child)
+    
+    def delete_item(self, row_id):
+        """Delete an item from the tree view and data."""
+        if not self.data is not None or self.data.empty:
+            return
+            
+        # Find and remove the item from the tree
+        for item in self.tree.get_children():
+            if self._delete_item_recursive(item, row_id):
+                break
+                
+        # Remove from user modifications if exists
+        if row_id in self.user_modifications:
+            del self.user_modifications[row_id]
+            
+        # Remove from data
+        if self.data is not None and not self.data.empty:
+            # Find the row index by matching the row_id components
+            delimiter = "◆◆◆"
+            parts = row_id.split(delimiter)
+            if len(parts) >= 4:
+                erp_name, category, subcategory, sublevel = parts[0], parts[1], parts[2], parts[3]
+                
+                # Create mask to find the row to delete
+                mask = (
+                    (self.data['ERP name'] == erp_name) &
+                    (self.data['Article Category'] == category) &
+                    (self.data['Article Subcategory'] == subcategory) &
+                    (self.data['Article Sublevel'] == sublevel)
+                )
+                
+                # Remove the row
+                self.data = self.data[~mask]
+                
+                # Refresh the view
+                self.refresh_view()
+    
+    def _delete_item_recursive(self, item, row_id):
+        """Recursively search for and delete an item with the given row_id."""
+        # Check if this item has the matching row_id
+        item_tags = self.tree.item(item, "tags")
+        if item_tags and "erp_item" in str(item_tags):
+            # This is an ERP item, check if it matches
+            item_values = self.tree.item(item, "values")
+            if item_values and len(item_values) > 0:
+                # Get the ERP name from the values (assuming it's in the ERP Name column)
+                erp_name = item_values[1] if len(item_values) > 1 else ""  # ERP Name is typically the second column
+                
+                # Check if this matches our row_id
+                delimiter = "◆◆◆"
+                if row_id.startswith(erp_name + delimiter):
+                    # Found the item, delete it
+                    self.tree.delete(item)
+                    return True
+        
+        # Check children recursively
+        for child in self.tree.get_children(item):
+            if self._delete_item_recursive(child, row_id):
+                return True
+                
+        return False
