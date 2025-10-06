@@ -223,9 +223,42 @@
 - **Visual Prompt Status**: Added status label showing currently loaded prompt name
 - **Improved User Experience**: Better organization and visual feedback throughout the interface
 
+## AI Model Management Requirements
+- **AI Model Management System**: Complete model management functionality
+  - Model Manager dialog for downloading, removing, and configuring AI models
+  - Model parameter tuning with sliders, input fields, and checkboxes
+  - Dynamic parameter display based on model capabilities (using `ollama show`)
+  - Parameter enable/disable functionality with persistent settings
+  - Model-specific parameter storage in configuration file
+  - Real-time parameter validation and type conversion
+  - Bidirectional synchronization between sliders and input fields
+  - Save button state management for parameter changes
+  - Model information display (architecture, parameters, context length, quantization)
+  - Automatic parameter initialization for new models
+  - Robust error handling for model operations
+
+## AI Prompt Template System Requirements
+- **Template Variable Substitution**: Automatic replacement of prompt template variables
+  - Support for `{erp_name}`, `{category}`, `{subcategory}`, `{sublevel}` variables
+  - Automatic extraction of ERP item data from context strings
+  - Template substitution before sending prompts to AI models
+  - Consistent behavior across all AI models (gpt-oss, gemma3, etc.)
+  - Robust parsing of context strings with multiple format support
+  - Error handling for missing or malformed template variables
+
+## AI Settings Persistence Requirements
+- **Save View Integration**: AI settings must be saved with view preferences
+  - Selected AI model persistence across application sessions
+  - Selected AI prompt persistence across application sessions
+  - Model parameter settings persistence for each model
+  - Parameter enable/disable state persistence
+  - Automatic loading of AI settings on application startup
+  - Integration with existing Save View functionality
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)
 - openpyxl (for Excel file reading/writing)
 - tkinter (built-in, for additional GUI components)
 - requests (for Ollama API communication)
+- ollama (for AI model management and text generation)

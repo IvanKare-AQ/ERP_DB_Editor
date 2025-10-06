@@ -130,3 +130,120 @@ class ConfigManager:
         
         self.config["ai_settings"]["selected_model"] = model_name
         self.save_config()
+    
+    def get_selected_prompt(self) -> Optional[str]:
+        """Get selected AI prompt key."""
+        return self.config.get("ai_settings", {}).get("selected_prompt")
+    
+    def save_selected_prompt(self, prompt_key: str) -> None:
+        """Save selected AI prompt key."""
+        if "ai_settings" not in self.config:
+            self.config["ai_settings"] = {}
+        
+        self.config["ai_settings"]["selected_prompt"] = prompt_key
+        self.save_config()
+    
+    def get_selected_prompt_text(self) -> Optional[str]:
+        """Get the actual prompt text for the selected prompt key."""
+        prompt_key = self.get_selected_prompt()
+        if not prompt_key:
+            return None
+        
+        # Load prompts from prompts.json
+        try:
+            prompts_file = os.path.join(os.path.dirname(__file__), "..", "..", "config", "prompts.json")
+            with open(prompts_file, 'r', encoding='utf-8') as f:
+                prompts_data = json.load(f)
+            
+            # Get the prompt text for the selected key
+            prompt_info = prompts_data.get("prompts", {}).get(prompt_key)
+            if prompt_info:
+                return prompt_info.get("prompt")
+            
+        except Exception as e:
+            print(f"Error loading prompt text for key '{prompt_key}': {e}")
+        
+        return None
+    
+    def get_available_prompts(self) -> Dict[str, Dict[str, str]]:
+        """Get all available prompts from prompts.json."""
+        try:
+            prompts_file = os.path.join(os.path.dirname(__file__), "..", "..", "config", "prompts.json")
+            with open(prompts_file, 'r', encoding='utf-8') as f:
+                prompts_data = json.load(f)
+            
+            return prompts_data.get("prompts", {})
+            
+        except Exception as e:
+            print(f"Error loading prompts: {e}")
+            return {}
+    
+    def get_model_parameters(self, model_name: str) -> Dict[str, Any]:
+        """Get parameters for a specific model."""
+        if "model_parameters" not in self.config:
+            self.config["model_parameters"] = {}
+        
+        # If model exists, return its parameters
+        if model_name in self.config["model_parameters"]:
+            return self.config["model_parameters"][model_name]
+        
+        # Model not found - create default parameters based on model type
+        default_params = self._create_default_parameters_for_model(model_name)
+        
+        # Save the default parameters for future use
+        self.config["model_parameters"][model_name] = default_params
+        self.save_config()
+        
+        return default_params
+    
+    def _create_default_parameters_for_model(self, model_name: str) -> Dict[str, Any]:
+        """Create default parameters for a model based on its name/type."""
+        # Basic default parameters
+        default_params = {
+            "temperature": 0.7,
+            "top_p": 0.9
+        }
+        
+        # Add model-specific defaults based on common patterns
+        if "gpt" in model_name.lower():
+            # GPT models typically support basic parameters
+            default_params.update({
+                "num_ctx": 4096,
+                "num_predict": 512
+            })
+        elif "gemma" in model_name.lower():
+            # Gemma models typically support more parameters
+            default_params.update({
+                "top_k": 40,
+                "repeat_penalty": 1.1,
+                "num_ctx": 4096,
+                "num_predict": 512
+            })
+        elif "llama" in model_name.lower():
+            # Llama models
+            default_params.update({
+                "top_k": 40,
+                "repeat_penalty": 1.1,
+                "num_ctx": 2048,
+                "num_predict": 256
+            })
+        else:
+            # Generic model defaults
+            default_params.update({
+                "num_ctx": 2048,
+                "num_predict": 256
+            })
+        
+        return default_params
+    
+    def save_model_parameters(self, model_name: str, parameters: Dict[str, Any]) -> None:
+        """Save parameters for a specific model."""
+        if "model_parameters" not in self.config:
+            self.config["model_parameters"] = {}
+        
+        self.config["model_parameters"][model_name] = parameters
+        self.save_config()
+    
+    def get_all_model_parameters(self) -> Dict[str, Dict[str, Any]]:
+        """Get all model parameters."""
+        return self.config.get("model_parameters", {})

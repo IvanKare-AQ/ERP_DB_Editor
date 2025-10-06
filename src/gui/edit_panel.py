@@ -11,6 +11,7 @@ from src.backend.ollama_handler import OllamaHandler
 from src.backend.prompt_manager import PromptManager
 from src.gui.prompt_dialog import PromptSelectionDialog
 from src.gui.save_prompt_dialog import SavePromptDialog
+from src.gui.model_manager_dialog import ModelManagerDialog
 
 
 class EditPanel(ctk.CTkFrame):
@@ -561,7 +562,8 @@ class EditPanel(ctk.CTkFrame):
         self.model_dropdown = ctk.CTkOptionMenu(
             model_frame,
             values=["No models available"],
-            width=150
+            width=150,
+            command=self.on_model_selection_change
         )
         self.model_dropdown.pack(side="left", padx=5, pady=5)
         
@@ -575,14 +577,14 @@ class EditPanel(ctk.CTkFrame):
         )
         self.refresh_models_button.pack(side="left", padx=5, pady=5)
         
-        self.download_model_button = ctk.CTkButton(
+        self.manage_models_button = ctk.CTkButton(
             model_frame,
-            text="Download",
-            command=self.download_model,
+            text="Manage",
+            command=self.open_model_manager,
             width=60,
             height=25
         )
-        self.download_model_button.pack(side="left", padx=5, pady=5)
+        self.manage_models_button.pack(side="left", padx=5, pady=5)
         
         # Prompt Tool button in AI Settings
         self.prompt_tool_button = ctk.CTkButton(
@@ -668,6 +670,8 @@ class EditPanel(ctk.CTkFrame):
             self.refresh_models()
             # Load previously selected model from config
             self.load_selected_model_from_config()
+            # Load previously selected prompt from config
+            self.load_selected_prompt_from_config()
     
     def load_selected_model_from_config(self):
         """Load previously selected model from config."""
@@ -679,6 +683,22 @@ class EditPanel(ctk.CTkFrame):
                 self.model_dropdown.set(selected_model)
                 if self.main_window and hasattr(self.main_window, 'status_label'):
                     self.main_window.update_status(f"Loaded AI model: {selected_model}")
+    
+    def load_selected_prompt_from_config(self):
+        """Load previously selected prompt from config."""
+        if self.main_window and hasattr(self.main_window, 'config_manager'):
+            config_manager = self.main_window.config_manager
+            selected_prompt = config_manager.get_selected_prompt()
+            
+            if selected_prompt:
+                self.selected_prompt = selected_prompt
+                # Update the prompt status label to show that a saved prompt was loaded
+                self.prompt_status_label.configure(
+                    text="Prompt: Loaded from saved view",
+                    text_color="green"
+                )
+                if self.main_window and hasattr(self.main_window, 'status_label'):
+                    self.main_window.update_status("Loaded saved AI prompt")
     
     def refresh_models(self):
         """Refresh the list of available models."""
@@ -692,6 +712,8 @@ class EditPanel(ctk.CTkFrame):
                 if self.available_models:
                     # Update UI in main thread
                     self.main_window.root.after(0, self.update_model_dropdown)
+                    # Load previously selected model after models are loaded
+                    self.main_window.root.after(0, self.load_selected_model_from_config)
                     if self.main_window and hasattr(self.main_window, 'status_label'):
                         self.main_window.update_status(f"Found {len(self.available_models)} AI models")
                 else:
@@ -716,34 +738,20 @@ class EditPanel(ctk.CTkFrame):
             if self.available_models:
                 self.model_dropdown.set(self.available_models[0])
                 self.preview_button.configure(state="normal")
-    
-    def download_model(self):
-        """Download a model dialog."""
-        # Simple input dialog for model name
-        dialog = ctk.CTkInputDialog(text="Enter model name to download:", title="Download Model")
-        model_name = dialog.get_input()
         
-        if model_name:
-            if self.main_window and hasattr(self.main_window, 'status_label'):
-                self.main_window.update_status(f"Downloading model: {model_name}")
-            
-            # Run download in separate thread
-            def download_thread():
-                success = self.ollama_handler.pull_model(model_name)
-                self.main_window.root.after(0, lambda: self.download_complete(success, model_name))
-            
-            threading.Thread(target=download_thread, daemon=True).start()
+        # Update save view button state when model selection changes
+        if self.main_window and hasattr(self.main_window, 'update_save_view_button_state'):
+            self.main_window.update_save_view_button_state()
     
-    def download_complete(self, success, model_name):
-        """Handle download completion."""
-        if success:
-            self.refresh_models()
+    def open_model_manager(self):
+        """Open the model manager dialog."""
+        try:
+            dialog = ModelManagerDialog(self.main_window.root, self.main_window)
+            # The dialog will handle its own lifecycle
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open model manager: {str(e)}")
             if self.main_window and hasattr(self.main_window, 'status_label'):
-                self.main_window.update_status(f"Model '{model_name}' downloaded successfully")
-        else:
-            if self.main_window and hasattr(self.main_window, 'status_label'):
-                self.main_window.update_status(f"Failed to download model '{model_name}'")
-            messagebox.showerror("Error", f"Failed to download model '{model_name}'")
+                self.main_window.update_status("Error opening model manager")
     
     
     def generate_preview(self):
@@ -763,7 +771,11 @@ class EditPanel(ctk.CTkFrame):
         
         model_name = self.model_dropdown.get()
         # Use selected prompt if available, otherwise use default
-        prompt = self.selected_prompt if self.selected_prompt else "Generate a better ERP name for this item based on its category and specifications."
+        if self.selected_prompt and self.main_window and hasattr(self.main_window, 'config_manager'):
+            config_manager = self.main_window.config_manager
+            prompt = config_manager.get_selected_prompt_text()
+        else:
+            prompt = "Generate a better ERP name for this item based on its category and specifications."
         
         if not prompt:
             messagebox.showwarning("Warning", "Please enter a prompt")
@@ -789,9 +801,15 @@ class EditPanel(ctk.CTkFrame):
                 # Prepare context (always use selected item context)
                 context = self.get_selected_item_context()
                 
+                # Get model parameters
+                model_parameters = None
+                if self.main_window and hasattr(self.main_window, 'config_manager'):
+                    config_manager = self.main_window.config_manager
+                    model_parameters = config_manager.get_model_parameters(model_name)
+                
                 # Generate suggestions
                 suggestions = self.ollama_handler.generate_erp_names(
-                    prompt, context, model_name, 5
+                    prompt, context, model_name, 5, model_parameters
                 )
                 
                 # Update UI in main thread
@@ -884,7 +902,11 @@ class EditPanel(ctk.CTkFrame):
         
         # Check if we have a prompt
         # Use selected prompt if available, otherwise use default
-        prompt = self.selected_prompt if self.selected_prompt else "Generate a better ERP name for this item based on its category and specifications."
+        if self.selected_prompt and self.main_window and hasattr(self.main_window, 'config_manager'):
+            config_manager = self.main_window.config_manager
+            prompt = config_manager.get_selected_prompt_text()
+        else:
+            prompt = "Generate a better ERP name for this item based on its category and specifications."
         if not prompt:
             messagebox.showwarning("Warning", "Please enter a prompt first")
             return
@@ -949,9 +971,15 @@ class EditPanel(ctk.CTkFrame):
                         
                         context = f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sublevel: {sublevel}"
                         
+                        # Get model parameters
+                        model_parameters = None
+                        if self.main_window and hasattr(self.main_window, 'config_manager'):
+                            config_manager = self.main_window.config_manager
+                            model_parameters = config_manager.get_model_parameters(model_name)
+                        
                         # Generate suggestion for this item
                         suggestions = self.ollama_handler.generate_erp_names(
-                            prompt, context, model_name, 1
+                            prompt, context, model_name, 1, model_parameters
                         )
                         
                         if suggestions and not self.should_stop_processing:
@@ -1018,7 +1046,11 @@ class EditPanel(ctk.CTkFrame):
         
         # Check if we have a prompt
         # Use selected prompt if available, otherwise use default
-        prompt = self.selected_prompt if self.selected_prompt else "Generate a better ERP name for this item based on its category and specifications."
+        if self.selected_prompt and self.main_window and hasattr(self.main_window, 'config_manager'):
+            config_manager = self.main_window.config_manager
+            prompt = config_manager.get_selected_prompt_text()
+        else:
+            prompt = "Generate a better ERP name for this item based on its category and specifications."
         if not prompt:
             messagebox.showwarning("Warning", "Please enter a prompt first")
             return
@@ -1094,9 +1126,15 @@ class EditPanel(ctk.CTkFrame):
                         
                         context = f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sublevel: {sublevel}"
                         
+                        # Get model parameters
+                        model_parameters = None
+                        if self.main_window and hasattr(self.main_window, 'config_manager'):
+                            config_manager = self.main_window.config_manager
+                            model_parameters = config_manager.get_model_parameters(model_name)
+                        
                         # Generate suggestion for this item
                         suggestions = self.ollama_handler.generate_erp_names(
-                            prompt, context, model_name, 1
+                            prompt, context, model_name, 1, model_parameters
                         )
                         
                         if suggestions and not self.should_stop_processing:
@@ -1211,11 +1249,11 @@ class EditPanel(ctk.CTkFrame):
         """Callback when a prompt is selected.
         
         Args:
-            prompt_name: The name of the selected prompt
+            prompt_name: The name/key of the selected prompt
             prompt_text: The selected prompt text
         """
-        # Store the selected prompt for use in AI operations
-        self.selected_prompt = prompt_text
+        # Store the selected prompt key for use in AI operations
+        self.selected_prompt = prompt_name
         
         # Update the status label to show the prompt name
         self.prompt_status_label.configure(
@@ -1226,3 +1264,13 @@ class EditPanel(ctk.CTkFrame):
         # Show status message
         if self.main_window and hasattr(self.main_window, 'update_status'):
             self.main_window.update_status(f"Prompt '{prompt_name}' loaded successfully")
+        
+        # Update save view button state when prompt selection changes
+        if self.main_window and hasattr(self.main_window, 'update_save_view_button_state'):
+            self.main_window.update_save_view_button_state()
+    
+    def on_model_selection_change(self, selected_model):
+        """Handle model selection change."""
+        # Update save view button state when model selection changes
+        if self.main_window and hasattr(self.main_window, 'update_save_view_button_state'):
+            self.main_window.update_save_view_button_state()

@@ -136,6 +136,10 @@ class MainWindow:
         )
         self.clear_filters_button.pack(side="left", padx=5, pady=5)
         
+        # Separator after Clear Filters
+        separator3 = ctk.CTkFrame(self.toolbar_frame, width=2, height=30)
+        separator3.pack(side="left", padx=10, pady=5)
+        
         # Multi-selection control section
         self.clear_user_erp_button = ctk.CTkButton(
             self.toolbar_frame,
@@ -154,6 +158,10 @@ class MainWindow:
             state="disabled"
         )
         self.apply_user_erp_button.pack(side="left", padx=5, pady=5)
+        
+        # Separator after Apply User ERP Names
+        separator4 = ctk.CTkFrame(self.toolbar_frame, width=2, height=30)
+        separator4.pack(side="left", padx=10, pady=5)
         
         # Data cleaning section
         self.convert_multiline_button = ctk.CTkButton(
@@ -353,15 +361,30 @@ class MainWindow:
             # Get current filters from tree view
             current_filters = self.tree_view.get_current_filters()
             
+            # Get current AI model and prompt from edit panel
+            selected_model = self.edit_panel.model_dropdown.get() if hasattr(self.edit_panel, 'model_dropdown') else None
+            selected_prompt = getattr(self.edit_panel, 'selected_prompt', None)
+            
             # Save column visibility to config
             self.config_manager.save_column_visibility(visible_columns)
             
             # Save filters to config
             self.config_manager.save_filters(current_filters)
             
+            # Save AI model if available and not "No models available"
+            if selected_model and selected_model != "No models available":
+                self.config_manager.save_selected_model(selected_model)
+            
+            # Save AI prompt if available
+            if selected_prompt:
+                self.config_manager.save_selected_prompt(selected_prompt)
+            
             # Reset view changes flag
             self.view_has_changes = False
             self.update_save_view_button_state()
+            
+            # Update status
+            self.update_status("View settings saved successfully (including AI model and prompt)")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save view: {str(e)}")
     
@@ -378,6 +401,19 @@ class MainWindow:
         current_filters = self.tree_view.get_current_filters()
         saved_filters = self.config_manager.get_filters()
         
+        # Check if current AI model differs from saved model
+        current_model = None
+        if hasattr(self.edit_panel, 'model_dropdown'):
+            current_model = self.edit_panel.model_dropdown.get()
+            if current_model == "No models available":
+                current_model = None
+        
+        saved_model = self.config_manager.get_selected_model()
+        
+        # Check if current AI prompt differs from saved prompt
+        current_prompt = getattr(self.edit_panel, 'selected_prompt', None)
+        saved_prompt = self.config_manager.get_selected_prompt()
+        
         # Compare current and saved visibility
         visibility_changed = False
         if current_visibility and saved_visibility:
@@ -392,8 +428,14 @@ class MainWindow:
         else:
             filters_changed = bool(current_filters) and not bool(saved_filters)
         
+        # Compare current and saved AI model
+        model_changed = current_model != saved_model
+        
+        # Compare current and saved AI prompt
+        prompt_changed = current_prompt != saved_prompt
+        
         # Update button state
-        has_changes = visibility_changed or filters_changed
+        has_changes = visibility_changed or filters_changed or model_changed or prompt_changed
         if has_changes:
             self.save_view_button.configure(state="normal")
             self.view_has_changes = True

@@ -54,6 +54,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **AI Model Management System**: Complete model management functionality
+  - Model Manager dialog (900x700) for downloading, removing, and configuring AI models
+  - Dynamic parameter display based on model capabilities using `ollama show` command
+  - Model parameter tuning with sliders, input fields, and checkboxes
+  - Parameter enable/disable functionality with persistent settings
+  - Model-specific parameter storage in configuration file
+  - Real-time parameter validation and type conversion (int, float, str)
+  - Bidirectional synchronization between sliders and input fields
+  - Model information display (architecture, parameters, context length, quantization)
+  - Automatic parameter initialization for new models based on model type
+  - Robust error handling for model operations and parameter management
+- **AI Prompt Template System**: Automatic template variable substitution
+  - Support for `{erp_name}`, `{category}`, `{subcategory}`, `{sublevel}` variables
+  - Automatic extraction of ERP item data from context strings
+  - Template substitution before sending prompts to AI models
+  - Consistent behavior across all AI models (gpt-oss, gemma3, etc.)
+  - Robust parsing of context strings with multiple format support
+  - Error handling for missing or malformed template variables
+- **AI Settings Persistence**: Integration with Save View functionality
+  - Selected AI model persistence across application sessions
+  - Selected AI prompt persistence across application sessions
+  - Model parameter settings persistence for each model
+  - Parameter enable/disable state persistence
+  - Automatic loading of AI settings on application startup
+  - Integration with existing Save View functionality
+- **Enhanced Model Manager Interface**: Professional model management UI
+  - Two-panel layout (left for model list/actions, right for parameters)
+  - Model list with download and remove functionality
+  - Parameter tuning section with dynamic widget creation
+  - Save button state management for parameter changes
+  - Real-time parameter validation and type conversion
+  - Model information display with detailed specifications
+  - Automatic parameter initialization for new models
+  - Robust error handling for model operations
+
+### Fixed
+- **AI Prompt Template Substitution**: Fixed critical issue where AI models received unsubstituted template variables
+  - Root cause: Prompt templates contained variables like `{erp_name}`, `{category}` that were not being replaced
+  - Added `_extract_erp_data_from_context()` method to parse context strings and extract ERP item data
+  - Implemented template variable substitution in `generate_erp_names()` method
+  - Fixed gpt-oss model receiving raw template variables instead of actual ERP item data
+  - Ensured consistent behavior across all AI models (gpt-oss, gemma3, etc.)
+  - Added robust parsing of context strings with multiple format support
+  - Implemented error handling for missing or malformed template variables
+- **Model Manager Dialog Issues**: Fixed multiple critical issues in model management
+  - Fixed `KeyError: 'widget'` in `update_parameter_enabled` method for text parameters
+  - Fixed Save button graying out when clicking on input fields
+  - Fixed parameter reset to default values when re-selecting the same model
+  - Replaced problematic `<<ListboxSelect>>` event binding with specific event handlers
+  - Added `on_model_click()` and `on_model_key_select()` methods for better event handling
+  - Implemented `check_model_selection()` with delayed processing to prevent focus issues
+  - Fixed parameter preservation when selecting the same model multiple times
+  - Added `update_parameter_values_from_config()` to refresh UI without recreating widgets
+  - Enhanced Save button state management to remain enabled during parameter changes
+- **Parameter Type Conversion**: Fixed parameter type handling in model management
+  - Fixed `num_ctx` (context length) being saved as float instead of integer
+  - Fixed floating point precision issues (e.g., 0.20 saving as "0.19999999999999996")
+  - Implemented proper type conversion (int, float, str) when saving parameters
+  - Added rounding logic for float values based on step values
+  - Enhanced parameter validation and error handling
+- **Model Parameter Persistence**: Fixed parameter saving and loading issues
+  - Fixed new models not getting parameters saved in settings file
+  - Implemented `_initialize_new_model_parameters()` for automatic parameter creation
+  - Enhanced `get_model_parameters()` to automatically create default parameters for new models
+  - Fixed parameter reset issues when selecting models
+  - Added proper parameter type conversion and validation
+  - Implemented robust error handling for parameter operations
+
+### Enhanced
+- **AI Model Integration**: Improved AI model handling and parameter management
+  - Dynamic parameter display based on model capabilities
+  - Model-specific parameter storage and retrieval
+  - Automatic parameter initialization for new models
+  - Enhanced parameter validation and type conversion
+  - Improved error handling for model operations
+  - Better user feedback and status updates
+- **User Interface**: Enhanced model management interface
+  - Professional two-panel layout for model management
+  - Dynamic parameter widgets based on model capabilities
+  - Real-time parameter validation and type conversion
+  - Bidirectional synchronization between sliders and input fields
+  - Improved Save button state management
+  - Better error handling and user feedback
+- **Parameter Management**: Enhanced parameter handling and persistence
+  - Parameter enable/disable functionality with persistent settings
+  - Model-specific parameter storage in configuration file
+  - Real-time parameter validation and type conversion
+  - Automatic parameter initialization for new models
+  - Robust error handling for parameter operations
+  - Better user feedback and status updates
+
+### Added
 - **Item Deletion Functionality**: Complete item removal system
   - Added "Delete Selected Item" button under "Edit Selected Item" section
   - Red color scheme to indicate destructive action

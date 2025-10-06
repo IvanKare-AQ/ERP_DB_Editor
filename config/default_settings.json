@@ -27,14 +27,54 @@
         ]
     },
     "view_settings": {
-        "filters": {
-            "Electronics": {
-                "value": "Electronics",
-                "type": "contains"
-            }
-        }
+        "filters": {}
     },
     "ai_settings": {
-        "selected_model": "gemma3:27b"
+        "selected_model": "gemma3:27b-it-qat",
+        "selected_prompt": "Underscored_names"
+    },
+    "model_parameters": {
+        "gpt-oss:20b": {
+            "temperature": 1.0,
+            "num_ctx": 131072,
+            "_enabled_params": {
+                "temperature": true,
+                "num_ctx": true
+            }
+        },
+        "gemma3:27b": {
+            "temperature": 1.0,
+            "top_k": 64,
+            "top_p": 0.95,
+            "num_ctx": 131072,
+            "_enabled_params": {
+                "stop": false,
+                "temperature": true,
+                "top_k": true,
+                "top_p": true,
+                "num_ctx": true
+            }
+        },
+        "gpt-oss:120b": {
+            "temperature": 1.0,
+            "num_ctx": 131072,
+            "_enabled_params": {
+                "temperature": true,
+                "num_ctx": true
+            }
+        },
+        "gemma3:27b-it-qat": {
+            "top_p": 0.95,
+            "temperature": 1.0,
+            "top_k": 64,
+            "num_ctx": 131072,
+            "_enabled_params": {
+                "top_p": true,
+                "stop": false,
+                "temperature": true,
+                "top_k": true,
+                "num_ctx": true
+            }
+        }
     }
 }
