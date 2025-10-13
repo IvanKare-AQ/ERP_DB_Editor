@@ -27,8 +27,8 @@ class MainWindow:
         """Initialize the main window."""
         self.root = ctk.CTk()
         self.root.title("ERP Database Editor")
-        self.root.geometry("1800x1000")  # Even wider to ensure edit panel visibility
-        self.root.minsize(1400, 800)  # Increased minimum width and height
+        self.root.geometry("2000x1000")  # Even wider to ensure edit panel visibility with wider tabs
+        self.root.minsize(1600, 800)  # Increased minimum width and height for wider tabs
         
         # Initialize backend components
         self.excel_handler = ExcelHandler()
@@ -163,60 +163,40 @@ class MainWindow:
         separator4 = ctk.CTkFrame(self.toolbar_frame, width=2, height=30)
         separator4.pack(side="left", padx=10, pady=5)
         
-        # Data cleaning section
-        self.convert_multiline_button = ctk.CTkButton(
-            self.toolbar_frame,
-            text="Convert Multiline",
-            command=self.convert_multiline_cells,
-            width=120,
-            state="disabled"
-        )
-        self.convert_multiline_button.pack(side="left", padx=5, pady=5)
-        
-        self.remove_nen_button = ctk.CTkButton(
-            self.toolbar_frame,
-            text="Remove NEN",
-            command=self.remove_nen_prefix,
-            width=100,
-            state="disabled"
-        )
-        self.remove_nen_button.pack(side="left", padx=5, pady=5)
         
     def create_content_area(self):
         """Create the main content area with tree view and edit panel."""
         self.content_frame = ctk.CTkFrame(self.main_frame)
         self.content_frame.pack(fill="both", expand=True)
-        
+
         # Create right panel for editing first (to ensure it gets space)
-        self.right_panel = ctk.CTkScrollableFrame(self.content_frame)
+        self.right_panel = ctk.CTkFrame(self.content_frame)
         self.right_panel.pack(side="right", fill="both", padx=(5, 10), pady=10)
-        self.right_panel.configure(width=700, fg_color=("gray90", "gray15"))  # Fixed width with distinct color
-        
+        # Use the same width as the EditPanel for consistency
+        self.right_panel.configure(width=EditPanel.get_panel_width())
+
         # Create left panel for tree view
         self.left_panel = ctk.CTkFrame(self.content_frame)
         self.left_panel.pack(side="left", fill="both", expand=True, padx=(10, 5), pady=10)
-        
+
         # Create tree view widget
         self.tree_view = TreeViewWidget(self.left_panel)
         self.tree_view.pack(fill="both", expand=True)
-        
+
         # Bind tree view selection event
         self.tree_view.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
-        
-        # Create edit panel
+
+        # Create edit panel with tabs
         self.edit_panel = EditPanel(self.right_panel, self.tree_view, self)
         self.edit_panel.pack(fill="both", expand=True)
-        
+
         # Load column visibility settings
         self.tree_view.load_column_visibility(self.config_manager)
-        
+
         # Update Save View button state
         self.update_save_view_button_state()
-        
-        # Refresh AI models after main window is fully initialized
-        if hasattr(self.edit_panel, 'refresh_models_on_startup'):
-            self.root.after(1000, self.edit_panel.refresh_models_on_startup)  # Delay to ensure everything is loaded
-        
+
+
     def create_status_bar(self):
         """Create the status bar at the bottom of the application."""
         # Create status bar frame at the bottom of the main window
@@ -287,8 +267,6 @@ class MainWindow:
                 self.save_view_button.configure(state="normal")
                 self.filter_button.configure(state="normal")
                 self.clear_filters_button.configure(state="normal")
-                self.convert_multiline_button.configure(state="normal")
-                self.remove_nen_button.configure(state="normal")
                 self.apply_user_erp_button.configure(state="normal")
                 
                 # Update status and file info
@@ -361,9 +339,12 @@ class MainWindow:
             # Get current filters from tree view
             current_filters = self.tree_view.get_current_filters()
             
-            # Get current AI model and prompt from edit panel
-            selected_model = self.edit_panel.model_dropdown.get() if hasattr(self.edit_panel, 'model_dropdown') else None
-            selected_prompt = getattr(self.edit_panel, 'selected_prompt', None)
+            # Get current AI model and prompt from AI editor
+            selected_model = None
+            selected_prompt = None
+            if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor'):
+                selected_model = self.edit_panel.ai_editor.model_dropdown.get() if hasattr(self.edit_panel.ai_editor, 'model_dropdown') else None
+                selected_prompt = getattr(self.edit_panel.ai_editor, 'selected_prompt', None)
             
             # Save column visibility to config
             self.config_manager.save_column_visibility(visible_columns)
@@ -403,15 +384,17 @@ class MainWindow:
         
         # Check if current AI model differs from saved model
         current_model = None
-        if hasattr(self.edit_panel, 'model_dropdown'):
-            current_model = self.edit_panel.model_dropdown.get()
+        if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'model_dropdown'):
+            current_model = self.edit_panel.ai_editor.model_dropdown.get()
             if current_model == "No models available":
                 current_model = None
-        
+
         saved_model = self.config_manager.get_selected_model()
-        
+
         # Check if current AI prompt differs from saved prompt
-        current_prompt = getattr(self.edit_panel, 'selected_prompt', None)
+        current_prompt = None
+        if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor'):
+            current_prompt = getattr(self.edit_panel.ai_editor, 'selected_prompt', None)
         saved_prompt = self.config_manager.get_selected_prompt()
         
         # Compare current and saved visibility
@@ -430,7 +413,7 @@ class MainWindow:
         
         # Compare current and saved AI model
         model_changed = current_model != saved_model
-        
+
         # Compare current and saved AI prompt
         prompt_changed = current_prompt != saved_prompt
         
@@ -491,15 +474,15 @@ class MainWindow:
                         erp_items.append((original_data, row_id))
             
             if erp_items:
-                # If only one ERP item selected, populate edit panel
+                # If only one ERP item selected, populate manual edit panel
                 if len(erp_items) == 1:
                     original_data, row_id = erp_items[0]
-                    self.edit_panel.set_selected_item(original_data, row_id)
+                    self.edit_panel.manual_editor.set_selected_item(original_data, row_id)
                     erp_name = original_data.get('ERP name', 'Unknown')
                     self.update_status(f"Selected: {erp_name}")
                 else:
                     # Multiple ERP items selected
-                    self.edit_panel.set_selected_item(None, None)
+                    self.edit_panel.manual_editor.set_selected_item(None, None)
                     self.update_status(f"Selected {len(erp_items)} items")
                 
                 # Store selected items for multi-selection operations
@@ -509,19 +492,22 @@ class MainWindow:
                 self.clear_user_erp_button.configure(state="normal")
                 
                 # Update apply to selected button state
-                self.edit_panel.update_apply_to_selected_button_state()
+                if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
+                    self.edit_panel.ai_editor.update_apply_to_selected_button_state()
             else:
                 # No ERP items selected
-                self.edit_panel.set_selected_item(None, None)
+                self.edit_panel.manual_editor.set_selected_item(None, None)
                 self.tree_view.selected_items = []
                 self.clear_user_erp_button.configure(state="disabled")
-                self.edit_panel.update_apply_to_selected_button_state()
+                if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
+                    self.edit_panel.ai_editor.update_apply_to_selected_button_state()
                 self.update_status("Ready")
         else:
-            self.edit_panel.set_selected_item(None, None)
+            self.manual_edit_panel.set_selected_item(None, None)
             self.tree_view.selected_items = []
             self.clear_user_erp_button.configure(state="disabled")
-            self.edit_panel.update_apply_to_selected_button_state()
+            if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
+                self.edit_panel.ai_editor.update_apply_to_selected_button_state()
     
     def find_row_id_from_tree_item(self, item_text, item_values):
         """Find the row ID for a tree item."""

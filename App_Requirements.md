@@ -223,6 +223,27 @@
 - **Visual Prompt Status**: Added status label showing currently loaded prompt name
 - **Improved User Experience**: Better organization and visual feedback throughout the interface
 
+### Tabbed Interface Redesign (v1.2.0)
+- **Modular Edit Panel Architecture**: Restructured right panel into three specialized tabs
+  - **Manual Tab (✏️)**: Manual editing, reassignment, and data cleaning tools
+  - **AI Tab (🤖)**: AI-powered editing with model management and prompt tools
+  - **ML Tab (🧠)**: Placeholder for future machine learning features
+- **Fixed Width Layout**: Right panel now uses consistent 1000px width across all tabs
+- **Component Separation**: Each tab is a self-contained module with dedicated file
+  - `manual_editor.py`: Manual editing functionality (User ERP Name, Manufacturer, REMARK)
+  - `ai_editor.py`: AI tools and model management (completely self-contained)
+  - `ml_editor.py`: ML placeholder for future expansion
+- **Enhanced Data Cleaning**: Moved "Convert Multiline" and "Remove NEN" buttons to Manual tab
+- **Unified UI Constants**: Width and height parameters standardized across all UI components
+  - Consistent button heights (35px standard, 90px for reassign)
+  - Standardized input field widths (400px)
+  - Unified spacing and padding values
+- **Self-Contained AI Editor**: AI functionality now handles its own initialization
+  - Automatic model refresh on startup
+  - Configuration loading integrated within AI editor
+  - Independent status updates and error handling
+- **Professional Tab Icons**: Unicode icons for quick visual identification of tab purposes
+
 ## AI Model Management Requirements
 - **AI Model Management System**: Complete model management functionality
   - Model Manager dialog for downloading, removing, and configuring AI models

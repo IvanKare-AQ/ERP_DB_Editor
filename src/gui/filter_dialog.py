@@ -10,7 +10,20 @@ from tkinter import ttk
 
 class FilterDialog:
     """Dialog for managing column filters."""
-    
+
+    # Width constants for consistent UI sizing
+    SCROLLABLE_FRAME_HEIGHT = 350  # Height for scrollable frame
+    APPLY_BUTTON_WIDTH = 120       # Width for apply button
+    CLEAR_BUTTON_WIDTH = 100       # Width for clear button
+    CANCEL_BUTTON_WIDTH = 100      # Width for cancel button
+    COLUMN_LABEL_WIDTH = 120       # Width for column labels
+    FILTER_TYPE_WIDTH = 100        # Width for filter type dropdown
+    FILTER_VALUE_WIDTH = 200       # Width for filter value input
+    CLEAR_FILTER_WIDTH = 60        # Width for clear filter button
+
+    # Height constants for consistent UI sizing
+    CLEAR_FILTER_HEIGHT = 20       # Height for clear filter button
+
     def __init__(self, parent, tree_view, main_window=None):
         """Initialize the filter dialog."""
         self.parent = parent
@@ -62,7 +75,7 @@ class FilterDialog:
         instructions_label.pack(pady=(0, 10))
         
         # Scrollable frame for filter controls
-        self.scrollable_frame = ctk.CTkScrollableFrame(main_frame, height=350)
+        self.scrollable_frame = ctk.CTkScrollableFrame(main_frame, height=self.SCROLLABLE_FRAME_HEIGHT)
         self.scrollable_frame.pack(fill="both", expand=True, pady=(0, 10))
         
         # Create filter controls for each column
@@ -73,16 +86,16 @@ class FilterDialog:
         button_frame.pack(fill="x", pady=(10, 0))
         
         # Buttons
-        self.apply_button = ctk.CTkButton(button_frame, text="Apply Filters", 
-                                        command=self.apply_filters, width=120)
+        self.apply_button = ctk.CTkButton(button_frame, text="Apply Filters",
+                                        command=self.apply_filters, width=self.APPLY_BUTTON_WIDTH)
         self.apply_button.pack(side="left", padx=(0, 10))
         
-        self.clear_button = ctk.CTkButton(button_frame, text="Clear All", 
-                                        command=self.clear_all, width=100)
+        self.clear_button = ctk.CTkButton(button_frame, text="Clear All",
+                                        command=self.clear_all, width=self.CLEAR_BUTTON_WIDTH)
         self.clear_button.pack(side="left", padx=(0, 10))
         
-        self.cancel_button = ctk.CTkButton(button_frame, text="Cancel", 
-                                         command=self.cancel_dialog, width=100)
+        self.cancel_button = ctk.CTkButton(button_frame, text="Cancel",
+                                         command=self.cancel_dialog, width=self.CANCEL_BUTTON_WIDTH)
         self.cancel_button.pack(side="left")
         
     def create_filter_controls(self):
@@ -93,7 +106,7 @@ class FilterDialog:
             filter_frame.pack(fill="x", pady=2)
             
             # Column label
-            column_label = ctk.CTkLabel(filter_frame, text=column, width=120)
+            column_label = ctk.CTkLabel(filter_frame, text=column, width=self.COLUMN_LABEL_WIDTH)
             column_label.pack(side="left", padx=10, pady=5)
             
             # Filter type dropdown
@@ -102,7 +115,7 @@ class FilterDialog:
                 filter_frame, 
                 values=["contains", "equals", "starts with", "ends with"],
                 variable=filter_type_var,
-                width=100
+                width=self.FILTER_TYPE_WIDTH
             )
             filter_type_dropdown.pack(side="left", padx=5, pady=5)
             
@@ -112,7 +125,7 @@ class FilterDialog:
                 filter_frame, 
                 placeholder_text="Filter value...",
                 textvariable=filter_value_var,
-                width=200
+                width=self.FILTER_VALUE_WIDTH
             )
             filter_value_entry.pack(side="left", padx=5, pady=5)
             
@@ -121,8 +134,8 @@ class FilterDialog:
                 filter_frame,
                 text="Clear",
                 command=lambda col=column: self.clear_column_filter(col),
-                width=60,
-                height=20
+                width=self.CLEAR_FILTER_WIDTH,
+                height=self.CLEAR_FILTER_HEIGHT
             )
             clear_filter_button.pack(side="left", padx=5, pady=5)
             

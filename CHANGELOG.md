@@ -5,6 +5,76 @@ All notable changes to the ERP Database Editor project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-10-13
+
+### Added
+- **Tabbed Interface Redesign**: Complete restructuring of the right panel into specialized tabs
+  - **Manual Tab (✏️)**: Dedicated space for manual editing, reassignment, and data cleaning
+  - **AI Tab (🤖)**: Isolated AI-powered editing with model management and prompt tools
+  - **ML Tab (🧠)**: Future-ready placeholder for machine learning features
+  - Professional Unicode icons for quick visual identification
+  - Fixed 1000px width layout for consistent tab sizing
+- **Modular Component Architecture**: Enhanced code organization and maintainability
+  - Created `manual_editor.py` - self-contained manual editing module
+  - Created `ai_editor.py` - self-contained AI tools module
+  - Created `ml_editor.py` - placeholder ML module for future expansion
+  - Created `edit_panel.py` - tabbed container orchestrating all editors
+  - Each module is independently maintainable and testable
+- **Unified UI Constants**: Standardized dimensions across entire application
+  - Consistent button heights (35px standard, 90px for reassign button)
+  - Standardized input field widths (400px)
+  - Unified spacing and padding values throughout all UI files
+  - Applied to all dialogs: `filter_dialog.py`, `model_manager_dialog.py`, `prompt_dialog.py`
+- **Self-Contained AI Editor**: AI functionality now fully independent
+  - Automatic model refresh on application startup (1000ms delay)
+  - Configuration loading integrated within AI editor module
+  - Independent status updates and error handling
+  - No external initialization required from main window
+
+### Changed
+- **Data Cleaning Tools Relocation**: Moved buttons from toolbar to Manual tab
+  - "Convert Multiline" button relocated to Manual tab bottom section
+  - "Remove NEN" button relocated to Manual tab bottom section
+  - Better logical grouping with other manual data operations
+- **Window Sizing**: Adjusted main window dimensions to accommodate wider tabs
+  - Initial geometry: 2000x1000 (increased from previous size)
+  - Minimum size: 1600x800 (increased from previous minimum)
+  - Right panel fixed width: 1000px for optimal content display
+
+### Enhanced
+- **Code Organization**: Improved maintainability through modular structure
+  - Separation of concerns: Manual, AI, and ML functionalities isolated
+  - Reduced coupling between components
+  - Easier to extend and modify individual features
+  - Better error isolation and debugging
+- **User Experience**: Cleaner interface with logical feature grouping
+  - Related tools grouped in dedicated tabs
+  - Reduced visual clutter in main window
+  - Intuitive tab navigation with clear icons
+  - Consistent layout across all tabs
+
+### Technical Improvements
+- **Architecture**: Enhanced application structure for scalability
+  - `EditPanel` acts as container for specialized editor modules
+  - Each editor module is self-initializing and self-managing
+  - Main window simplified to focus on orchestration
+  - Reduced complexity in main_window.py (removed 200+ lines)
+- **UI Framework**: Better use of CustomTkinter components
+  - `CTkTabview` for professional tabbed interface
+  - Proper parent-child widget hierarchy
+  - Consistent styling and theming across tabs
+  - Responsive layout within fixed-width container
+
+### Fixed
+- **Import References**: Corrected module imports after restructuring
+  - Updated main_window.py to reference EditPanel correctly
+  - Fixed attribute access chains for nested editor components
+  - Added hasattr() checks for safe attribute access
+- **Threading Issues**: Resolved UI update problems in AI editor
+  - Changed `self.after()` to `self.main_window.root.after()` throughout ai_editor.py
+  - Ensures all UI updates happen on main thread
+  - Prevents potential threading exceptions
+
 ## [0.1.0] - 2024-12-19
 
 ### Added

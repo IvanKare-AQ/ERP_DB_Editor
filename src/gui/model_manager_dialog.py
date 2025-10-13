@@ -12,7 +12,25 @@ from src.backend.ollama_handler import OllamaHandler
 
 class ModelManagerDialog:
     """Dialog for managing AI models."""
-    
+
+    # Width constants for consistent UI sizing
+    REMOVE_BUTTON_WIDTH = 120    # Width for remove button
+    REFRESH_BUTTON_WIDTH = 80    # Width for refresh button
+    MODEL_INPUT_WIDTH = 300      # Width for model name input
+    DOWNLOAD_BUTTON_WIDTH = 100  # Width for download button
+    SAVE_BUTTON_WIDTH = 140      # Width for save parameters button
+    CHECKBOX_WIDTH = 20          # Width for checkboxes
+    LABEL_WIDTH = 100            # Width for labels
+    ENTRY_WIDTH = 180            # Width for parameter entries (text)
+    SLIDER_ENTRY_WIDTH = 70      # Width for slider value entries
+    SLIDER_WIDTH = 120           # Width for parameter sliders
+    OPTION_MENU_WIDTH = 100      # Width for option menus
+
+    # Height constants for consistent UI sizing
+    BUTTON_HEIGHT = 35           # Height for all buttons
+    CHECKBOX_HEIGHT = 20         # Height for checkboxes
+    ENTRY_HEIGHT = 35            # Height for entries
+
     def __init__(self, parent, main_window=None):
         """Initialize the model manager dialog."""
         self.parent = parent
@@ -138,8 +156,8 @@ class ModelManagerDialog:
             actions_frame,
             text="Remove Selected",
             command=self.remove_selected_model,
-            width=120,
-            height=35,
+            width=self.REMOVE_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT,
             fg_color="#d32f2f",
             hover_color="#b71c1c",
             state="disabled"
@@ -151,8 +169,8 @@ class ModelManagerDialog:
             actions_frame,
             text="Refresh",
             command=self.load_models,
-            width=80,
-            height=35
+            width=self.REFRESH_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT
         )
         self.refresh_button.pack(side="left", padx=5, pady=10)
         
@@ -175,8 +193,8 @@ class ModelManagerDialog:
         self.model_name_entry = ctk.CTkEntry(
             input_frame,
             placeholder_text="Enter model name (e.g., llama3.2:3b)",
-            width=300,
-            height=35
+            width=self.MODEL_INPUT_WIDTH,
+            height=self.ENTRY_HEIGHT
         )
         self.model_name_entry.pack(side="left", padx=(10, 5), pady=10)
         
@@ -185,8 +203,8 @@ class ModelManagerDialog:
             input_frame,
             text="Download",
             command=self.download_model,
-            width=100,
-            height=35
+            width=self.DOWNLOAD_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT
         )
         self.download_button.pack(side="left", padx=5, pady=10)
         
@@ -230,8 +248,8 @@ class ModelManagerDialog:
             parent,
             text="Save Parameters",
             command=self.save_parameters,
-            width=140,
-            height=35,
+            width=self.SAVE_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT,
             state="disabled"
         )
         self.save_params_button.pack(pady=(0, 10))
@@ -413,7 +431,7 @@ class ModelManagerDialog:
         enable_checkbox = ctk.CTkCheckBox(
             param_frame,
             text="",
-            width=20,
+            width=self.CHECKBOX_WIDTH,
             command=lambda: self.toggle_parameter_enabled(key, enable_checkbox.get())
         )
         enable_checkbox.pack(side="left", padx=(5, 2), pady=5)
@@ -424,14 +442,14 @@ class ModelManagerDialog:
             param_frame,
             text=label + ":",
             font=ctk.CTkFont(size=12, weight="bold"),
-            width=100
+            width=self.LABEL_WIDTH
         )
         label_widget.pack(side="left", padx=(5, 5), pady=5)
         
         # Text entry
         param_entry = ctk.CTkEntry(
             param_frame,
-            width=180,
+            width=self.ENTRY_WIDTH,
             font=ctk.CTkFont(size=10)
         )
         param_entry.insert(0, str(value))
@@ -468,7 +486,7 @@ class ModelManagerDialog:
         enable_checkbox = ctk.CTkCheckBox(
             param_frame,
             text="",
-            width=20,
+            width=self.CHECKBOX_WIDTH,
             command=lambda: self.toggle_parameter_enabled(key, enable_checkbox.get())
         )
         enable_checkbox.pack(side="left", padx=(5, 2), pady=5)
@@ -479,14 +497,14 @@ class ModelManagerDialog:
             param_frame,
             text=label + ":",
             font=ctk.CTkFont(size=12, weight="bold"),
-            width=100
+            width=self.LABEL_WIDTH
         )
         label_widget.pack(side="left", padx=(5, 5), pady=5)
         
         # Value input field
         value_entry = ctk.CTkEntry(
             param_frame,
-            width=70,
+            width=self.SLIDER_ENTRY_WIDTH,
             font=ctk.CTkFont(size=10)
         )
         
@@ -511,7 +529,7 @@ class ModelManagerDialog:
             widget = ctk.CTkOptionMenu(
                 param_frame,
                 values=values,
-                width=100,
+                width=self.LABEL_WIDTH,
                 command=lambda val: self.update_parameter_entry(key, val, value_entry)
             )
             widget.set(str(value))
@@ -522,7 +540,7 @@ class ModelManagerDialog:
                 from_=min_val,
                 to=max_val,
                 number_of_steps=int((max_val - min_val) / step) if step else 100,
-                width=120,
+                width=self.SLIDER_WIDTH,
                 command=lambda v: self.update_parameter_entry(key, v, value_entry)
             )
             widget.set(value)

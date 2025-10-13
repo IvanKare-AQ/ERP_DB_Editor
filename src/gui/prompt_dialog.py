@@ -10,7 +10,21 @@ from src.backend.prompt_manager import PromptManager
 
 class PromptSelectionDialog:
     """Dialog for selecting and managing AI prompts."""
-    
+
+    # Width constants for consistent UI sizing
+    SCROLLABLE_FRAME_HEIGHT = 400  # Height for scrollable frames
+    PREVIEW_TEXTBOX_HEIGHT = 400   # Height for preview textbox
+    LOAD_BUTTON_WIDTH = 100        # Width for load button
+    DUPLICATE_BUTTON_WIDTH = 80    # Width for duplicate button
+    EDIT_BUTTON_WIDTH = 100        # Width for edit button
+    DELETE_BUTTON_WIDTH = 100      # Width for delete button
+    CLOSE_BUTTON_WIDTH = 100       # Width for close button
+
+    # Height constants for consistent UI sizing
+    BUTTON_HEIGHT = 30             # Height for regular buttons
+    CLOSE_BUTTON_HEIGHT = 35       # Height for close button (slightly taller)
+    PROMPT_BUTTON_HEIGHT = 35      # Height for prompt buttons
+
     def __init__(self, parent, on_prompt_selected: Callable[[str], None]):
         """Initialize the prompt selection dialog.
         
@@ -78,7 +92,7 @@ class PromptSelectionDialog:
         list_label.pack(pady=(5, 5))
         
         # Scrollable frame for prompt list
-        self.prompt_list_frame = ctk.CTkScrollableFrame(left_frame, height=400)
+        self.prompt_list_frame = ctk.CTkScrollableFrame(left_frame, height=self.SCROLLABLE_FRAME_HEIGHT)
         self.prompt_list_frame.pack(fill="both", expand=True, padx=10, pady=5)
         
         # Right column - Prompt preview
@@ -92,7 +106,7 @@ class PromptSelectionDialog:
         # Text widget for prompt preview (read-only)
         self.preview_text = ctk.CTkTextbox(
             right_frame,
-            height=400,
+            height=self.PREVIEW_TEXTBOX_HEIGHT,
             font=ctk.CTkFont(family="Courier", size=11)
         )
         self.preview_text.pack(fill="both", expand=True, padx=10, pady=5)
@@ -107,8 +121,8 @@ class PromptSelectionDialog:
             buttons_frame,
             text="Load to Editor",
             command=self.load_to_editor,
-            width=100,
-            height=30,
+            width=self.LOAD_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT,
             state="disabled"
         )
         self.load_button.pack(side="left", padx=(10, 3))
@@ -118,8 +132,8 @@ class PromptSelectionDialog:
             buttons_frame,
             text="Duplicate",
             command=self.duplicate_prompt,
-            width=80,
-            height=30,
+            width=self.DUPLICATE_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT,
             state="disabled"
         )
         self.duplicate_button.pack(side="left", padx=3)
@@ -129,8 +143,8 @@ class PromptSelectionDialog:
             buttons_frame,
             text="Edit Prompt",
             command=self.edit_prompt,
-            width=100,
-            height=30,
+            width=self.EDIT_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT,
             state="disabled"
         )
         self.edit_button.pack(side="left", padx=3)
@@ -140,8 +154,8 @@ class PromptSelectionDialog:
             buttons_frame,
             text="Delete Prompt",
             command=self.delete_prompt,
-            width=100,
-            height=30,
+            width=self.DELETE_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT,
             state="disabled"
         )
         self.delete_button.pack(side="left", padx=3)
@@ -151,8 +165,8 @@ class PromptSelectionDialog:
             buttons_frame,
             text="Close",
             command=self.close_dialog,
-            width=100,
-            height=35
+            width=self.CLOSE_BUTTON_WIDTH,
+            height=self.CLOSE_BUTTON_HEIGHT
         )
         self.close_button.pack(side="right", padx=(5, 10))
     
@@ -196,7 +210,7 @@ class PromptSelectionDialog:
             prompt_frame,
             text=name,
             command=lambda n=name: self.on_prompt_clicked(n),
-            height=35,
+            height=self.PROMPT_BUTTON_HEIGHT,
             anchor="w"
         )
         prompt_button.pack(fill="x", padx=5, pady=2)
