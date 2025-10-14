@@ -74,6 +74,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Changed `self.after()` to `self.main_window.root.after()` throughout ai_editor.py
   - Ensures all UI updates happen on main thread
   - Prevents potential threading exceptions
+- **AI Prompt Selection Bug**: Fixed prompt not being used by Generate and Process buttons
+  - Root cause: Prompt text was not stored locally when selected via Prompt Tool
+  - Generate/Process buttons were reading from config file instead of current selection
+  - Added `self.selected_prompt_text` to store the actual prompt text
+  - Updated all AI operations (Generate, Process Selected, Process Entire Table) to use stored text
+  - Fixed `load_selected_prompt_from_config()` to load both prompt name and text
+  - Prompt changes now take effect immediately without requiring "Save View"
+- **Item Reassignment Bug**: Fixed reassigned items losing category information
+  - Root cause: `get_original_row_data()` was returning original data without applying modifications
+  - Reassigned items couldn't be reassigned again due to empty/incorrect dropdown values
+  - Modified `get_original_row_data()` to apply reassignment modifications to returned data
+  - Now correctly applies `new_category`, `new_subcategory`, and `new_sublevel` from user modifications
+  - Reassigned items can now be selected and reassigned multiple times
+  - Category/subcategory/sublevel dropdowns populate correctly for reassigned items
 
 ## [0.1.0] - 2024-12-19
 

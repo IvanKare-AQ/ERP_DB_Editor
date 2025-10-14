@@ -243,6 +243,11 @@
   - Configuration loading integrated within AI editor
   - Independent status updates and error handling
 - **Professional Tab Icons**: Unicode icons for quick visual identification of tab purposes
+- **Bug Fixes**: Critical fixes for AI prompt selection and item reassignment
+  - AI prompt selection now works correctly with Generate and Process buttons
+  - Prompt changes take effect immediately without requiring "Save View"
+  - Reassigned items now retain their new category information for further reassignment
+  - Category/subcategory/sublevel dropdowns populate correctly after reassignment
 
 ## AI Model Management Requirements
 - **AI Model Management System**: Complete model management functionality

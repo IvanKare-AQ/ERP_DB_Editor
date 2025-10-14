@@ -525,7 +525,7 @@ class MainWindow:
         return None
     
     def get_original_row_data(self, row_id):
-        """Get original row data for a row ID."""
+        """Get original row data for a row ID, with user modifications applied."""
         if hasattr(self.tree_view, 'data') and not self.tree_view.data.empty:
             # Parse row ID to find matching data
             parts = row_id.split('◆◆◆')
@@ -544,7 +544,20 @@ class MainWindow:
                     (self.tree_view.data[sublevel_col] == sublevel)
                 ]
                 if not matching_rows.empty:
-                    return matching_rows.iloc[0].to_dict()
+                    row_data = matching_rows.iloc[0].to_dict()
+                    
+                    # Apply user modifications (reassignment) to the row data
+                    if row_id in self.tree_view.user_modifications:
+                        mods = self.tree_view.user_modifications[row_id]
+                        # Apply reassignment modifications
+                        if 'new_category' in mods:
+                            row_data['Article Category'] = mods['new_category']
+                        if 'new_subcategory' in mods:
+                            row_data['Article Subcategory'] = mods['new_subcategory']
+                        if 'new_sublevel' in mods:
+                            row_data['Article Sublevel'] = mods['new_sublevel']
+                    
+                    return row_data
         return None
     
     def get_data_with_modifications(self):

@@ -53,8 +53,9 @@ class AIEditor(ctk.CTkFrame):
         self.processing_thread = None
         self.should_stop_processing = False
 
-        # Store selected prompt
+        # Store selected prompt name and text
         self.selected_prompt = None
+        self.selected_prompt_text = None
 
         # Panel will be sized by the tabview container
 
@@ -229,9 +230,11 @@ class AIEditor(ctk.CTkFrame):
 
             if selected_prompt:
                 self.selected_prompt = selected_prompt
+                # Also load the prompt text
+                self.selected_prompt_text = config_manager.get_selected_prompt_text()
                 # Update the prompt status label to show that a saved prompt was loaded
                 self.prompt_status_label.configure(
-                    text="Prompt: Loaded from saved view",
+                    text=f"Prompt: {selected_prompt}",
                     text_color="green"
                 )
                 if self.main_window and hasattr(self.main_window, 'status_label'):
@@ -306,10 +309,9 @@ class AIEditor(ctk.CTkFrame):
             return
 
         model_name = self.model_dropdown.get()
-        # Use selected prompt if available, otherwise use default
-        if self.selected_prompt and self.main_window and hasattr(self.main_window, 'config_manager'):
-            config_manager = self.main_window.config_manager
-            prompt = config_manager.get_selected_prompt_text()
+        # Use selected prompt text if available, otherwise use default
+        if self.selected_prompt_text:
+            prompt = self.selected_prompt_text
         else:
             prompt = "Generate a better ERP name for this item based on its category and specifications."
 
@@ -435,10 +437,9 @@ class AIEditor(ctk.CTkFrame):
             return
 
         # Check if we have a prompt
-        # Use selected prompt if available, otherwise use default
-        if self.selected_prompt and self.main_window and hasattr(self.main_window, 'config_manager'):
-            config_manager = self.main_window.config_manager
-            prompt = config_manager.get_selected_prompt_text()
+        # Use selected prompt text if available, otherwise use default
+        if self.selected_prompt_text:
+            prompt = self.selected_prompt_text
         else:
             prompt = "Generate a better ERP name for this item based on its category and specifications."
         if not prompt:
@@ -579,10 +580,9 @@ class AIEditor(ctk.CTkFrame):
             return
 
         # Check if we have a prompt
-        # Use selected prompt if available, otherwise use default
-        if self.selected_prompt and self.main_window and hasattr(self.main_window, 'config_manager'):
-            config_manager = self.main_window.config_manager
-            prompt = config_manager.get_selected_prompt_text()
+        # Use selected prompt text if available, otherwise use default
+        if self.selected_prompt_text:
+            prompt = self.selected_prompt_text
         else:
             prompt = "Generate a better ERP name for this item based on its category and specifications."
         if not prompt:
@@ -759,8 +759,9 @@ class AIEditor(ctk.CTkFrame):
             prompt_name: The name/key of the selected prompt
             prompt_text: The selected prompt text
         """
-        # Store the selected prompt key for use in AI operations
+        # Store both the prompt key and text for use in AI operations
         self.selected_prompt = prompt_name
+        self.selected_prompt_text = prompt_text
 
         # Update the status label to show the prompt name
         self.prompt_status_label.configure(
