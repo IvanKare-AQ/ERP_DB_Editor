@@ -89,6 +89,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Reassigned items can now be selected and reassigned multiple times
   - Category/subcategory/sublevel dropdowns populate correctly for reassigned items
 
+### Added
+- **User ERP Name Parsing System**: Advanced structured naming with component breakdown
+  - **Automatic Parsing**: User ERP Name automatically parsed into Type, PN, and Details fields
+  - **Parsing Format**: Type_PN_Details (separated by underscores)
+    - Type: First component before first underscore
+    - PN: Part Number between first and second underscore
+    - Details: All content after second underscore
+  - **Bidirectional Sync**: Real-time synchronization between User ERP Name and parsed fields
+    - Editing User ERP Name updates Type, PN, Details automatically
+    - Editing Type, PN, or Details reconstructs User ERP Name automatically
+  - **Conversion Buttons**: Three `_ → -` buttons for underscore to hyphen conversion
+    - Individual button for Type field
+    - Individual button for PN field
+    - Individual button for Details field
+  - **Visual Separation**: Horizontal separator between REMARK and parsed fields for clarity
+  - **Flexible Naming**: Support for mixed separator conventions
+    - Structural separators: Use `_` to separate Type, PN, Details
+    - Descriptive separators: Use `-` within fields for readability
+  - **Smart Field Handling**: Empty fields automatically skipped when reconstructing User ERP Name
+
+### Enhanced
+- **Manual Editor Interface**: Improved user experience for structured naming
+  - Clear visual grouping of parsed components
+  - Instant feedback when editing any component
+  - Conversion tools for standardizing naming conventions
+  - Consistent button styling across all conversion tools
+
 ## [0.1.0] - 2024-12-19
 
 ### Added

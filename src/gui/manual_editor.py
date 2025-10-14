@@ -97,6 +97,8 @@ class ManualEditor(ctk.CTkFrame):
             height=self.INPUT_FIELD_HEIGHT
         )
         self.user_erp_name_entry.pack(side="left", padx=(0, 10))
+        # Bind to re-parse into Type, PN, Details when edited
+        self.user_erp_name_entry.bind('<KeyRelease>', self.on_user_erp_name_change)
 
         # Reset button for User ERP Name
         self.reset_name_button = ctk.CTkButton(
@@ -174,6 +176,112 @@ class ManualEditor(ctk.CTkFrame):
             state="disabled"
         )
         self.reset_remark_button.pack(side="left")
+
+        # Separator after REMARK
+        separator_parsed = ctk.CTkFrame(self, height=self.SEPARATOR_HEIGHT)
+        separator_parsed.pack(fill="x", padx=10, pady=10)
+
+        # Type input field frame
+        type_frame = ctk.CTkFrame(self)
+        type_frame.pack(pady=(0, 5))
+
+        # Type label
+        type_label = ctk.CTkLabel(
+            type_frame,
+            text="Type:",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            width=self.FIELD_LABEL_WIDTH
+        )
+        type_label.pack(side="left", padx=(10, 5))
+
+        # Type input field
+        self.type_entry = ctk.CTkEntry(
+            type_frame,
+            placeholder_text="Parsed from User ERP Name...",
+            width=self.INPUT_FIELD_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT
+        )
+        self.type_entry.pack(side="left", padx=(0, 10))
+        # Bind to update User ERP Name when edited
+        self.type_entry.bind('<KeyRelease>', self.on_parsed_field_change)
+
+        # Convert underscores to hyphens button for Type
+        self.convert_underscore_type_button = ctk.CTkButton(
+            type_frame,
+            text="_ → -",
+            command=self.convert_underscores_to_hyphens_type,
+            width=self.RESET_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT
+        )
+        self.convert_underscore_type_button.pack(side="left")
+
+        # PN (Part Number) input field frame
+        pn_frame = ctk.CTkFrame(self)
+        pn_frame.pack(pady=(0, 5))
+
+        # PN label
+        pn_label = ctk.CTkLabel(
+            pn_frame,
+            text="PN:",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            width=self.FIELD_LABEL_WIDTH
+        )
+        pn_label.pack(side="left", padx=(10, 5))
+
+        # PN input field
+        self.pn_entry = ctk.CTkEntry(
+            pn_frame,
+            placeholder_text="Parsed from User ERP Name...",
+            width=self.INPUT_FIELD_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT
+        )
+        self.pn_entry.pack(side="left", padx=(0, 10))
+        # Bind to update User ERP Name when edited
+        self.pn_entry.bind('<KeyRelease>', self.on_parsed_field_change)
+
+        # Convert underscores to hyphens button for PN
+        self.convert_underscore_pn_button = ctk.CTkButton(
+            pn_frame,
+            text="_ → -",
+            command=self.convert_underscores_to_hyphens_pn,
+            width=self.RESET_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT
+        )
+        self.convert_underscore_pn_button.pack(side="left")
+
+        # Details input field frame
+        details_frame = ctk.CTkFrame(self)
+        details_frame.pack(pady=(0, 5))
+
+        # Details label
+        details_label = ctk.CTkLabel(
+            details_frame,
+            text="Details:",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            width=self.FIELD_LABEL_WIDTH
+        )
+        details_label.pack(side="left", padx=(10, 5))
+
+        # Details input field
+        self.details_entry = ctk.CTkEntry(
+            details_frame,
+            placeholder_text="Parsed from User ERP Name...",
+            width=self.INPUT_FIELD_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT
+        )
+        self.details_entry.pack(side="left", padx=(0, 10))
+        # Bind to update User ERP Name when edited
+        self.details_entry.bind('<KeyRelease>', self.on_parsed_field_change)
+
+        # Convert underscores to hyphens button
+        self.convert_underscore_button = ctk.CTkButton(
+            details_frame,
+            text="_ → -",
+            command=self.convert_underscores_to_hyphens,
+            width=self.RESET_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT
+        )
+        self.convert_underscore_button.pack(side="left")
 
         # Update button frame (moved to bottom)
         update_frame = ctk.CTkFrame(self)
@@ -362,6 +470,9 @@ class ManualEditor(ctk.CTkFrame):
             self.user_erp_name_entry.delete(0, tk.END)
             self.user_erp_name_entry.insert(0, current_user_name)
 
+            # Parse User ERP Name into Type, PN, and Details
+            self.parse_user_erp_name(current_user_name)
+
             # Populate Manufacturer field - priority: user modifications > original Manufacturer
             current_manufacturer = self.tree_view.user_modifications.get(row_id, {}).get('manufacturer', '')
             if not current_manufacturer:
@@ -419,6 +530,11 @@ class ManualEditor(ctk.CTkFrame):
             self.manufacturer_entry.insert(0, "")
             self.remark_entry.delete(0, tk.END)
             self.remark_entry.insert(0, "")
+            
+            # Clear parsed fields
+            self.type_entry.delete(0, tk.END)
+            self.pn_entry.delete(0, tk.END)
+            self.details_entry.delete(0, tk.END)
 
             # Disable buttons when no item is selected
             self.update_name_button.configure(state="disabled")
@@ -432,6 +548,112 @@ class ManualEditor(ctk.CTkFrame):
             self.category_dropdown.configure(values=["Select Category..."])
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
             self.sublevel_dropdown.configure(values=["Select Sublevel..."])
+
+    def parse_user_erp_name(self, user_erp_name):
+        """Parse User ERP Name into Type, PN, and Details fields.
+        
+        Format: Type_PN_Details
+        - Type: First string before first "_"
+        - PN: String between first and second "_"
+        - Details: Everything after second "_"
+        """
+        if not user_erp_name:
+            # Clear all parsed fields
+            self.type_entry.delete(0, tk.END)
+            self.pn_entry.delete(0, tk.END)
+            self.details_entry.delete(0, tk.END)
+            return
+        
+        # Split by underscore
+        parts = user_erp_name.split('_', 2)  # Split into maximum 3 parts
+        
+        # Extract Type (first part)
+        type_value = parts[0] if len(parts) > 0 else ""
+        self.type_entry.delete(0, tk.END)
+        self.type_entry.insert(0, type_value)
+        
+        # Extract PN (second part)
+        pn_value = parts[1] if len(parts) > 1 else ""
+        self.pn_entry.delete(0, tk.END)
+        self.pn_entry.insert(0, pn_value)
+        
+        # Extract Details (everything after second underscore)
+        details_value = parts[2] if len(parts) > 2 else ""
+        self.details_entry.delete(0, tk.END)
+        self.details_entry.insert(0, details_value)
+
+    def on_parsed_field_change(self, event=None):
+        """Update User ERP Name when any of the parsed fields (Type, PN, Details) are edited."""
+        # Get current values from parsed fields
+        type_value = self.type_entry.get()
+        pn_value = self.pn_entry.get()
+        details_value = self.details_entry.get()
+        
+        # Reconstruct User ERP Name using underscore separator
+        parts = []
+        if type_value:
+            parts.append(type_value)
+        if pn_value:
+            parts.append(pn_value)
+        if details_value:
+            parts.append(details_value)
+        
+        # Join with underscores
+        new_user_erp_name = '_'.join(parts)
+        
+        # Update User ERP Name field
+        self.user_erp_name_entry.delete(0, tk.END)
+        self.user_erp_name_entry.insert(0, new_user_erp_name)
+
+    def on_user_erp_name_change(self, event=None):
+        """Re-parse User ERP Name into Type, PN, and Details when directly edited."""
+        user_erp_name = self.user_erp_name_entry.get()
+        self.parse_user_erp_name(user_erp_name)
+
+    def convert_underscores_to_hyphens_type(self):
+        """Convert all underscore characters to hyphens in the Type field."""
+        # Get current Type value
+        type_value = self.type_entry.get()
+        
+        # Replace all underscores with hyphens
+        converted_value = type_value.replace('_', '-')
+        
+        # Update Type field
+        self.type_entry.delete(0, tk.END)
+        self.type_entry.insert(0, converted_value)
+        
+        # This will trigger on_parsed_field_change to update User ERP Name
+        self.on_parsed_field_change()
+
+    def convert_underscores_to_hyphens_pn(self):
+        """Convert all underscore characters to hyphens in the PN field."""
+        # Get current PN value
+        pn_value = self.pn_entry.get()
+        
+        # Replace all underscores with hyphens
+        converted_value = pn_value.replace('_', '-')
+        
+        # Update PN field
+        self.pn_entry.delete(0, tk.END)
+        self.pn_entry.insert(0, converted_value)
+        
+        # This will trigger on_parsed_field_change to update User ERP Name
+        self.on_parsed_field_change()
+
+    def convert_underscores_to_hyphens(self):
+        """Convert all underscore characters to hyphens in the Details field."""
+        # Get current Details value
+        details_value = self.details_entry.get()
+        
+        # Replace all underscores with hyphens
+        converted_value = details_value.replace('_', '-')
+        
+        # Update Details field
+        self.details_entry.delete(0, tk.END)
+        self.details_entry.insert(0, converted_value)
+        
+        # This will trigger on_parsed_field_change to update User ERP Name
+        self.on_parsed_field_change()
 
     def delete_selected_item(self):
         """Delete the selected item from the tree view."""

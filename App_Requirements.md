@@ -248,6 +248,14 @@
   - Prompt changes take effect immediately without requiring "Save View"
   - Reassigned items now retain their new category information for further reassignment
   - Category/subcategory/sublevel dropdowns populate correctly after reassignment
+- **User ERP Name Parsing System**: Advanced parsing and editing capabilities for structured naming
+  - Automatic parsing of User ERP Name into Type, PN (Part Number), and Details components
+  - Format: Type_PN_Details (separated by underscores)
+  - Bidirectional synchronization between User ERP Name and parsed fields
+  - Real-time updates when editing either User ERP Name or individual components
+  - Underscore to hyphen conversion buttons for all three fields
+  - Flexible naming convention support (structural _ vs descriptive - separators)
+  - Visual separator between standard fields and parsed fields for clarity
 
 ## AI Model Management Requirements
 - **AI Model Management System**: Complete model management functionality
