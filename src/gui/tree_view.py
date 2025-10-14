@@ -132,13 +132,14 @@ class TreeViewWidget(ctk.CTkFrame):
     def setup_columns(self):
         """Setup the tree view columns."""
         # Define the hierarchy columns
-        self.tree["columns"] = ("User ERP Name", "ERP Name", "CAD Name", "Electronics", "Product Value", 
+        self.tree["columns"] = ("User ERP Name", "Image", "ERP Name", "CAD Name", "Electronics", "Product Value", 
                               "Manufacturer", "SKU", "EAN 13", "Unit", "Supplier", 
                               "Expiry Date", "Tracking Method", "Procurement Method", "Remark")
         
         # Configure column headings
         self.tree.heading("#0", text="Hierarchy", anchor="w")
         self.tree.heading("User ERP Name", text="User ERP Name")
+        self.tree.heading("Image", text="Image")
         self.tree.heading("ERP Name", text="ERP Name")
         self.tree.heading("CAD Name", text="CAD Name")
         self.tree.heading("Electronics", text="Electronics")
@@ -212,6 +213,7 @@ class TreeViewWidget(ctk.CTkFrame):
                         row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{sublevel}"
                         
                         erp_name = row.get('ERP name', '')
+                        image = row.get('Image', '')
                         cad_name = row.get('CAD name', '')
                         electronics = row.get('Electronics', '')
                         product_value = row.get('Product Value', '')
@@ -236,7 +238,7 @@ class TreeViewWidget(ctk.CTkFrame):
                         # Create ERP item node with row ID and alternating color tag stored in tags
                         self.tree.insert(sublevel_node, "end", 
                                        text=erp_name,
-                                       values=(user_erp_name, erp_name, cad_name, electronics, product_value,
+                                       values=(user_erp_name, image, erp_name, cad_name, electronics, product_value,
                                               manufacturer, sku, ean13, unit, supplier,
                                               expiry_date, tracking_method, procurement_method, remark),
                                        tags=(row_tag, row_id))
@@ -369,6 +371,8 @@ class TreeViewWidget(ctk.CTkFrame):
                                 if row_id in self.user_modifications and 'user_erp_name' in self.user_modifications[row_id]:
                                     user_value = self.user_modifications[row_id]['user_erp_name']
                                 values.append(user_value)
+                            elif col == "Image":
+                                values.append(row.get('Image', ''))
                             elif col == "ERP Name":
                                 values.append(row.get('ERP name', ''))
                             elif col == "CAD Name":

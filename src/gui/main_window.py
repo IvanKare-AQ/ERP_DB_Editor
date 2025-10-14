@@ -636,6 +636,10 @@ class MainWindow:
                     if 'remark' in mods:
                         data.loc[mask, 'REMARK'] = mods['remark']
                     
+                    # Apply Image modification
+                    if 'image' in mods:
+                        data.loc[mask, 'Image'] = mods['image']
+                    
                     # Apply reassignment modifications
                     if 'new_category' in mods and 'new_subcategory' in mods and 'new_sublevel' in mods:
                         data.loc[mask, 'Article Category'] = mods['new_category']

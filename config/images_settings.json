@@ -1,0 +1,16 @@
+{
+  "images_folder_name": "Images",
+  "image_format": "PNG",
+  "image_size": {
+    "width": 800,
+    "height": 600,
+    "maintain_aspect_ratio": true
+  },
+  "image_quality": 85,
+  "web_search": {
+    "max_results": 10,
+    "preferred_size": "medium",
+    "timeout": 10
+  }
+}
+

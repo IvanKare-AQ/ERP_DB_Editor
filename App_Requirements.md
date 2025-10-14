@@ -254,8 +254,22 @@
   - Bidirectional synchronization between User ERP Name and parsed fields
   - Real-time updates when editing either User ERP Name or individual components
   - Underscore to hyphen conversion buttons for all three fields
+  - NO-PN quick-insert button for items without part numbers
   - Flexible naming convention support (structural _ vs descriptive - separators)
   - Visual separator between standard fields and parsed fields for clarity
+- **Image Management System**: Complete image handling with web search and preview
+  - Automatic Image column creation in Excel files (positioned after ERP name)
+  - Image preview display (150x150) in Manual Editing tab
+  - Modal dialog for image selection with multiple sources
+  - Web image search using DuckDuckGo (no API key required)
+  - Local file selection via file browser
+  - Automatic image processing and standardization
+  - Image storage in Images/ folder alongside Excel file
+  - Configurable image settings (size, format, quality)
+  - Relative path storage in Excel for portability
+  - Support for PNG, JPEG, and other common formats
+  - Thumbnail preview in search results
+  - Multi-item selection handling with placeholder icons
 
 ## AI Model Management Requirements
 - **AI Model Management System**: Complete model management functionality

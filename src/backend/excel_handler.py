@@ -58,6 +58,18 @@ class ExcelHandler:
                 col_exists = any(existing_col.strip() == col.strip() for existing_col in self.data.columns)
                 if not col_exists:
                     self.data[col] = ''
+            
+            # Ensure Image column exists for storing relative image paths
+            # Images will be stored in "Images" folder relative to the Excel file location
+            image_col_exists = any(existing_col.strip() == 'Image' for existing_col in self.data.columns)
+            if not image_col_exists:
+                # Add Image column after ERP name if it doesn't exist
+                if 'ERP name' in self.data.columns:
+                    erp_name_pos = self.data.columns.get_loc('ERP name') + 1
+                    self.data.insert(erp_name_pos, 'Image', '')
+                else:
+                    # If ERP name doesn't exist, add at the end
+                    self.data['Image'] = ''
                     
     def save_file(self, file_path: str, data: Optional[pd.DataFrame] = None) -> None:
         """Save data to an Excel file."""

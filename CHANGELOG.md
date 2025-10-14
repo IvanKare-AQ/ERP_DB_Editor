@@ -103,18 +103,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Individual button for Type field
     - Individual button for PN field
     - Individual button for Details field
+  - **NO-PN Button**: Quick-insert button for items without part numbers
+    - Inserts "NO-PN" into PN field with one click
+    - Automatically updates User ERP Name
+    - Standardizes naming for items lacking part numbers
   - **Visual Separation**: Horizontal separator between REMARK and parsed fields for clarity
   - **Flexible Naming**: Support for mixed separator conventions
     - Structural separators: Use `_` to separate Type, PN, Details
     - Descriptive separators: Use `-` within fields for readability
   - **Smart Field Handling**: Empty fields automatically skipped when reconstructing User ERP Name
+- **Image Management System**: Complete image handling with web search and local files
+  - **Image Column**: Automatically created in Excel files when opening
+    - Positioned after ERP name column
+    - Stores relative paths to image files
+    - Images saved in Images/ folder alongside Excel file
+  - **Image Preview**: 150x150 pixel preview in Manual Editing tab
+    - Displays current item's image
+    - Shows "Multiple Items" for multi-selection
+    - Shows "No Image" placeholder when no image assigned
+  - **Add Image Dialog**: Modal window for image selection
+    - Web image search using DuckDuckGo (no API key required)
+    - Local file browser for selecting images from computer
+    - PN-based automatic search (uses Part Number for web search)
+    - Manual search phrase override option
+    - Thumbnail grid display of search results
+    - Click to select desired image
+  - **Image Processing Backend** (`image_handler.py`):
+    - Automatic image standardization (resize, format conversion)
+    - Configurable target size (default 800x600)
+    - Maintain aspect ratio option
+    - PNG/JPEG format support
+    - Quality settings for JPEG compression
+    - Relative path management for portability
+  - **Image Settings** (`images_settings.json`):
+    - Configurable images folder name
+    - Image format (PNG/JPEG)
+    - Target dimensions (width/height)
+    - Aspect ratio preservation
+    - JPEG quality setting
+    - Web search parameters (max results, timeout)
 
 ### Enhanced
-- **Manual Editor Interface**: Improved user experience for structured naming
+- **Manual Editor Interface**: Improved user experience for structured naming and image management
   - Clear visual grouping of parsed components
   - Instant feedback when editing any component
   - Conversion tools for standardizing naming conventions
   - Consistent button styling across all conversion tools
+  - Image preview for visual product identification
+  - Streamlined button layout (Update, Add Image, Delete)
+  - Left-aligned input fields for professional appearance
+- **Data Persistence**: Enhanced save functionality
+  - Image paths saved to Excel with user modifications
+  - Relative paths ensure portability across systems
+  - Images folder auto-created when needed
+
+### Fixed
+- **Image Path Resolution**: Fixed double "Images/Images/" path issue
+  - Correctly handles paths with "Images/" prefix
+  - Prevents path duplication when loading images
+  - Smart path resolution for relative and absolute paths
+- **Package Deprecation**: Updated to use new `ddgs` package
+  - Added fallback support for `duckduckgo_search`
+  - Eliminated deprecation warnings
+  - Future-proof image search functionality
 
 ## [0.1.0] - 2024-12-19
 

@@ -6,6 +6,8 @@ Provides manual editing functionality for selected ERP items.
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import messagebox
+from PIL import Image, ImageTk
+import os
 
 
 class ManualEditor(ctk.CTkFrame):
@@ -27,6 +29,7 @@ class ManualEditor(ctk.CTkFrame):
     BUTTON_HEIGHT = 35           # Unified height for all buttons
     REASSIGN_BUTTON_HEIGHT = 90  # Height for reassign button (spans multiple rows)
     SEPARATOR_HEIGHT = 2         # Height for separator lines
+    IMAGE_PREVIEW_SIZE = 150     # Size for image preview (width and height in pixels)
 
     def __init__(self, parent, tree_view, main_window=None):
         """Initialize the manual editor."""
@@ -36,6 +39,10 @@ class ManualEditor(ctk.CTkFrame):
         self.main_window = main_window
         self.selected_item = None
         self.selected_row_id = None
+        
+        # Image handling
+        self.current_image_photo = None  # Store PhotoImage reference
+        self.image_handler = None  # Will be initialized when Excel file is loaded
 
         # Panel will be sized by the tabview container
 
@@ -46,39 +53,42 @@ class ManualEditor(ctk.CTkFrame):
         """Setup the manual editor components."""
         # Title
         title_label = ctk.CTkLabel(self, text="Manual Editing", font=ctk.CTkFont(size=16, weight="bold"))
-        title_label.pack(pady=(10, 10))
-
-        # Delete button
-        self.delete_button = ctk.CTkButton(
-            self,
-            text="Delete Selected Item",
-            command=self.delete_selected_item,
-            width=self.ACTION_BUTTON_WIDTH,
-            height=self.INPUT_FIELD_HEIGHT,
-            fg_color="#d32f2f",  # Red color for delete action
-            hover_color="#b71c1c",
-            state="disabled"
+        title_label.pack(pady=(10, 5))
+        
+        # Small image preview centered
+        image_container = ctk.CTkFrame(self, width=self.IMAGE_PREVIEW_SIZE, height=self.IMAGE_PREVIEW_SIZE)
+        image_container.pack(pady=(0, 10))
+        image_container.pack_propagate(False)  # Prevent resizing
+        
+        # Use tk.Label for image support
+        self.image_preview_label = tk.Label(
+            image_container,
+            text="No Image",
+            bg="#2b2b2b",  # Dark background
+            fg="gray",
+            relief="solid",
+            borderwidth=1
         )
-        self.delete_button.pack(pady=(0, 10))
+        self.image_preview_label.place(x=0, y=0, width=self.IMAGE_PREVIEW_SIZE, height=self.IMAGE_PREVIEW_SIZE)
 
         # User ERP Name section
-        self.setup_user_erp_name_section()
+        self.setup_user_erp_name_section(self)
 
         # Separator
         separator1 = ctk.CTkFrame(self, height=self.SEPARATOR_HEIGHT)
         separator1.pack(fill="x", padx=10, pady=10)
 
         # Reassignment section
-        self.setup_reassignment_section()
+        self.setup_reassignment_section(self)
 
         # Data cleaning section at the bottom
-        self.setup_data_cleaning_section()
+        self.setup_data_cleaning_section(self)
 
-    def setup_user_erp_name_section(self):
+    def setup_user_erp_name_section(self, parent):
         """Setup the User ERP Name editing section."""
         # User ERP Name input field and buttons frame
-        user_erp_frame = ctk.CTkFrame(self)
-        user_erp_frame.pack(pady=(0, 5))
+        user_erp_frame = ctk.CTkFrame(parent)
+        user_erp_frame.pack(anchor="w", pady=(0, 5))
 
         # User ERP Name label
         user_erp_label = ctk.CTkLabel(
@@ -112,8 +122,8 @@ class ManualEditor(ctk.CTkFrame):
         self.reset_name_button.pack(side="left")
 
         # Manufacturer input field and buttons frame
-        manufacturer_frame = ctk.CTkFrame(self)
-        manufacturer_frame.pack(pady=(0, 5))
+        manufacturer_frame = ctk.CTkFrame(parent)
+        manufacturer_frame.pack(anchor="w", pady=(0, 5))
 
         # Manufacturer label
         manufacturer_label = ctk.CTkLabel(
@@ -145,8 +155,8 @@ class ManualEditor(ctk.CTkFrame):
         self.reset_manufacturer_button.pack(side="left")
 
         # REMARK input field and buttons frame
-        remark_frame = ctk.CTkFrame(self)
-        remark_frame.pack(pady=(0, 5))
+        remark_frame = ctk.CTkFrame(parent)
+        remark_frame.pack(anchor="w", pady=(0, 5))
 
         # REMARK label
         remark_label = ctk.CTkLabel(
@@ -178,12 +188,12 @@ class ManualEditor(ctk.CTkFrame):
         self.reset_remark_button.pack(side="left")
 
         # Separator after REMARK
-        separator_parsed = ctk.CTkFrame(self, height=self.SEPARATOR_HEIGHT)
+        separator_parsed = ctk.CTkFrame(parent, height=self.SEPARATOR_HEIGHT)
         separator_parsed.pack(fill="x", padx=10, pady=10)
 
         # Type input field frame
-        type_frame = ctk.CTkFrame(self)
-        type_frame.pack(pady=(0, 5))
+        type_frame = ctk.CTkFrame(parent)
+        type_frame.pack(anchor="w", pady=(0, 5))
 
         # Type label
         type_label = ctk.CTkLabel(
@@ -216,8 +226,8 @@ class ManualEditor(ctk.CTkFrame):
         self.convert_underscore_type_button.pack(side="left")
 
         # PN (Part Number) input field frame
-        pn_frame = ctk.CTkFrame(self)
-        pn_frame.pack(pady=(0, 5))
+        pn_frame = ctk.CTkFrame(parent)
+        pn_frame.pack(anchor="w", pady=(0, 5))
 
         # PN label
         pn_label = ctk.CTkLabel(
@@ -247,11 +257,21 @@ class ManualEditor(ctk.CTkFrame):
             width=self.RESET_BUTTON_WIDTH,
             height=self.BUTTON_HEIGHT
         )
-        self.convert_underscore_pn_button.pack(side="left")
+        self.convert_underscore_pn_button.pack(side="left", padx=(0, 5))
+        
+        # NO-PN button to insert "NO-PN" into PN field
+        self.no_pn_button = ctk.CTkButton(
+            pn_frame,
+            text="NO-PN",
+            command=self.insert_no_pn,
+            width=self.RESET_BUTTON_WIDTH,
+            height=self.BUTTON_HEIGHT
+        )
+        self.no_pn_button.pack(side="left")
 
         # Details input field frame
-        details_frame = ctk.CTkFrame(self)
-        details_frame.pack(pady=(0, 5))
+        details_frame = ctk.CTkFrame(parent)
+        details_frame.pack(anchor="w", pady=(0, 5))
 
         # Details label
         details_label = ctk.CTkLabel(
@@ -284,8 +304,8 @@ class ManualEditor(ctk.CTkFrame):
         self.convert_underscore_button.pack(side="left")
 
         # Update button frame (moved to bottom)
-        update_frame = ctk.CTkFrame(self)
-        update_frame.pack(pady=(5, 10))
+        update_frame = ctk.CTkFrame(parent)
+        update_frame.pack(anchor="w", pady=(5, 10))
 
         # Update button
         self.update_name_button = ctk.CTkButton(
@@ -296,12 +316,36 @@ class ManualEditor(ctk.CTkFrame):
             height=self.INPUT_FIELD_HEIGHT,
             state="disabled"
         )
-        self.update_name_button.pack()
+        self.update_name_button.pack(side="left", padx=5)
+        
+        # Add Image button
+        self.add_image_button = ctk.CTkButton(
+            update_frame,
+            text="Add Image",
+            command=self.open_image_dialog,
+            width=self.UPDATE_BUTTON_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT,
+            state="disabled"
+        )
+        self.add_image_button.pack(side="left", padx=5)
+        
+        # Delete button (moved here from top)
+        self.delete_button = ctk.CTkButton(
+            update_frame,
+            text="Delete Selected Item",
+            command=self.delete_selected_item,
+            width=self.DELETE_BUTTON_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT,
+            fg_color="#d32f2f",  # Red color for delete action
+            hover_color="#b71c1c",
+            state="disabled"
+        )
+        self.delete_button.pack(side="left", padx=5)
 
-    def setup_reassignment_section(self):
+    def setup_reassignment_section(self, parent):
         """Setup the reassignment section."""
         # Main container frame for two-column layout
-        main_frame = ctk.CTkFrame(self)
+        main_frame = ctk.CTkFrame(parent)
         main_frame.pack(fill="x", padx=10, pady=5)
 
         # Left column for dropdowns
@@ -367,10 +411,10 @@ class ManualEditor(ctk.CTkFrame):
         )
         self.reassign_button.pack(pady=5)
 
-    def setup_data_cleaning_section(self):
+    def setup_data_cleaning_section(self, parent):
         """Setup the data cleaning section."""
         # Data cleaning frame at the bottom
-        cleaning_frame = ctk.CTkFrame(self)
+        cleaning_frame = ctk.CTkFrame(parent)
         cleaning_frame.pack(fill="x", pady=(20, 0))
 
         # Title
@@ -495,6 +539,7 @@ class ManualEditor(ctk.CTkFrame):
             self.reset_manufacturer_button.configure(state="normal")
             self.reset_remark_button.configure(state="normal")
             self.delete_button.configure(state="normal")
+            self.add_image_button.configure(state="normal")
 
             # Set the dropdowns to current item's category/subcategory/sublevel
             current_category = item_data.get('Article Category', '')
@@ -522,6 +567,9 @@ class ManualEditor(ctk.CTkFrame):
 
             # Enable buttons
             self.reassign_button.configure(state="normal")
+            
+            # Update image preview
+            self.update_image_preview()
         else:
             # Clear fields and disable buttons
             self.user_erp_name_entry.delete(0, tk.END)
@@ -543,11 +591,15 @@ class ManualEditor(ctk.CTkFrame):
             self.reset_remark_button.configure(state="disabled")
             self.delete_button.configure(state="disabled")
             self.reassign_button.configure(state="disabled")
+            self.add_image_button.configure(state="disabled")
 
             # Reset dropdowns
             self.category_dropdown.configure(values=["Select Category..."])
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
             self.sublevel_dropdown.configure(values=["Select Sublevel..."])
+            
+            # Clear image preview
+            self.update_image_preview()
 
     def parse_user_erp_name(self, user_erp_name):
         """Parse User ERP Name into Type, PN, and Details fields.
@@ -610,6 +662,117 @@ class ManualEditor(ctk.CTkFrame):
         user_erp_name = self.user_erp_name_entry.get()
         self.parse_user_erp_name(user_erp_name)
 
+    def open_image_dialog(self):
+        """Open the image selection dialog."""
+        if not self.selected_item or not self.selected_row_id:
+            messagebox.showwarning("Warning", "Please select an item first")
+            return
+        
+        # Initialize image handler if needed
+        if not self.image_handler and self.main_window:
+            from src.backend.image_handler import ImageHandler
+            excel_path = self.main_window.current_file_path
+            self.image_handler = ImageHandler(excel_path)
+        
+        # Get PN for initial search
+        pn_value = self.pn_entry.get().strip()
+        initial_search = pn_value if pn_value else self.selected_item.get('ERP name', '')
+        
+        # Open image dialog
+        from src.gui.image_dialog import ImageSelectionDialog
+        ImageSelectionDialog(
+            self.main_window.root if self.main_window else self,
+            self.image_handler,
+            initial_search,
+            callback=self.on_image_selected
+        )
+    
+    def on_image_selected(self, relative_path: str):
+        """Callback when image is selected and saved.
+        
+        Args:
+            relative_path: Relative path to the saved image
+        """
+        if not self.selected_row_id:
+            return
+        
+        # Update the Image column in user modifications
+        if self.selected_row_id not in self.tree_view.user_modifications:
+            self.tree_view.user_modifications[self.selected_row_id] = {}
+        self.tree_view.user_modifications[self.selected_row_id]['image'] = relative_path
+        
+        # Update the image preview
+        self.load_and_display_image(relative_path)
+        
+        # Update status
+        if self.main_window and hasattr(self.main_window, 'update_status'):
+            self.main_window.update_status(f"Image added: {relative_path}")
+    
+    def load_and_display_image(self, image_path: str):
+        """Load and display an image in the preview area.
+        
+        Args:
+            image_path: Relative or absolute path to the image
+        """
+        if not image_path:
+            # Show "No Image" placeholder
+            self.image_preview_label.configure(image='', text="No Image")
+            self.current_image_photo = None
+            return
+        
+        try:
+            # Initialize image handler if needed
+            if not self.image_handler and self.main_window:
+                from src.backend.image_handler import ImageHandler
+                excel_path = self.main_window.current_file_path
+                self.image_handler = ImageHandler(excel_path)
+            
+            # Load image
+            if self.image_handler:
+                image = self.image_handler.load_image(image_path)
+                
+                if image:
+                    # Resize for preview
+                    image.thumbnail((self.IMAGE_PREVIEW_SIZE, self.IMAGE_PREVIEW_SIZE), Image.Resampling.LANCZOS)
+                    
+                    # Convert to PhotoImage
+                    photo = ImageTk.PhotoImage(image)
+                    
+                    # Update label
+                    self.image_preview_label.configure(image=photo, text="")
+                    self.current_image_photo = photo  # Keep reference
+                else:
+                    self.image_preview_label.configure(image='', text="Image\nNot Found")
+            else:
+                self.image_preview_label.configure(image='', text="No Image")
+                
+        except Exception as e:
+            print(f"Error displaying image: {e}")
+            self.image_preview_label.configure(image='', text="Error\nLoading")
+    
+    def update_image_preview(self):
+        """Update image preview based on selected item."""
+        if self.selected_item and self.selected_row_id:
+            # Check if there's a modified image path
+            image_path = self.tree_view.user_modifications.get(
+                self.selected_row_id, {}
+            ).get('image', '')
+            
+            # If no modification, check original data
+            if not image_path:
+                image_path = self.selected_item.get('Image', '')
+            
+            # Load and display
+            self.load_and_display_image(image_path)
+        else:
+            # Multiple items or no selection - show placeholder
+            if hasattr(self.tree_view, 'selected_items') and len(self.tree_view.selected_items) > 1:
+                self.image_preview_label.configure(image='', text="Multiple\nItems")
+                self.current_image_photo = None
+            else:
+                self.image_preview_label.configure(image='', text="No Image")
+                self.current_image_photo = None
+
     def convert_underscores_to_hyphens_type(self):
         """Convert all underscore characters to hyphens in the Type field."""
         # Get current Type value
@@ -636,6 +799,15 @@ class ManualEditor(ctk.CTkFrame):
         # Update PN field
         self.pn_entry.delete(0, tk.END)
         self.pn_entry.insert(0, converted_value)
+        
+        # This will trigger on_parsed_field_change to update User ERP Name
+        self.on_parsed_field_change()
+
+    def insert_no_pn(self):
+        """Insert 'NO-PN' into the PN field."""
+        # Clear and insert "NO-PN"
+        self.pn_entry.delete(0, tk.END)
+        self.pn_entry.insert(0, "NO-PN")
         
         # This will trigger on_parsed_field_change to update User ERP Name
         self.on_parsed_field_change()
