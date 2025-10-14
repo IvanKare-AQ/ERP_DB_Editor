@@ -17,7 +17,7 @@ class EditPanel(ctk.CTkFrame):
     """Tabbed panel containing Manual, AI, and ML editors."""
 
     # Configuration constants
-    PANEL_WIDTH = 650  # Fixed width to accommodate widest tab
+    PANEL_WIDTH = 750  # Fixed width to accommodate widest tab
     
     def __init__(self, parent, tree_view, main_window=None):
         """Initialize the tabbed edit panel."""

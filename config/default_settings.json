@@ -22,8 +22,7 @@
     ],
     "column_visibility": {
         "visible_columns": [
-            "ERP Name",
-            "Electronics"
+            "User ERP Name"
         ]
     },
     "view_settings": {
@@ -31,7 +30,7 @@
     },
     "ai_settings": {
         "selected_model": "gemma3:27b-it-qat",
-        "selected_prompt": "Underscored_names"
+        "selected_prompt": "Websearch"
     },
     "model_parameters": {
         "gpt-oss:20b": {
