@@ -6,6 +6,7 @@ Handles image operations including loading, web search, and standardization.
 import os
 import json
 import requests
+import time
 from typing import Optional, List, Dict, Tuple
 from PIL import Image
 from io import BytesIO
@@ -116,11 +117,12 @@ class ImageHandler:
             print(f"Error loading image: {e}")
             return None
     
-    def web_search_images(self, search_query: str) -> List[Dict[str, str]]:
+    def web_search_images(self, search_query: str, max_retries: int = 3) -> List[Dict[str, str]]:
         """Search for images on the web using DuckDuckGo image search.
         
         Args:
             search_query: Search term for finding images
+            max_retries: Maximum number of retry attempts on rate limit (default: 3)
             
         Returns:
             List of dictionaries containing image URLs and metadata
@@ -137,27 +139,53 @@ class ImageHandler:
             
             max_results = self.settings["web_search"]["max_results"]
             
-            with DDGS() as ddgs:
-                search_results = ddgs.images(
-                    search_query,
-                    max_results=max_results
-                )
-                
-                for idx, result in enumerate(search_results):
-                    results.append({
-                        "index": idx,
-                        "url": result.get("image", ""),
-                        "thumbnail": result.get("thumbnail", ""),
-                        "title": result.get("title", ""),
-                        "source": result.get("source", ""),
-                        "width": result.get("width", 0),
-                        "height": result.get("height", 0)
-                    })
+            # Retry logic for rate limiting
+            for attempt in range(max_retries):
+                try:
+                    # Add delay between attempts to avoid rate limiting
+                    if attempt > 0:
+                        wait_time = 2 ** attempt  # Exponential backoff: 2, 4, 8 seconds
+                        print(f"Rate limited. Waiting {wait_time} seconds before retry {attempt + 1}/{max_retries}...")
+                        time.sleep(wait_time)
+                    
+                    with DDGS() as ddgs:
+                        search_results = ddgs.images(
+                            search_query,
+                            max_results=max_results
+                        )
+                        
+                        for idx, result in enumerate(search_results):
+                            results.append({
+                                "index": idx,
+                                "url": result.get("image", ""),
+                                "thumbnail": result.get("thumbnail", ""),
+                                "title": result.get("title", ""),
+                                "source": result.get("source", ""),
+                                "width": result.get("width", 0),
+                                "height": result.get("height", 0)
+                            })
+                        
+                        # Success - break out of retry loop
+                        break
+                        
+                except Exception as search_error:
+                    error_msg = str(search_error)
+                    # Check if it's a rate limit error
+                    if "403" in error_msg or "Ratelimit" in error_msg or "rate" in error_msg.lower():
+                        if attempt < max_retries - 1:
+                            continue  # Try again
+                        else:
+                            print(f"Rate limit exceeded after {max_retries} attempts. Please try again later.")
+                            print("Tip: Wait a few minutes before searching again, or use local file selection.")
+                    else:
+                        # Different error - don't retry
+                        raise search_error
             
         except ImportError:
             print("duckduckgo_search not installed. Install with: pip install duckduckgo-search")
         except Exception as e:
             print(f"Error searching for images: {e}")
+            print("Tip: If you're experiencing rate limiting, try using the 'Select Local File' option instead.")
         
         return results
     

@@ -158,7 +158,30 @@ class ImageSelectionDialog:
         # Run search in thread to avoid blocking UI
         def search_thread():
             try:
-                results = self.image_handler.web_search_images(search_query)
+                # Create a custom print function to capture retry messages
+                import sys
+                from io import StringIO
+                
+                # Capture print output
+                old_stdout = sys.stdout
+                sys.stdout = captured_output = StringIO()
+                
+                try:
+                    results = self.image_handler.web_search_images(search_query)
+                    output = captured_output.getvalue()
+                    
+                    # Check if there were retry messages
+                    if "Rate limited" in output or "Waiting" in output:
+                        # Update status to show retry info
+                        for line in output.split('\n'):
+                            if line.strip():
+                                self.dialog.after(0, lambda msg=line: self.status_label.configure(
+                                    text=msg, text_color="orange"
+                                ))
+                    
+                finally:
+                    sys.stdout = old_stdout
+                
                 self.search_results = results
                 
                 # Update UI in main thread
@@ -374,11 +397,28 @@ class ImageSelectionDialog:
     def search_error(self, error_msg):
         """Handle search error."""
         self.search_button.configure(state="normal", text="Search Web")
-        self.status_label.configure(
-            text=f"Search failed: {error_msg}",
-            text_color="red"
-        )
-        messagebox.showerror("Search Error", f"Failed to search for images:\n{error_msg}")
+        
+        # Check if it's a rate limit error
+        if "403" in error_msg or "Ratelimit" in error_msg or "rate" in error_msg.lower():
+            self.status_label.configure(
+                text="Rate limit exceeded. Please wait a few minutes or use 'Local File'.",
+                text_color="red"
+            )
+            messagebox.showwarning(
+                "Rate Limit Exceeded",
+                "DuckDuckGo has rate-limited your searches.\n\n"
+                "Solutions:\n"
+                "1. Wait 2-5 minutes before searching again\n"
+                "2. Use the 'Local File' button to select an image from your computer\n"
+                "3. Try a different, more specific search phrase\n\n"
+                "Rate limiting is temporary and will reset after a short wait."
+            )
+        else:
+            self.status_label.configure(
+                text=f"Search failed: {error_msg}",
+                text_color="red"
+            )
+            messagebox.showerror("Search Error", f"Failed to search for images:\n{error_msg}")
     
     def clear_results(self):
         """Clear search results display."""
