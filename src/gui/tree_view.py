@@ -132,7 +132,7 @@ class TreeViewWidget(ctk.CTkFrame):
     def setup_columns(self):
         """Setup the tree view columns."""
         # Define the hierarchy columns
-        self.tree["columns"] = ("User ERP Name", "Image", "ERP Name", "CAD Name", "Electronics", "Product Value", 
+        self.tree["columns"] = ("User ERP Name", "Image", "SKU NR", "ERP Name", "CAD Name", "Electronics", "Product Value", 
                               "Manufacturer", "SKU", "EAN 13", "Unit", "Supplier", 
                               "Expiry Date", "Tracking Method", "Procurement Method", "Remark")
         
@@ -140,6 +140,7 @@ class TreeViewWidget(ctk.CTkFrame):
         self.tree.heading("#0", text="Hierarchy", anchor="w")
         self.tree.heading("User ERP Name", text="User ERP Name")
         self.tree.heading("Image", text="Image")
+        self.tree.heading("SKU NR", text="SKU NR")
         self.tree.heading("ERP Name", text="ERP Name")
         self.tree.heading("CAD Name", text="CAD Name")
         self.tree.heading("Electronics", text="Electronics")
@@ -180,7 +181,7 @@ class TreeViewWidget(ctk.CTkFrame):
         for category_name, category_data in categories:
             # Create category node with color tag
             category_node = self.tree.insert("", "end", text=category_name, 
-                                           values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                                           values=("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
                                            tags=("category",))
             
             # Group by Article Subcategory within category
@@ -190,7 +191,7 @@ class TreeViewWidget(ctk.CTkFrame):
                 # Create subcategory node with color tag
                 subcategory_node = self.tree.insert(category_node, "end", 
                                                   text=subcategory_name,
-                                                  values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                                                  values=("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
                                                   tags=("subcategory",))
                 
                 # Group by Article Sublevelwithin subcategory
@@ -200,7 +201,7 @@ class TreeViewWidget(ctk.CTkFrame):
                     # Create sublevel node with color tag
                     sublevel_node = self.tree.insert(subcategory_node, "end", 
                                                    text=sublevel_name,
-                                                   values=("", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                                                   values=("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
                                                    tags=("sublevel",))
                     
                     # Add ERP Name items under sublevel with alternating backgrounds
@@ -214,6 +215,7 @@ class TreeViewWidget(ctk.CTkFrame):
                         
                         erp_name = row.get('ERP name', '')
                         image = row.get('Image', '')
+                        sku_nr = row.get('SKU NR', '')
                         cad_name = row.get('CAD name', '')
                         electronics = row.get('Electronics', '')
                         product_value = row.get('Product Value', '')
@@ -238,7 +240,7 @@ class TreeViewWidget(ctk.CTkFrame):
                         # Create ERP item node with row ID and alternating color tag stored in tags
                         self.tree.insert(sublevel_node, "end", 
                                        text=erp_name,
-                                       values=(user_erp_name, image, erp_name, cad_name, electronics, product_value,
+                                       values=(user_erp_name, image, sku_nr, erp_name, cad_name, electronics, product_value,
                                               manufacturer, sku, ean13, unit, supplier,
                                               expiry_date, tracking_method, procurement_method, remark),
                                        tags=(row_tag, row_id))
@@ -373,6 +375,8 @@ class TreeViewWidget(ctk.CTkFrame):
                                 values.append(user_value)
                             elif col == "Image":
                                 values.append(row.get('Image', ''))
+                            elif col == "SKU NR":
+                                values.append(row.get('SKU NR', ''))
                             elif col == "ERP Name":
                                 values.append(row.get('ERP name', ''))
                             elif col == "CAD Name":
@@ -511,6 +515,8 @@ class TreeViewWidget(ctk.CTkFrame):
         """Map display column names to data column names."""
         column_mapping = {
             "User ERP Name": "User ERP Name",  # This is a virtual column
+            "Image": "Image",
+            "SKU NR": "SKU NR",
             "ERP Name": "ERP name",
             "CAD Name": "CAD name",
             "Electronics": "Electronics",
