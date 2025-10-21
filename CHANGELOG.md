@@ -215,6 +215,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-10-21
+
+### Fixed
+- **Image Download Reliability**: Enhanced image downloading with robust URL handling
+  - Added URL normalization with multiple retry strategies for failed downloads
+  - Automatic handling of URL encoding variations (spaces, `+` characters, special chars)
+  - Support for case-insensitive file extensions (`.jpg` vs `.JPG`)
+  - Intelligent retry logic that tries multiple URL formats before failing
+  - Enhanced error messages with specific reasons and helpful tips for users
+  - Better handling of 404 (Not Found), 403 (Forbidden), timeout, and connection errors
+  - Examples: Handles DigiKey URLs with spaces like `Assmann+Photos/AHDS15A-KG-TAXB-R.JPG`
+- **Local Image Preview**: Complete preview functionality for local file selection
+  - Full image preview (up to 400x400) when selecting local files
+  - Detailed file information display (filename, dimensions, format, size)
+  - Visual highlighting of selected image with blue frame
+  - Loading status with thread-safe UI updates
+  - Proper error handling with informative messages
+  - Added `.webp` to supported image formats
+- **Column Visibility Dialog**: Fixed critical bug preventing access to hidden columns
+  - Root cause: Dialog was reading from tree's current columns instead of master list
+  - Added permanent master column list (`all_columns`) that never changes
+  - Added `get_all_columns()` method to tree view widget
+  - Dialog now always shows all 16 available columns regardless of current visibility
+  - Users can now freely hide and show columns without losing access
+  - Fixed column visibility restoration from saved settings
+
+### Enhanced
+- **Image Handler** (`image_handler.py`):
+  - Smarter URL parsing with multiple format attempts
+  - Progressive retry strategy for unreliable image URLs
+  - Better user feedback with progress messages during retries
+  - Import of `urllib.parse` for robust URL handling
+- **Image Selection Dialog** (`image_dialog.py`):
+  - Professional preview display with proper sizing
+  - File metadata display (dimensions, format, size in KB/MB)
+  - Thread-safe loading for responsive UI
+  - Added `os` module to imports for file operations
+- **Tree View Widget** (`tree_view.py`):
+  - Cleaner architecture with separation of column management
+  - Master column list ensures consistent column availability
+  - Better method naming with `get_all_columns()` vs `get_visible_columns()`
+
+### Technical Improvements
+- **URL Processing**: Added sophisticated URL normalization algorithm
+  - Decodes and re-encodes URLs to handle various formats
+  - Tests multiple URL variations (original, encoded, case variations)
+  - Prevents wasted attempts on 403 errors (blocked by website)
+  - Continues trying alternatives for 404 errors (might work with different format)
+- **UI Architecture**: Enhanced column management system
+  - Immutable master column list prevents state corruption
+  - Clear separation between available and visible columns
+  - Proper getter methods for different column access patterns
+
+## [Unreleased]
+
 ### Added
 - **AI Model Management System**: Complete model management functionality
   - Model Manager dialog (900x700) for downloading, removing, and configuring AI models

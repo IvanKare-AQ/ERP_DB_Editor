@@ -65,11 +65,14 @@
 ## Column Visibility Requirements
 - Column visibility functionality must properly hide/show columns in tree view
 - Column visibility dialog must show all available columns regardless of current visibility state
+- Master column list (`all_columns`) maintained to ensure all columns always accessible
+- `get_all_columns()` method provides access to complete column list
 - Column visibility settings must persist between application sessions
 - Changes to column visibility must be immediately reflected in the tree view
 - "Apply" button in column visibility dialog must only update view temporarily (not save to config)
 - "Save View" button must be grayed out when there are no differences between current view and saved settings
 - Proper separation between temporary view changes and persistent settings
+- Hidden columns must remain accessible for re-showing through visibility dialog
 
 ## Data Filtering Requirements
 - Excel-style filtering functionality for columns in tree view
@@ -262,12 +265,18 @@
   - Image preview display (150x150) in Manual Editing tab
   - Modal dialog for image selection with multiple sources
   - Web image search using DuckDuckGo (no API key required)
-  - Local file selection via file browser
+  - Local file selection via file browser with full preview (up to 400x400)
+  - Local file preview displays metadata (filename, dimensions, format, size)
+  - Robust image download with URL normalization and retry strategies
+  - Automatic handling of URL encoding variations (spaces, +, special characters)
+  - Support for case-insensitive file extensions (.jpg vs .JPG)
+  - Intelligent retry logic for unreliable image URLs
+  - Enhanced error messages with specific reasons and helpful tips
   - Automatic image processing and standardization
   - Image storage in Images/ folder alongside Excel file
   - Configurable image settings (size, format, quality)
   - Relative path storage in Excel for portability
-  - Support for PNG, JPEG, and other common formats
+  - Support for PNG, JPEG, WEBP, and other common formats
   - Thumbnail preview in search results
   - Multi-item selection handling with placeholder icons
 

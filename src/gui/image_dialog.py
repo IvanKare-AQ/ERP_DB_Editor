@@ -3,6 +3,7 @@ Image Selection Dialog for ERP Database Editor
 Modal dialog for selecting images via web search or local file.
 """
 
+import os
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -307,7 +308,7 @@ class ImageSelectionDialog:
         file_path = filedialog.askopenfilename(
             title="Select Image File",
             filetypes=[
-                ("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff"),
+                ("Image files", "*.png *.jpg *.jpeg *.gif *.bmp *.tiff *.webp"),
                 ("All files", "*.*")
             ]
         )
@@ -316,22 +317,90 @@ class ImageSelectionDialog:
             self.selected_image_path = file_path
             self.clear_results()
             
-            # Display selected file info
-            info_frame = ctk.CTkFrame(self.results_frame)
-            info_frame.pack(fill="x", padx=5, pady=5)
+            # Display selected file with preview
+            preview_frame = ctk.CTkFrame(self.results_frame)
+            preview_frame.pack(fill="both", expand=True, padx=5, pady=5)
             
-            info_label = ctk.CTkLabel(
-                info_frame,
-                text=f"Selected: {file_path}",
+            # Show loading status
+            loading_label = ctk.CTkLabel(
+                preview_frame,
+                text="Loading preview...",
                 font=ctk.CTkFont(size=12)
             )
-            info_label.pack(padx=10, pady=10)
+            loading_label.pack(pady=20)
             
-            self.status_label.configure(
-                text="Local file selected. Click 'Add Selected Image' to confirm.",
-                text_color="green"
-            )
-            self.select_button.configure(state="normal")
+            # Load and display image preview in thread
+            def load_preview():
+                try:
+                    # Load the image
+                    image = Image.open(file_path)
+                    
+                    # Get original dimensions
+                    original_width, original_height = image.size
+                    
+                    # Create a copy for thumbnail
+                    preview_image = image.copy()
+                    preview_image.thumbnail((400, 400), Image.Resampling.LANCZOS)
+                    photo = ImageTk.PhotoImage(preview_image)
+                    
+                    # Store reference to prevent garbage collection
+                    self.thumbnail_images['local_preview'] = photo
+                    
+                    # Update UI in main thread
+                    def update_ui():
+                        # Remove loading label
+                        loading_label.destroy()
+                        
+                        # Create preview display
+                        preview_label = tk.Label(
+                            preview_frame,
+                            image=photo,
+                            bg=preview_frame.cget("fg_color")[1] if isinstance(preview_frame.cget("fg_color"), tuple) else preview_frame.cget("fg_color")
+                        )
+                        preview_label.image = photo  # Keep reference
+                        preview_label.pack(pady=10)
+                        
+                        # Display file info
+                        file_size = os.path.getsize(file_path)
+                        size_kb = file_size / 1024
+                        size_str = f"{size_kb:.1f} KB" if size_kb < 1024 else f"{size_kb/1024:.1f} MB"
+                        
+                        info_text = f"File: {os.path.basename(file_path)}\n"
+                        info_text += f"Dimensions: {original_width} x {original_height} pixels\n"
+                        info_text += f"Format: {image.format}\n"
+                        info_text += f"Size: {size_str}\n"
+                        info_text += f"Path: {file_path}"
+                        
+                        info_label = ctk.CTkLabel(
+                            preview_frame,
+                            text=info_text,
+                            font=ctk.CTkFont(size=12),
+                            justify="left"
+                        )
+                        info_label.pack(padx=10, pady=10)
+                        
+                        # Highlight the frame
+                        preview_frame.configure(fg_color="#1f6aa5")
+                        
+                        self.status_label.configure(
+                            text="Local file selected. Click 'Add Selected Image' to confirm.",
+                            text_color="green"
+                        )
+                        self.select_button.configure(state="normal")
+                    
+                    self.dialog.after(0, update_ui)
+                    
+                except Exception as e:
+                    def show_error():
+                        loading_label.configure(text=f"Error loading image: {str(e)}")
+                        self.status_label.configure(
+                            text="Failed to load image. Please select a valid image file.",
+                            text_color="red"
+                        )
+                    self.dialog.after(0, show_error)
+            
+            # Start loading in background thread
+            threading.Thread(target=load_preview, daemon=True).start()
     
     def confirm_selection(self):
         """Process and save the selected image."""

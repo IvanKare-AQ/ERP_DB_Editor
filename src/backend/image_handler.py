@@ -11,6 +11,7 @@ from typing import Optional, List, Dict, Tuple
 from PIL import Image
 from io import BytesIO
 from pathlib import Path
+from urllib.parse import urlparse, quote, unquote
 
 
 class ImageHandler:
@@ -189,8 +190,57 @@ class ImageHandler:
         
         return results
     
+    def _normalize_url(self, url: str) -> List[str]:
+        """Generate multiple normalized versions of a URL to try.
+        
+        Args:
+            url: Original URL
+            
+        Returns:
+            List of URL variations to try
+        """
+        url_variations = [url]  # Start with original URL
+        
+        try:
+            parsed = urlparse(url)
+            
+            # Decode any existing encoding
+            decoded_path = unquote(parsed.path)
+            
+            # Variation 1: Properly encode the path (spaces -> %20, + -> %2B, etc.)
+            encoded_path = quote(decoded_path, safe='/')
+            normalized_url = f"{parsed.scheme}://{parsed.netloc}{encoded_path}"
+            if normalized_url != url:
+                url_variations.append(normalized_url)
+            
+            # Variation 2: Try with %20 instead of + for spaces
+            if '+' in parsed.path:
+                space_path = parsed.path.replace('+', '%20')
+                space_url = f"{parsed.scheme}://{parsed.netloc}{space_path}"
+                if space_url not in url_variations:
+                    url_variations.append(space_url)
+            
+            # Variation 3: Try lowercase extension
+            if parsed.path.upper().endswith(('.JPG', '.PNG', '.JPEG', '.GIF', '.WEBP')):
+                lower_path = parsed.path[:-4] + parsed.path[-4:].lower()
+                lower_url = f"{parsed.scheme}://{parsed.netloc}{lower_path}"
+                if lower_url not in url_variations:
+                    url_variations.append(lower_url)
+            
+            # Variation 4: Try uppercase extension
+            if parsed.path.lower().endswith(('.jpg', '.png', '.jpeg', '.gif', '.webp')):
+                upper_path = parsed.path[:-4] + parsed.path[-4:].upper()
+                upper_url = f"{parsed.scheme}://{parsed.netloc}{upper_path}"
+                if upper_url not in url_variations:
+                    url_variations.append(upper_url)
+                    
+        except Exception as e:
+            print(f"Error normalizing URL: {e}")
+        
+        return url_variations
+
     def download_image_from_url(self, url: str) -> Optional[Image.Image]:
-        """Download an image from a URL.
+        """Download an image from a URL with multiple retry strategies.
         
         Args:
             url: URL of the image to download
@@ -198,17 +248,79 @@ class ImageHandler:
         Returns:
             PIL Image object or None if download fails
         """
-        try:
-            timeout = self.settings["web_search"]["timeout"]
-            response = requests.get(url, timeout=timeout, stream=True)
-            response.raise_for_status()
-            
-            image = Image.open(BytesIO(response.content))
-            return image
-            
-        except Exception as e:
-            print(f"Error downloading image from URL: {e}")
-            return None
+        timeout = self.settings["web_search"]["timeout"]
+        
+        # Add headers to mimic a real browser and avoid 403 Forbidden errors
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Sec-Fetch-Dest': 'image',
+            'Sec-Fetch-Mode': 'no-cors',
+            'Sec-Fetch-Site': 'cross-site',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+        }
+        
+        # Try multiple URL variations
+        url_variations = self._normalize_url(url)
+        last_error = None
+        
+        for idx, url_to_try in enumerate(url_variations):
+            try:
+                if idx > 0:
+                    print(f"Trying alternative URL format ({idx + 1}/{len(url_variations)}): {url_to_try}")
+                
+                response = requests.get(url_to_try, timeout=timeout, stream=True, headers=headers)
+                response.raise_for_status()
+                
+                # Successfully downloaded
+                image = Image.open(BytesIO(response.content))
+                if idx > 0:
+                    print(f"✓ Successfully downloaded using alternative URL format")
+                return image
+                
+            except requests.exceptions.HTTPError as e:
+                last_error = e
+                if e.response.status_code == 403:
+                    # Don't try other variations for 403 errors
+                    print(f"403 Forbidden: Website blocked image download from {url_to_try}")
+                    print("Tip: Some websites block direct image downloads. Try using 'Local File' instead.")
+                    return None
+                elif e.response.status_code == 404:
+                    # Try next variation for 404 errors
+                    if idx == len(url_variations) - 1:
+                        # Last attempt failed
+                        print(f"404 Not Found: Image does not exist at {url}")
+                        print("Possible reasons:")
+                        print("  - The image may have been moved or deleted from the server")
+                        print("  - The URL may be incorrect or outdated")
+                        print("  - The website may have changed its URL structure")
+                        print("Tip: Try searching for the image again or use 'Local File' option.")
+                    continue
+                else:
+                    print(f"HTTP Error {e.response.status_code}: {e}")
+                    if idx == len(url_variations) - 1:
+                        return None
+                    continue
+                    
+            except requests.exceptions.Timeout:
+                print(f"Timeout: Failed to download image within {timeout} seconds")
+                print("Tip: Try increasing the timeout in settings or check your internet connection.")
+                return None
+            except requests.exceptions.ConnectionError:
+                print(f"Connection Error: Unable to reach {urlparse(url_to_try).netloc}")
+                print("Tip: Check your internet connection and try again.")
+                return None
+            except Exception as e:
+                last_error = e
+                if idx == len(url_variations) - 1:
+                    print(f"Error downloading image from URL: {e}")
+                continue
+        
+        return None
     
     def unify_image(self, image: Image.Image) -> Image.Image:
         """Standardize image size and format according to settings.

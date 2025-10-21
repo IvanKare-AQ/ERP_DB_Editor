@@ -27,6 +27,11 @@ class TreeViewWidget(ctk.CTkFrame):
         self.selected_item = None
         self.selected_items = []  # For multi-selection support
         
+        # Master list of all available columns (never changes)
+        self.all_columns = ("User ERP Name", "Image", "SKU NR", "ERP Name", "CAD Name", "Electronics", "Product Value", 
+                           "Manufacturer", "SKU", "EAN 13", "Unit", "Supplier", 
+                           "Expiry Date", "Tracking Method", "Procurement Method", "Remark")
+        
         # Create the tree view
         self.create_tree_view()
         
@@ -131,10 +136,8 @@ class TreeViewWidget(ctk.CTkFrame):
         
     def setup_columns(self):
         """Setup the tree view columns."""
-        # Define the hierarchy columns
-        self.tree["columns"] = ("User ERP Name", "Image", "SKU NR", "ERP Name", "CAD Name", "Electronics", "Product Value", 
-                              "Manufacturer", "SKU", "EAN 13", "Unit", "Supplier", 
-                              "Expiry Date", "Tracking Method", "Procurement Method", "Remark")
+        # Use the master list of all columns
+        self.tree["columns"] = self.all_columns
         
         # Configure column headings
         self.tree.heading("#0", text="Hierarchy", anchor="w")
@@ -267,13 +270,17 @@ class TreeViewWidget(ctk.CTkFrame):
         """Check if the tree view has data."""
         return self.data is not None and not self.data.empty
         
+    def get_all_columns(self):
+        """Get all available columns (master list)."""
+        return self.all_columns
+    
     def get_visible_columns(self):
         """Get the currently visible columns."""
         if self.visible_columns:
             return self.visible_columns
         else:
             # Return all columns if no visibility settings
-            return self.tree["columns"]
+            return self.all_columns
         
     def set_visible_columns(self, visible_columns):
         """Set the visible columns."""

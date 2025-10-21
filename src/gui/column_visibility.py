@@ -79,9 +79,9 @@ class ColumnVisibilityDialog:
         
     def create_column_checkboxes(self):
         """Create checkboxes for each column."""
-        # Get all available columns from tree view (this is the definitive list)
+        # Get all available columns from tree view master list (never changes)
         # This includes User ERP Name, Image, ERP Name, CAD Name, etc.
-        all_columns = self.tree_view.tree["columns"]
+        all_columns = self.tree_view.get_all_columns()
         
         # Get currently visible columns from tree view (not from saved config)
         currently_visible = self.tree_view.get_visible_columns()
