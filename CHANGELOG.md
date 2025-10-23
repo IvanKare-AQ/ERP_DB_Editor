@@ -268,6 +268,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clear separation between available and visible columns
   - Proper getter methods for different column access patterns
 
+## [1.2.2] - 2025-01-27
+
+### Fixed
+- **Column Visibility Data Display**: Comprehensive fix for empty column data issue
+  - **Root Cause**: Missing cases in `populate_tree_with_visibility()` method for several columns
+  - **KEN NAME Column**: Fixed missing case that caused empty data display despite column being visible
+  - **Extended Column Support**: Added support for all missing Excel columns:
+    - SN (Serial Number)
+    - Manually processed (Processing status)
+    - SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL (AI suggestions)
+    - AI_STATUS, USE_FOR_ML (AI/ML status columns)
+  - **Column Order Consistency**: Updated column order to match Excel file structure
+  - **Data Population Integrity**: All 24 columns now display actual data from Excel files
+  - **Systematic Testing**: Verified all columns work correctly with comprehensive testing
+
+### Enhanced
+- **Column Management System**: Complete overhaul of column handling
+  - **Master Column List**: Updated from 17 to 24 columns to include all Excel columns
+  - **Column Mapping**: Added proper mapping for all new columns in `get_data_column_name()`
+  - **Data Extraction**: Updated `populate_tree_with_visibility()` to handle all column types
+  - **Tree Structure**: Updated hardcoded empty string tuples to match new column count
+  - **Column Visibility Dialog**: Now includes all available columns for proper visibility management
+
+### Technical Improvements
+- **Data Integrity**: Systematic verification of all column data extraction
+- **Column Synchronization**: Tree view structure now handles all available columns correctly
+- **Missing Column Detection**: Automatic detection and handling of columns missing from tree view
+- **Column Order Validation**: Ensured tree view column order matches Excel file structure
+
+### Added
+- **Comprehensive Column Support**: Full support for all Excel file columns
+  - Standard ERP columns: User ERP Name, Image, SKU NR, ERP Name, KEN NAME, CAD Name, etc.
+  - Processing status columns: SN, Manually processed
+  - AI suggestion columns: SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL
+  - AI/ML status columns: AI_STATUS, USE_FOR_ML
+- **Data Verification**: Systematic testing framework for column data integrity
+- **Column Count Synchronization**: Proper handling of all 24 columns in tree view structure
+
 ## [Unreleased]
 
 ### Added

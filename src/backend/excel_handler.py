@@ -70,6 +70,17 @@ class ExcelHandler:
                 else:
                     # If ERP name doesn't exist, add at the end
                     self.data['Image'] = ''
+            
+            # Ensure KEN NAME column exists
+            ken_name_col_exists = any(existing_col.strip() == 'KEN NAME' for existing_col in self.data.columns)
+            if not ken_name_col_exists:
+                # Add KEN NAME column after CAD name if it doesn't exist
+                if 'CAD name' in self.data.columns:
+                    cad_name_pos = self.data.columns.get_loc('CAD name') + 1
+                    self.data.insert(cad_name_pos, 'KEN NAME', '')
+                else:
+                    # If CAD name doesn't exist, add at the end
+                    self.data['KEN NAME'] = ''
                     
     def save_file(self, file_path: str, data: Optional[pd.DataFrame] = None) -> None:
         """Save data to an Excel file."""

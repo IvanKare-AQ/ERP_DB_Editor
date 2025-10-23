@@ -312,6 +312,21 @@
   - Automatic loading of AI settings on application startup
   - Integration with existing Save View functionality
 
+## Column Management and Data Integrity Requirements
+- **Comprehensive Column Support**: All Excel columns must be accessible through Column Visibility dialog
+- **Complete Column Mapping**: Proper mapping between display names and Excel column names
+- **Data Population Integrity**: All columns must display actual data from Excel files
+- **Missing Column Detection**: Automatic detection and handling of columns missing from tree view
+- **Column Order Consistency**: Tree view column order must match Excel file structure
+- **Extended Column Support**: Support for all data columns including:
+  - Standard ERP columns (User ERP Name, Image, SKU NR, ERP Name, KEN NAME, CAD Name, etc.)
+  - Processing status columns (SN, Manually processed)
+  - AI suggestion columns (SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL)
+  - AI/ML status columns (AI_STATUS, USE_FOR_ML)
+- **Column Visibility Fixes**: Resolved issues where columns appeared in visibility dialog but showed empty data
+- **Data Extraction Verification**: Systematic testing of all columns to ensure proper data display
+- **Column Count Synchronization**: Tree view structure must handle all available columns correctly
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)
@@ -319,3 +334,5 @@
 - tkinter (built-in, for additional GUI components)
 - requests (for Ollama API communication)
 - ollama (for AI model management and text generation)
+- Pillow (for image processing)
+- ddgs (for web image search)

@@ -314,8 +314,9 @@ class ImageSelectionDialog:
         )
         
         if file_path:
-            self.selected_image_path = file_path
+            # Clear results first, then set the path
             self.clear_results()
+            self.selected_image_path = file_path
             
             # Display selected file with preview
             preview_frame = ctk.CTkFrame(self.results_frame)
@@ -348,40 +349,45 @@ class ImageSelectionDialog:
                     
                     # Update UI in main thread
                     def update_ui():
-                        # Remove loading label
-                        loading_label.destroy()
+                        try:
+                            # Remove loading label
+                            if loading_label.winfo_exists():
+                                loading_label.destroy()
+                            
+                            # Create preview display using CustomTkinter label for consistent theming
+                            preview_label = ctk.CTkLabel(
+                                preview_frame,
+                                image=photo,
+                                text=""  # Empty text
+                            )
+                            preview_label.image = photo  # Keep reference
+                            preview_label.pack(pady=10)
+                            
+                            # Display file info
+                            file_size = os.path.getsize(file_path)
+                            size_kb = file_size / 1024
+                            size_str = f"{size_kb:.1f} KB" if size_kb < 1024 else f"{size_kb/1024:.1f} MB"
+                            
+                            info_text = f"File: {os.path.basename(file_path)}\n"
+                            info_text += f"Dimensions: {original_width} x {original_height} pixels\n"
+                            info_text += f"Format: {image.format}\n"
+                            info_text += f"Size: {size_str}\n"
+                            info_text += f"Path: {file_path}"
+                            
+                            info_label = ctk.CTkLabel(
+                                preview_frame,
+                                text=info_text,
+                                font=ctk.CTkFont(size=12),
+                                justify="left"
+                            )
+                            info_label.pack(padx=10, pady=10)
+                            
+                            # Highlight the frame
+                            preview_frame.configure(fg_color="#1f6aa5")
+                        except Exception as ui_error:
+                            print(f"UI update error: {ui_error}")
                         
-                        # Create preview display
-                        preview_label = tk.Label(
-                            preview_frame,
-                            image=photo,
-                            bg=preview_frame.cget("fg_color")[1] if isinstance(preview_frame.cget("fg_color"), tuple) else preview_frame.cget("fg_color")
-                        )
-                        preview_label.image = photo  # Keep reference
-                        preview_label.pack(pady=10)
-                        
-                        # Display file info
-                        file_size = os.path.getsize(file_path)
-                        size_kb = file_size / 1024
-                        size_str = f"{size_kb:.1f} KB" if size_kb < 1024 else f"{size_kb/1024:.1f} MB"
-                        
-                        info_text = f"File: {os.path.basename(file_path)}\n"
-                        info_text += f"Dimensions: {original_width} x {original_height} pixels\n"
-                        info_text += f"Format: {image.format}\n"
-                        info_text += f"Size: {size_str}\n"
-                        info_text += f"Path: {file_path}"
-                        
-                        info_label = ctk.CTkLabel(
-                            preview_frame,
-                            text=info_text,
-                            font=ctk.CTkFont(size=12),
-                            justify="left"
-                        )
-                        info_label.pack(padx=10, pady=10)
-                        
-                        # Highlight the frame
-                        preview_frame.configure(fg_color="#1f6aa5")
-                        
+                        # Always enable the button if we have a valid path
                         self.status_label.configure(
                             text="Local file selected. Click 'Add Selected Image' to confirm.",
                             text_color="green"
@@ -391,12 +397,33 @@ class ImageSelectionDialog:
                     self.dialog.after(0, update_ui)
                     
                 except Exception as e:
+                    print(f"Error loading preview: {e}")
                     def show_error():
-                        loading_label.configure(text=f"Error loading image: {str(e)}")
+                        try:
+                            if loading_label.winfo_exists():
+                                loading_label.configure(text=f"Preview unavailable")
+                            
+                            # Show basic file info even if preview fails
+                            info_text = f"File: {os.path.basename(file_path)}\n"
+                            info_text += f"Path: {file_path}\n"
+                            info_text += f"(Preview failed to load, but you can still use this image)"
+                            
+                            info_label = ctk.CTkLabel(
+                                preview_frame,
+                                text=info_text,
+                                font=ctk.CTkFont(size=12),
+                                justify="left"
+                            )
+                            info_label.pack(padx=10, pady=10)
+                        except Exception as ui_error:
+                            print(f"Error showing error message: {ui_error}")
+                        
+                        # Enable the button anyway - we have a valid file path
                         self.status_label.configure(
-                            text="Failed to load image. Please select a valid image file.",
-                            text_color="red"
+                            text="Image file selected. Click 'Add Selected Image' to confirm.",
+                            text_color="orange"
                         )
+                        self.select_button.configure(state="normal")
                     self.dialog.after(0, show_error)
             
             # Start loading in background thread
@@ -408,6 +435,7 @@ class ImageSelectionDialog:
             messagebox.showwarning("Warning", "No image selected")
             return
         
+        print(f"Processing image: {self.selected_image_path}")
         self.select_button.configure(state="disabled", text="Processing...")
         self.status_label.configure(text="Processing image...", text_color="blue")
         
@@ -416,38 +444,54 @@ class ImageSelectionDialog:
                 # Load image
                 if self.selected_image_path.startswith("http"):
                     # Web image
+                    print(f"Downloading web image from: {self.selected_image_path}")
                     image = self.image_handler.download_image_from_url(self.selected_image_path)
                 else:
                     # Local file
+                    print(f"Loading local image from: {self.selected_image_path}")
                     image = Image.open(self.selected_image_path)
                 
                 if not image:
+                    print("Error: Failed to load image (image is None)")
                     self.dialog.after(0, lambda: messagebox.showerror(
                         "Error", "Failed to load image"
                     ))
                     return
+                
+                print(f"Image loaded successfully: {image.size} {image.format}")
                 
                 # Generate filename from search query or use generic name
                 search_query = self.search_entry.get().strip()
                 if search_query:
                     filename = search_query.replace(" ", "_").replace("/", "_")
                 else:
-                    filename = "image"
+                    # Use original filename for local files
+                    if not self.selected_image_path.startswith("http"):
+                        filename = os.path.splitext(os.path.basename(self.selected_image_path))[0]
+                    else:
+                        filename = "image"
+                
+                print(f"Saving image with filename: {filename}")
                 
                 # Save image
                 relative_path = self.image_handler.save_image(image, filename)
                 
                 if relative_path:
+                    print(f"Image saved successfully: {relative_path}")
                     # Call callback with the relative path
                     self.dialog.after(0, lambda: self.success(relative_path))
                 else:
+                    print("Error: Failed to save image (relative_path is None)")
                     self.dialog.after(0, lambda: messagebox.showerror(
                         "Error", "Failed to save image"
                     ))
                     
             except Exception as e:
-                self.dialog.after(0, lambda: messagebox.showerror(
-                    "Error", f"Failed to process image: {str(e)}"
+                print(f"Error processing image: {e}")
+                import traceback
+                traceback.print_exc()
+                self.dialog.after(0, lambda err=str(e): messagebox.showerror(
+                    "Error", f"Failed to process image: {err}"
                 ))
             finally:
                 self.dialog.after(0, lambda: self.select_button.configure(

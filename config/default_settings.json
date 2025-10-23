@@ -22,7 +22,9 @@
     ],
     "column_visibility": {
         "visible_columns": [
-            "User ERP Name"
+            "User ERP Name",
+            "SKU NR",
+            "KEN NAME"
         ]
     },
     "view_settings": {
