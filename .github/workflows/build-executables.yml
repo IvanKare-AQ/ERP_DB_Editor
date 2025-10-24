@@ -128,7 +128,7 @@ jobs:
 
   # Create Release
   create-release:
-    needs: [check-build-trigger, build-windows-x86, build-windows-arm, build-ubuntu, build-macos]
+    needs: [check-build-trigger, build-windows-x86, build-windows-arm, build-macos]
     if: needs.check-build-trigger.outputs.should-build == 'true'
     runs-on: ubuntu-latest
     steps:
