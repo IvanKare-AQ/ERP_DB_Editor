@@ -3,6 +3,8 @@ name: Build Cross-Platform Executables
 on:
   push:
     branches: [ main, Crossplatform-runner ]
+  pull_request:
+    branches: [ main, Crossplatform-runner ]
   workflow_dispatch:
     inputs:
       build_all_platforms:
@@ -21,10 +23,16 @@ jobs:
       - name: Check for #BUILD trigger
         id: check
         run: |
-          if [[ "${{ github.event.head_commit.message }}" == *"#BUILD"* ]] || [[ "${{ github.event.inputs.build_all_platforms }}" == "true" ]]; then
+          echo "Commit message: ${{ github.event.head_commit.message }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Manual trigger: ${{ github.event.inputs.build_all_platforms }}"
+          
+          if [[ "${{ github.event.head_commit.message }}" == *"#BUILD"* ]] || [[ "${{ github.event.inputs.build_all_platforms }}" == "true" ]] || [[ "${{ github.ref_name }}" == "Crossplatform-runner" ]]; then
             echo "should-build=true" >> $GITHUB_OUTPUT
+            echo "Build triggered!"
           else
             echo "should-build=false" >> $GITHUB_OUTPUT
+            echo "Build skipped - no #BUILD trigger found"
           fi
 
   # Build for Windows x86
