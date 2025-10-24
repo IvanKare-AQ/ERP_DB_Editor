@@ -301,7 +301,17 @@ class ManualEditor(ctk.CTkFrame):
             width=self.RESET_BUTTON_WIDTH,
             height=self.BUTTON_HEIGHT
         )
-        self.convert_underscore_button.pack(side="left")
+        self.convert_underscore_button.pack(side="left", padx=(0, 5))
+        
+        # Combined convert and update button
+        self.convert_and_update_button = ctk.CTkButton(
+            details_frame,
+            text="_ → - + Update",
+            command=self.convert_underscores_and_update_all,
+            width=self.RESET_BUTTON_WIDTH + 20,
+            height=self.BUTTON_HEIGHT
+        )
+        self.convert_and_update_button.pack(side="left")
 
         # Update button frame (moved to bottom)
         update_frame = ctk.CTkFrame(parent)
@@ -826,6 +836,14 @@ class ManualEditor(ctk.CTkFrame):
         
         # This will trigger on_parsed_field_change to update User ERP Name
         self.on_parsed_field_change()
+
+    def convert_underscores_and_update_all(self):
+        """Convert underscores to hyphens in Details field and update all fields."""
+        # First, convert underscores to hyphens in Details field
+        self.convert_underscores_to_hyphens()
+        
+        # Then, update all fields
+        self.update_all_fields()
 
     def delete_selected_item(self):
         """Delete the selected item from the tree view."""

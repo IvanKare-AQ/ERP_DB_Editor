@@ -257,6 +257,7 @@
   - Bidirectional synchronization between User ERP Name and parsed fields
   - Real-time updates when editing either User ERP Name or individual components
   - Underscore to hyphen conversion buttons for all three fields
+  - Combined conversion and update button for Details field ("_ → - + Update")
   - NO-PN quick-insert button for items without part numbers
   - Flexible naming convention support (structural _ vs descriptive - separators)
   - Visual separator between standard fields and parsed fields for clarity

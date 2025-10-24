@@ -268,6 +268,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clear separation between available and visible columns
   - Proper getter methods for different column access patterns
 
+## [1.2.3] - 2025-01-27
+
+### Added
+- **Combined Conversion and Update Button**: Enhanced Details field functionality
+  - Added "_ → - + Update" button next to existing "_ → -" button in Details field
+  - Combines underscore-to-hyphen conversion with "Update All Fields" functionality
+  - Single-click operation for efficient workflow
+  - Streamlined user experience for frequent conversion and update operations
+
+### Enhanced
+- **User ERP Name Parsing System**: Improved workflow efficiency
+  - Combined button provides one-click solution for conversion and field updates
+  - Maintains existing individual button functionality for granular control
+  - Better user experience for users who frequently need both operations
+
 ## [1.2.2] - 2025-01-27
 
 ### Fixed
