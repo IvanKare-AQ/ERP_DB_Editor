@@ -57,7 +57,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --clean --distpath "dist/windows-x86" ERP_DB_Editor.spec
+          pyinstaller --onedir --windowed --name "ERP_DB_Editor_Windows_x86" --distpath "dist/windows-x86" --add-data "config;config" src/main.py
 
       - name: Upload Windows x86 artifact
         uses: actions/upload-artifact@v4
@@ -87,7 +87,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --clean --distpath "dist/windows-arm" ERP_DB_Editor.spec
+          pyinstaller --onedir --windowed --name "ERP_DB_Editor_Windows_ARM" --distpath "dist/windows-arm" --add-data "config;config" src/main.py
 
       - name: Upload Windows ARM artifact
         uses: actions/upload-artifact@v4
@@ -149,7 +149,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --clean --distpath "dist/ubuntu" ERP_DB_Editor.spec
+          pyinstaller --onedir --windowed --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" --add-data "config:config" src/main.py
 
       - name: Upload Ubuntu artifact
         uses: actions/upload-artifact@v4
@@ -179,7 +179,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --clean --distpath "dist/macos" ERP_DB_Editor.spec
+          pyinstaller --onedir --windowed --name "ERP_DB_Editor_macOS" --distpath "dist/macos" --add-data "config:config" src/main.py
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
