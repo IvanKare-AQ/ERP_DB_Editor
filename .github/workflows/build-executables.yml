@@ -104,7 +104,27 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libx11-xcb1 libxrandr2 libasound2 libpangocairo-1.0-0 libatk1.0-0 libcairo-gobject2 libgtk-3-0 libgdk-pixbuf2.0-0
+          sudo apt-get install -y \
+            libx11-xcb1 \
+            libxrandr2 \
+            libasound2 \
+            libpangocairo-1.0-0 \
+            libatk1.0-0 \
+            libcairo-gobject2 \
+            libgtk-3-0 \
+            libgdk-pixbuf2.0-0 \
+            libxss1 \
+            libgconf-2-4 \
+            libxcomposite1 \
+            libxcursor1 \
+            libxdamage1 \
+            libxext6 \
+            libxfixes3 \
+            libxi6 \
+            libxrender1 \
+            libxtst6 \
+            libnss3 \
+            libcups2
 
       - name: Install Python dependencies
         run: |
@@ -112,9 +132,20 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Test Python imports
+        run: |
+          python -c "import customtkinter; print('CustomTkinter imported successfully')"
+          python -c "import pandas; print('Pandas imported successfully')"
+          python -c "import openpyxl; print('OpenPyXL imported successfully')"
+          python -c "import PIL; print('PIL imported successfully')"
+
       - name: Build executable
         run: |
-          pyinstaller --onedir --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" src/main.py
+          # Try building with spec file first
+          pyinstaller --clean ERP_DB_Editor.spec || {
+            echo "Spec file build failed, trying direct build..."
+            pyinstaller --onedir --windowed --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" src/main.py
+          }
 
       - name: Upload Ubuntu artifact
         uses: actions/upload-artifact@v4
