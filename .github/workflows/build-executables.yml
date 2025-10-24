@@ -128,8 +128,8 @@ jobs:
           #!/bin/bash
           # Remove quarantine attributes to prevent permission prompts
           xattr -dr com.apple.quarantine "$(dirname "$0")"
-          # Run the application
-          "$(dirname "$0")/ERP_DB_Editor_macOS"
+          # Run the application (PyInstaller creates a directory with the executable inside)
+          "$(dirname "$0")/ERP_DB_Editor_macOS/ERP_DB_Editor_macOS"
           EOF
           
           # Make the script executable
@@ -148,8 +148,9 @@ jobs:
           ```
           
           ### Option 2: Run directly
-          Double-click `ERP_DB_Editor_macOS` or run it from Terminal:
+          Navigate to the ERP_DB_Editor_macOS directory and run the executable:
           ```bash
+          cd ERP_DB_Editor_macOS
           ./ERP_DB_Editor_macOS
           ```
           
@@ -162,6 +163,7 @@ jobs:
           2. **Manual fix**: Run this command in Terminal:
              ```bash
              xattr -dr com.apple.quarantine /path/to/ERP_DB_Editor_macOS
+             xattr -dr com.apple.quarantine /path/to/ERP_DB_Editor_macOS/ERP_DB_Editor_macOS
              ```
           
           3. **System Preferences**: Go to System Preferences > Security & Privacy > General, and click "Open Anyway" if the app is blocked
