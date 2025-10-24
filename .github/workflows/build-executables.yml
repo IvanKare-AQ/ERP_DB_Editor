@@ -1,5 +1,8 @@
 name: Build Cross-Platform Executables
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: [ main, Crossplatform-runner ]
@@ -131,6 +134,8 @@ jobs:
     needs: [check-build-trigger, build-windows-x86, build-windows-arm, build-macos]
     if: needs.check-build-trigger.outputs.should-build == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -183,5 +188,4 @@ jobs:
             release/ERP_DB_Editor_macOS.zip
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
