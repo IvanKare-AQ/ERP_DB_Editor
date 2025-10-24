@@ -132,7 +132,20 @@ jobs:
             libxrender1 \
             libxtst6 \
             libnss3 \
-            libcups2
+            libcups2 \
+            libglib2.0-0 \
+            libgthread-2.0-0 \
+            libffi-dev \
+            libssl-dev \
+            python3-dev \
+            python3-tk \
+            tk-dev \
+            tcl-dev \
+            libx11-dev \
+            libxft-dev \
+            libfreetype6-dev \
+            libfontconfig1-dev \
+            xvfb
 
       - name: Install Python dependencies
         run: |
@@ -146,10 +159,35 @@ jobs:
           python -c "import pandas; print('Pandas imported successfully')"
           python -c "import openpyxl; print('OpenPyXL imported successfully')"
           python -c "import PIL; print('PIL imported successfully')"
+          python -c "import tkinter; print('Tkinter imported successfully')"
+          python -c "import tkinter.ttk; print('Tkinter.ttk imported successfully')"
 
+      - name: Start virtual display
+        run: |
+          # Start virtual display for GUI applications
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          export DISPLAY=:99
+          
       - name: Build executable
         run: |
+          # Set environment variables for GUI applications
+          export DISPLAY=:99
+          export QT_QPA_PLATFORM=offscreen
+          
+          # Try building with PyInstaller
           pyinstaller --onedir --windowed --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" --add-data "config:config" src/main.py
+          
+          # If build fails, try without windowed mode
+          if [ $? -ne 0 ]; then
+            echo "First build attempt failed, trying without --windowed flag..."
+            pyinstaller --onedir --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" --add-data "config:config" src/main.py
+          fi
+          
+          # If still fails, try with console mode
+          if [ $? -ne 0 ]; then
+            echo "Second build attempt failed, trying with console mode..."
+            pyinstaller --onedir --console --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" --add-data "config:config" src/main.py
+          fi
 
       - name: Upload Ubuntu artifact
         uses: actions/upload-artifact@v4
