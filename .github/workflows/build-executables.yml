@@ -1,0 +1,218 @@
+name: Build Cross-Platform Executables
+
+on:
+  push:
+    branches: [ main, Crossplatform-runner ]
+  workflow_dispatch:
+    inputs:
+      build_all_platforms:
+        description: 'Build all platforms'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  # Check if commit message contains #BUILD trigger
+  check-build-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      should-build: ${{ steps.check.outputs.should-build }}
+    steps:
+      - name: Check for #BUILD trigger
+        id: check
+        run: |
+          if [[ "${{ github.event.head_commit.message }}" == *"#BUILD"* ]] || [[ "${{ github.event.inputs.build_all_platforms }}" == "true" ]]; then
+            echo "should-build=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-build=false" >> $GITHUB_OUTPUT
+          fi
+
+  # Build for Windows x86
+  build-windows-x86:
+    needs: check-build-trigger
+    if: needs.check-build-trigger.outputs.should-build == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --onedir --windowed --name "ERP_DB_Editor_Windows_x86" --distpath "dist/windows-x86" src/main.py
+
+      - name: Upload Windows x86 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ERP_DB_Editor_Windows_x86
+          path: dist/windows-x86/
+
+  # Build for Windows ARM
+  build-windows-arm:
+    needs: check-build-trigger
+    if: needs.check-build-trigger.outputs.should-build == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --onedir --windowed --name "ERP_DB_Editor_Windows_ARM" --distpath "dist/windows-arm" src/main.py
+
+      - name: Upload Windows ARM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ERP_DB_Editor_Windows_ARM
+          path: dist/windows-arm/
+
+  # Build for Ubuntu
+  build-ubuntu:
+    needs: check-build-trigger
+    if: needs.check-build-trigger.outputs.should-build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-xcb1 libxrandr2 libasound2 libpangocairo-1.0-0 libatk1.0-0 libcairo-gobject2 libgtk-3-0 libgdk-pixbuf2.0-0
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --onedir --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" src/main.py
+
+      - name: Upload Ubuntu artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ERP_DB_Editor_Ubuntu
+          path: dist/ubuntu/
+
+  # Build for macOS
+  build-macos:
+    needs: check-build-trigger
+    if: needs.check-build-trigger.outputs.should-build == 'true'
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --onedir --windowed --name "ERP_DB_Editor_macOS" --distpath "dist/macos" src/main.py
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ERP_DB_Editor_macOS
+          path: dist/macos/
+
+  # Create Release
+  create-release:
+    needs: [check-build-trigger, build-windows-x86, build-windows-arm, build-ubuntu, build-macos]
+    if: needs.check-build-trigger.outputs.should-build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Create release archive
+        run: |
+          mkdir -p release
+          cp -r artifacts/* release/
+          
+          # Create zip files for each platform
+          cd release
+          zip -r ERP_DB_Editor_Windows_x86.zip ERP_DB_Editor_Windows_x86/
+          zip -r ERP_DB_Editor_Windows_ARM.zip ERP_DB_Editor_Windows_ARM/
+          zip -r ERP_DB_Editor_Ubuntu.zip ERP_DB_Editor_Ubuntu/
+          zip -r ERP_DB_Editor_macOS.zip ERP_DB_Editor_macOS/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: ERP DB Editor Build ${{ github.run_number }}
+          body: |
+            ## Cross-Platform Executables
+            
+            This release contains executables for all supported platforms:
+            
+            ### Windows x86
+            - Download: `ERP_DB_Editor_Windows_x86.zip`
+            - Extract and run `ERP_DB_Editor_Windows_x86.exe`
+            
+            ### Windows ARM
+            - Download: `ERP_DB_Editor_Windows_ARM.zip`
+            - Extract and run `ERP_DB_Editor_Windows_ARM.exe`
+            
+            ### Ubuntu
+            - Download: `ERP_DB_Editor_Ubuntu.zip`
+            - Extract and run `./ERP_DB_Editor_Ubuntu/ERP_DB_Editor_Ubuntu`
+            
+            ### macOS
+            - Download: `ERP_DB_Editor_macOS.zip`
+            - Extract and run `ERP_DB_Editor_macOS.app`
+            
+            ---
+            
+            **Build Information:**
+            - Commit: `${{ github.sha }}`
+            - Branch: `${{ github.ref_name }}`
+            - Build Date: `${{ github.event.head_commit.timestamp }}`
+          files: |
+            release/ERP_DB_Editor_Windows_x86.zip
+            release/ERP_DB_Editor_Windows_ARM.zip
+            release/ERP_DB_Editor_Ubuntu.zip
+            release/ERP_DB_Editor_macOS.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
