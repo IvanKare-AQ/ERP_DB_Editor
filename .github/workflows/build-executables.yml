@@ -146,7 +146,6 @@ jobs:
           cd release
           zip -r ERP_DB_Editor_Windows_x86.zip ERP_DB_Editor_Windows_x86/
           zip -r ERP_DB_Editor_Windows_ARM.zip ERP_DB_Editor_Windows_ARM/
-          zip -r ERP_DB_Editor_Ubuntu.zip ERP_DB_Editor_Ubuntu/
           zip -r ERP_DB_Editor_macOS.zip ERP_DB_Editor_macOS/
 
       - name: Create Release
@@ -167,9 +166,6 @@ jobs:
             - Download: `ERP_DB_Editor_Windows_ARM.zip`
             - Extract and run `ERP_DB_Editor_Windows_ARM.exe`
             
-            ### Ubuntu
-            - Download: `ERP_DB_Editor_Ubuntu.zip`
-            - Extract and run `./ERP_DB_Editor_Ubuntu/ERP_DB_Editor_Ubuntu`
             
             ### macOS
             - Download: `ERP_DB_Editor_macOS.zip`
@@ -184,7 +180,6 @@ jobs:
           files: |
             release/ERP_DB_Editor_Windows_x86.zip
             release/ERP_DB_Editor_Windows_ARM.zip
-            release/ERP_DB_Editor_Ubuntu.zip
             release/ERP_DB_Editor_macOS.zip
           draft: false
           prerelease: false
