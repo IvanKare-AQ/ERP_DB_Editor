@@ -25,6 +25,20 @@ def main():
     ctk.set_appearance_mode("system")  # Modes: "System" (standard), "Dark", "Light"
     ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
     
+    # Set default font sizes for consistent rendering across platforms
+    import tkinter as tk
+    default_font = tk.font.nametofont("TkDefaultFont")
+    default_font.configure(size=11)
+    
+    text_font = tk.font.nametofont("TkTextFont")
+    text_font.configure(size=11)
+    
+    fixed_font = tk.font.nametofont("TkFixedFont")
+    fixed_font.configure(size=11)
+    
+    # Set CustomTkinter default font
+    ctk.set_default_font("Arial", 11)
+    
     # Create and run the main application
     app = MainWindow()
     app.run()

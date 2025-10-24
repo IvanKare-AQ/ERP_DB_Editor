@@ -84,15 +84,15 @@ class TreeViewWidget(ctk.CTkFrame):
         
         # Configure the treeview style with dark theme
         style.configure("Treeview", 
-                       font=("Arial", 9),  # Smaller font size
-                       rowheight=20,  # Smaller row height
+                       font=("Arial", 11),  # Consistent font size
+                       rowheight=24,  # Increased row height for better readability
                        background="#2b2b2b",  # Dark background
                        foreground="#ffffff",  # White text
                        fieldbackground="#2b2b2b")  # Dark field background
         
         # Configure treeview heading with dark theme
         style.configure("Treeview.Heading",
-                       font=("Arial", 9, "bold"),  # Bold headers with smaller font
+                       font=("Arial", 11, "bold"),  # Bold headers with consistent font
                        background="#3c3c3c",  # Darker header background
                        foreground="#ffffff")  # White header text
         

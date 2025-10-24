@@ -157,7 +157,7 @@ class AIEditor(ctk.CTkFrame):
         self.preview_listbox = tk.Listbox(
             preview_frame,
             height=self.LISTBOX_HEIGHT,  # Shows 5 results
-            font=("Arial", 10),
+            font=("Arial", 11),  # Consistent font size
             bg="#2b2b2b",  # Dark background
             fg="#ffffff",  # White text
             selectbackground="#1976d2",  # Blue selection

@@ -135,7 +135,7 @@ class ModelManagerDialog:
         
         self.models_listbox = tk.Listbox(
             listbox_frame,
-            font=("Arial", 11),
+            font=("Arial", 11),  # Consistent font size
             selectmode=tk.SINGLE,
             bg="#2b2b2b",  # Dark background
             fg="#ffffff",  # White text
