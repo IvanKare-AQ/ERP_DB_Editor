@@ -107,7 +107,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
       - name: Install system dependencies
         run: |
@@ -174,19 +174,23 @@ jobs:
           export DISPLAY=:99
           export QT_QPA_PLATFORM=offscreen
           
-          # Try building with PyInstaller
-          pyinstaller --onedir --windowed --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" --add-data "config:config" src/main.py
+          # Try building with PyInstaller using simple approach
+          echo "Attempting to build with PyInstaller..."
           
-          # If build fails, try without windowed mode
+          # First try: Simple console build
+          echo "Trying simple console build..."
+          pyinstaller --onedir --console --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" --add-data "config:config" src/main.py
+          
+          # If build fails, try with more explicit imports
           if [ $? -ne 0 ]; then
-            echo "First build attempt failed, trying without --windowed flag..."
-            pyinstaller --onedir --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" --add-data "config:config" src/main.py
+            echo "Simple build failed, trying with explicit imports..."
+            pyinstaller --onedir --console --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" --add-data "config:config" --hidden-import=customtkinter --hidden-import=tkinter --hidden-import=pandas --hidden-import=openpyxl --hidden-import=PIL --hidden-import=requests --hidden-import=ollama --hidden-import=ddgs src/main.py
           fi
           
-          # If still fails, try with console mode
+          # If still fails, try with debug mode
           if [ $? -ne 0 ]; then
-            echo "Second build attempt failed, trying with console mode..."
-            pyinstaller --onedir --console --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" --add-data "config:config" src/main.py
+            echo "Explicit imports failed, trying with debug mode..."
+            pyinstaller --onedir --console --debug all --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" --add-data "config:config" --hidden-import=customtkinter --hidden-import=tkinter --hidden-import=pandas --hidden-import=openpyxl --hidden-import=PIL --hidden-import=requests --hidden-import=ollama --hidden-import=ddgs src/main.py
           fi
 
       - name: Upload Ubuntu artifact
