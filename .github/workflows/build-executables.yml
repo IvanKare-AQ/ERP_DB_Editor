@@ -49,7 +49,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --onedir --windowed --name "ERP_DB_Editor_Windows_x86" --distpath "dist/windows-x86" src/main.py
+          pyinstaller --clean --distpath "dist/windows-x86" ERP_DB_Editor.spec
 
       - name: Upload Windows x86 artifact
         uses: actions/upload-artifact@v4
@@ -79,7 +79,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --onedir --windowed --name "ERP_DB_Editor_Windows_ARM" --distpath "dist/windows-arm" src/main.py
+          pyinstaller --clean --distpath "dist/windows-arm" ERP_DB_Editor.spec
 
       - name: Upload Windows ARM artifact
         uses: actions/upload-artifact@v4
@@ -141,11 +141,7 @@ jobs:
 
       - name: Build executable
         run: |
-          # Try building with spec file first
-          pyinstaller --clean ERP_DB_Editor.spec || {
-            echo "Spec file build failed, trying direct build..."
-            pyinstaller --onedir --windowed --name "ERP_DB_Editor_Ubuntu" --distpath "dist/ubuntu" src/main.py
-          }
+          pyinstaller --clean --distpath "dist/ubuntu" ERP_DB_Editor.spec
 
       - name: Upload Ubuntu artifact
         uses: actions/upload-artifact@v4
@@ -175,7 +171,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --onedir --windowed --name "ERP_DB_Editor_macOS" --distpath "dist/macos" src/main.py
+          pyinstaller --clean --distpath "dist/macos" ERP_DB_Editor.spec
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
