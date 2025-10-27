@@ -13,7 +13,7 @@ on:
       build_all_platforms:
         description: 'Build all platforms'
         required: false
-        default: 'true'
+        default: true
         type: boolean
 
 jobs:
