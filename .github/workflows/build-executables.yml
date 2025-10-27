@@ -1,0 +1,241 @@
+name: Build Cross-Platform Executables
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: [ main, Crossplatform-runner ]
+  pull_request:
+    branches: [ main, Crossplatform-runner ]
+  workflow_dispatch:
+    inputs:
+      build_all_platforms:
+        description: 'Build all platforms'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  # Check if commit message contains #BUILD trigger
+  check-build-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      should-build: ${{ steps.check.outputs.should-build }}
+    steps:
+      - name: Check for #BUILD trigger
+        id: check
+        run: |
+          echo "Commit message: ${{ github.event.head_commit.message }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Manual trigger: ${{ github.event.inputs.build_all_platforms }}"
+          
+          if [[ "${{ github.event.head_commit.message }}" == *"#BUILD"* ]] || [[ "${{ github.event.inputs.build_all_platforms }}" == "true" ]] || [[ "${{ github.ref_name }}" == "Crossplatform-runner" ]]; then
+            echo "should-build=true" >> $GITHUB_OUTPUT
+            echo "Build triggered!"
+          else
+            echo "should-build=false" >> $GITHUB_OUTPUT
+            echo "Build skipped - no #BUILD trigger found"
+          fi
+
+  # Build for Windows x86
+  build-windows-x86:
+    needs: check-build-trigger
+    if: needs.check-build-trigger.outputs.should-build == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --onedir --windowed --name "ERP_DB_Editor_Windows_x86" --distpath "dist/windows-x86" --add-data "config;config" --add-data "src;src" --hidden-import=requests --hidden-import=customtkinter --hidden-import=tkinter --hidden-import=pandas --hidden-import=openpyxl --hidden-import=PIL --hidden-import=ollama --hidden-import=ddgs --hidden-import=duckduckgo_search --hidden-import=json --hidden-import=pathlib --hidden-import=threading --hidden-import=queue --hidden-import=urllib.parse --hidden-import=io --hidden-import=base64 --hidden-import=datetime --hidden-import=os --hidden-import=sys --hidden-import=re --hidden-import=time --hidden-import=traceback --hidden-import=messagebox --hidden-import=filedialog --hidden-import=tkinter.ttk --hidden-import=PIL.ImageTk --hidden-import=ssl --hidden-import=certifi --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=urllib3 src/main.py
+
+      - name: Upload Windows x86 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ERP_DB_Editor_Windows_x86
+          path: dist/windows-x86/
+
+  # Build for Windows ARM
+  build-windows-arm:
+    needs: check-build-trigger
+    if: needs.check-build-trigger.outputs.should-build == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --onedir --windowed --name "ERP_DB_Editor_Windows_ARM" --distpath "dist/windows-arm" --add-data "config;config" --add-data "src;src" --hidden-import=requests --hidden-import=customtkinter --hidden-import=tkinter --hidden-import=pandas --hidden-import=openpyxl --hidden-import=PIL --hidden-import=ollama --hidden-import=ddgs --hidden-import=duckduckgo_search --hidden-import=json --hidden-import=pathlib --hidden-import=threading --hidden-import=queue --hidden-import=urllib.parse --hidden-import=io --hidden-import=base64 --hidden-import=datetime --hidden-import=os --hidden-import=sys --hidden-import=re --hidden-import=time --hidden-import=traceback --hidden-import=messagebox --hidden-import=filedialog --hidden-import=tkinter.ttk --hidden-import=PIL.ImageTk --hidden-import=ssl --hidden-import=certifi --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=urllib3 src/main.py
+
+      - name: Upload Windows ARM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ERP_DB_Editor_Windows_ARM
+          path: dist/windows-arm/
+
+
+  # Build for macOS
+  build-macos:
+    needs: check-build-trigger
+    if: needs.check-build-trigger.outputs.should-build == 'true'
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --onedir --console --name "ERP_DB_Editor_macOS" --distpath "dist/macos" --add-data "config:config" --add-data "src:src" --hidden-import=requests --hidden-import=customtkinter --hidden-import=tkinter --hidden-import=pandas --hidden-import=openpyxl --hidden-import=PIL --hidden-import=ollama --hidden-import=ddgs --hidden-import=duckduckgo_search --hidden-import=json --hidden-import=pathlib --hidden-import=threading --hidden-import=queue --hidden-import=urllib.parse --hidden-import=io --hidden-import=base64 --hidden-import=datetime --hidden-import=os --hidden-import=sys --hidden-import=re --hidden-import=time --hidden-import=traceback --hidden-import=messagebox --hidden-import=filedialog --hidden-import=tkinter.ttk --hidden-import=PIL.ImageTk --hidden-import=ssl --hidden-import=certifi --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=urllib3 src/main.py
+          
+          # Create a simple script to run the application without permission prompts
+          cat > dist/macos/run_app.sh << 'EOF'
+          #!/bin/bash
+          # Remove quarantine attributes to prevent permission prompts
+          xattr -dr com.apple.quarantine "$(dirname "$0")"
+          # Run the application (PyInstaller creates a directory with the executable inside)
+          "$(dirname "$0")/ERP_DB_Editor_macOS/ERP_DB_Editor_macOS"
+          EOF
+          
+          # Make the script executable
+          chmod +x dist/macos/run_app.sh
+          
+          # Create a README file with instructions
+          cat > dist/macos/README.md << 'EOF'
+          # ERP Database Editor - macOS
+          
+          ## Running the Application
+          
+          ### Option 1: Use the run script (Recommended)
+          Double-click `run_app.sh` or run it from Terminal:
+          ```bash
+          ./run_app.sh
+          ```
+          
+          ### Option 2: Run directly
+          Navigate to the ERP_DB_Editor_macOS directory and run the executable:
+          ```bash
+          cd ERP_DB_Editor_macOS
+          ./ERP_DB_Editor_macOS
+          ```
+          
+          ## Troubleshooting
+          
+          If you get permission prompts or "app can't be opened" errors:
+          
+          1. **Use the run script**: The `run_app.sh` script automatically removes quarantine attributes
+          
+          2. **Manual fix**: Run this command in Terminal:
+             ```bash
+             xattr -dr com.apple.quarantine /path/to/ERP_DB_Editor_macOS
+             xattr -dr com.apple.quarantine /path/to/ERP_DB_Editor_macOS/ERP_DB_Editor_macOS
+             ```
+          
+          3. **System Preferences**: Go to System Preferences > Security & Privacy > General, and click "Open Anyway" if the app is blocked
+          
+          ## Note
+          This application is not signed/notarized, which is why macOS may show security warnings. The application is safe to run.
+          EOF
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ERP_DB_Editor_macOS
+          path: dist/macos/
+
+  # Create Release
+  create-release:
+    needs: [check-build-trigger, build-windows-x86, build-windows-arm, build-macos]
+    if: needs.check-build-trigger.outputs.should-build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Create release archive
+        run: |
+          mkdir -p release
+          cp -r artifacts/* release/
+          
+          # Create zip files for each platform
+          cd release
+          zip -r ERP_DB_Editor_Windows_x86.zip ERP_DB_Editor_Windows_x86/
+          zip -r ERP_DB_Editor_Windows_ARM.zip ERP_DB_Editor_Windows_ARM/
+          zip -r ERP_DB_Editor_macOS.zip ERP_DB_Editor_macOS/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: ERP DB Editor Build ${{ github.run_number }}
+          body: |
+            ## Cross-Platform Executables
+            
+            This release contains executables for all supported platforms:
+            
+            ### Windows x86
+            - Download: `ERP_DB_Editor_Windows_x86.zip`
+            - Extract and run `ERP_DB_Editor_Windows_x86.exe`
+            
+            ### Windows ARM
+            - Download: `ERP_DB_Editor_Windows_ARM.zip`
+            - Extract and run `ERP_DB_Editor_Windows_ARM.exe`
+            
+            
+            ### macOS
+            - Download: `ERP_DB_Editor_macOS.zip`
+            - Extract and run `run_app.sh` (recommended) or `ERP_DB_Editor_macOS` directly
+            - Note: If you get permission prompts, run `run_app.sh` which will remove quarantine attributes
+            
+            ---
+            
+            **Build Information:**
+            - Commit: `${{ github.sha }}`
+            - Branch: `${{ github.ref_name }}`
+            - Build Date: `${{ github.event.head_commit.timestamp }}`
+          files: |
+            release/ERP_DB_Editor_Windows_x86.zip
+            release/ERP_DB_Editor_Windows_ARM.zip
+            release/ERP_DB_Editor_macOS.zip
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -62,25 +62,62 @@ class TreeViewWidget(ctk.CTkFrame):
         
         # Configure columns
         self.setup_columns()
+        
+        # Force style refresh for Windows compatibility
+        self.refresh_tree_style()
     
     def configure_tree_style(self):
         """Configure the tree view styling with dark mode colors and fonts."""
         # Create a style object
         style = ttk.Style()
         
+        # Set the theme to ensure proper styling on all platforms
+        try:
+            # Try to set a theme that works well with custom styling
+            available_themes = style.theme_names()
+            if 'clam' in available_themes:
+                style.theme_use('clam')
+            elif 'alt' in available_themes:
+                style.theme_use('alt')
+        except:
+            pass  # Use default theme if setting fails
+        
         # Configure the treeview style with dark theme
         style.configure("Treeview", 
-                       font=("Arial", 9),  # Smaller font size
-                       rowheight=20,  # Smaller row height
+                       font=("Arial", 11),  # Consistent font size
+                       rowheight=24,  # Increased row height for better readability
                        background="#2b2b2b",  # Dark background
                        foreground="#ffffff",  # White text
                        fieldbackground="#2b2b2b")  # Dark field background
         
         # Configure treeview heading with dark theme
         style.configure("Treeview.Heading",
-                       font=("Arial", 9, "bold"),  # Bold headers with smaller font
+                       font=("Arial", 11, "bold"),  # Bold headers with consistent font
                        background="#3c3c3c",  # Darker header background
                        foreground="#ffffff")  # White header text
+        
+        # Additional configuration for Windows compatibility
+        style.map("Treeview.Heading",
+                 background=[('active', '#4c4c4c'),
+                           ('pressed', '#5c5c5c')])
+        
+        style.map("Treeview",
+                 background=[('selected', '#1976d2')],
+                 foreground=[('selected', '#ffffff')])
+    
+    def refresh_tree_style(self):
+        """Force refresh the tree style for Windows compatibility."""
+        try:
+            # Force a style refresh by temporarily changing and restoring the theme
+            style = ttk.Style()
+            current_theme = style.theme_use()
+            style.theme_use('clam')
+            style.theme_use(current_theme)
+            
+            # Re-apply the styling
+            self.configure_tree_style()
+        except:
+            pass  # Ignore errors during style refresh
         
         # Define dark color schemes for different hierarchy levels
         self.hierarchy_colors = {

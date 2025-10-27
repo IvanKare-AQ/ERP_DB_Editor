@@ -135,13 +135,17 @@ class ModelManagerDialog:
         
         self.models_listbox = tk.Listbox(
             listbox_frame,
-            font=("Arial", 11),
-            selectmode=tk.SINGLE
+            font=("Arial", 11),  # Consistent font size
+            selectmode=tk.SINGLE,
+            bg="#2b2b2b",  # Dark background
+            fg="#ffffff",  # White text
+            selectbackground="#1976d2",  # Blue selection
+            selectforeground="#ffffff"  # White selection text
         )
         self.models_listbox.pack(side="left", fill="both", expand=True)
         
         # Scrollbar for listbox
-        scrollbar = tk.Scrollbar(listbox_frame)
+        scrollbar = tk.Scrollbar(listbox_frame, bg="#3c3c3c", troughcolor="#2b2b2b")
         scrollbar.pack(side="right", fill="y")
         
         self.models_listbox.config(yscrollcommand=scrollbar.set)

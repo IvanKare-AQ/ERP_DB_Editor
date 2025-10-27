@@ -30,6 +30,9 @@ class MainWindow:
         self.root.geometry("2000x1000")  # Even wider to ensure edit panel visibility with wider tabs
         self.root.minsize(1600, 800)  # Increased minimum width and height for wider tabs
         
+        # Ensure consistent font rendering across platforms
+        self.configure_fonts()
+        
         # Initialize backend components
         self.excel_handler = ExcelHandler()
         self.config_manager = ConfigManager()
@@ -42,6 +45,27 @@ class MainWindow:
         
         # Setup the GUI
         self.setup_gui()
+    
+    def configure_fonts(self):
+        """Configure fonts for consistent rendering across platforms."""
+        import tkinter as tk
+        
+        try:
+            # Set default font sizes for consistent rendering across platforms
+            default_font = tk.font.nametofont("TkDefaultFont")
+            default_font.configure(size=11)
+            
+            text_font = tk.font.nametofont("TkTextFont")
+            text_font.configure(size=11)
+            
+            fixed_font = tk.font.nametofont("TkFixedFont")
+            fixed_font.configure(size=11)
+            
+            # Set CustomTkinter default font
+            ctk.set_default_font("Arial", 11)
+        except Exception as e:
+            print(f"Warning: Could not configure fonts: {e}")
+            # Continue without font configuration if it fails
         
     def setup_gui(self):
         """Setup the main GUI components."""

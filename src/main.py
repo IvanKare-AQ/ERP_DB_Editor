@@ -11,7 +11,12 @@ import os
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from src.gui.main_window import MainWindow
+# Import with proper path handling for PyInstaller
+try:
+    from src.gui.main_window import MainWindow
+except ImportError:
+    # Fallback for PyInstaller
+    from gui.main_window import MainWindow
 
 
 def main():

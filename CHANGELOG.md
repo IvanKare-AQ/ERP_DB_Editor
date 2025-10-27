@@ -5,6 +5,76 @@ All notable changes to the ERP Database Editor project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-01-XX
+
+### Added
+- **Cross-Platform Executable Builds**: Automated builds for Windows x86, Windows ARM, and macOS
+  - GitHub Actions workflow for automated cross-platform builds
+  - Triggered by "#BUILD" commit message or manual dispatch
+  - Comprehensive PyInstaller configuration with all dependencies
+  - Automated release creation with platform-specific executables
+  - Explicit hidden imports for all required modules (requests, customtkinter, PIL, etc.)
+  - Proper SSL/certificate support for network operations
+- **macOS Compatibility**: Special handling for macOS security and permissions
+  - Quarantine removal script (run_app.sh) to prevent permission prompts
+  - Comprehensive README with troubleshooting instructions for macOS users
+  - Proper path handling for PyInstaller directory distributions
+  - Console mode for better debugging and error visibility
+
+### Changed
+- **Font Consistency**: Consistent rendering across all platforms and execution methods
+  - Platform-specific theme selection for proper styling
+  - Consistent font sizes (11pt) across all components
+  - Increased tree view row height (20 to 24) for better readability
+  - Fixed font configuration timing to occur after root window creation
+- **Tree View Styling**: Improved dark theme styling for Windows compatibility
+  - Added platform-specific theme selection (clam or alt theme)
+  - Windows compatibility styling with proper theme mapping
+  - Style refresh mechanism for Windows compatibility
+  - Proper column header visibility (fixed white-on-white text issue)
+- **Component Styling**: Consistent dark theme across all GUI components
+  - AI editor listbox styling with dark theme colors
+  - Model manager dialog listbox styling with dark theme colors
+  - Dark theme scrollbar styling for listboxes
+  - Proper selection colors (blue selection with white text)
+
+### Fixed
+- **Tree View Column Headers**: Fixed white background with white font on Windows
+  - Added platform-specific theme selection
+  - Windows compatibility styling with proper theme mapping
+  - Style refresh mechanism for consistent rendering
+- **AI Results and Model Manager Styling**: Fixed styling issues in AI sections
+  - Dark theme listbox styling with proper contrast
+  - Blue selection highlighting for selected items
+  - Dark theme scrollbar styling
+- **macOS Permission Prompts**: Fixed permission prompts for every library
+  - Added quarantine removal script (run_app.sh)
+  - Comprehensive README with troubleshooting instructions
+  - Proper path handling for PyInstaller directory distributions
+- **Font Configuration Timing**: Fixed RuntimeError when configuring fonts too early
+  - Moved font configuration to main window initialization
+  - Font configuration now happens after root window creation
+  - Added error handling to prevent crashes
+- **macOS Run Script**: Fixed run_app.sh path issue
+  - Corrected executable path inside PyInstaller directory
+  - Updated README with proper instructions
+  - Fixed "is a directory" error when running the script
+- **GitHub Release Permissions**: Fixed 403 Forbidden error when creating releases
+  - Added proper workflow-level permissions (contents: write)
+  - Added job-level permissions for release creation
+  - Fixed token handling to use proper token parameter
+- **Build Module Imports**: Fixed missing module errors in Windows ARM builds
+  - Added comprehensive hidden imports for all required modules
+  - Proper SSL/certificate support
+  - Config and source directory handling in PyInstaller
+
+### Technical Improvements
+- **Build Configuration**: Comprehensive PyInstaller setup
+  - All dependencies explicitly included as hidden imports
+  - Proper data file handling (config, src directories)
+  - Platform-specific build configurations
+  - Automated artifact upload and release creation
+
 ## [1.2.0] - 2025-10-13
 
 ### Added
