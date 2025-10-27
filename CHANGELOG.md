@@ -5,6 +5,23 @@ All notable changes to the ERP Database Editor project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2025-01-XX
+
+### Fixed
+- **Build Workflow**: Resolved all platform build issues
+  - Fixed Windows x86 build module imports
+  - Fixed Windows ARM build module imports
+  - Fixed macOS build and run script path issues
+  - Fixed Ubuntu build (removed as unnecessary)
+- **Release Process**: Fixed GitHub release 403 error
+  - Added proper workflow-level and job-level permissions
+  - Fixed token handling in release creation
+  - Automated release creation now works correctly
+- **Cross-Platform Compatibility**: Comprehensive fixes for all platforms
+  - All platforms now build successfully
+  - All platform executables are properly packaged
+  - Release artifacts are correctly uploaded
+
 ## [1.3.0] - 2025-01-XX
 
 ### Added
