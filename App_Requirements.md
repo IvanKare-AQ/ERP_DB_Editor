@@ -328,6 +328,32 @@
 - **Data Extraction Verification**: Systematic testing of all columns to ensure proper data display
 - **Column Count Synchronization**: Tree view structure must handle all available columns correctly
 
+## Cross-Platform Build and Deployment Requirements
+- **Automated Cross-Platform Builds**: GitHub Actions workflow for automated builds
+  - Builds triggered by "#BUILD" commit message or manual dispatch
+  - Support for Windows x86, Windows ARM, and macOS platforms
+  - Automated release creation with platform-specific executables
+  - Comprehensive PyInstaller configuration with all dependencies
+  - Explicit hidden imports for all required modules
+  - Proper data file handling (config, src, images)
+- **macOS Compatibility**: Special handling for macOS security and permissions
+  - Quarantine removal script (run_app.sh) to prevent permission prompts
+  - Comprehensive README with troubleshooting instructions
+  - Proper path handling for PyInstaller directory distributions
+- **Font Consistency**: Consistent rendering across platforms and execution methods
+  - Platform-specific theme selection for proper styling
+  - Consistent font sizes (11pt) across all components
+  - Dark theme styling with proper contrast
+  - Tree view, AI editor, and model manager consistent styling
+  - Fixed Windows column header styling (no more white-on-white text)
+  - Proper font timing (fonts configured after root window creation)
+- **Build Configuration**: PyInstaller with comprehensive module inclusion
+  - All dependencies explicitly included as hidden imports
+  - Proper SSL/certificate support for network operations
+  - Config directory included in builds
+  - Source directory structure preserved in builds
+  - Console mode for macOS (better debugging and error visibility)
+
 ## Dependencies
 - customtkinter
 - pandas (for Excel file handling)
@@ -337,3 +363,4 @@
 - ollama (for AI model management and text generation)
 - Pillow (for image processing)
 - ddgs (for web image search)
+- pyinstaller (for cross-platform executable creation)
