@@ -61,8 +61,8 @@ class MainWindow:
             fixed_font = tk.font.nametofont("TkFixedFont")
             fixed_font.configure(size=11)
             
-            # Set CustomTkinter default font
-            ctk.set_default_font("Arial", 11)
+            # Note: CustomTkinter doesn't have set_default_font method
+            # Font configuration is handled per widget
         except Exception as e:
             print(f"Warning: Could not configure fonts: {e}")
             # Continue without font configuration if it fails
