@@ -6,7 +6,7 @@
 - GUI elements will be within src/gui folder
 - Backend elements will be within src/backend folder
 - src folder will contain main app and all application code
-- data will contain all generated and used data and will be ignored for git
+- data will contain JSON database files (tracked in git) and Images folder (ignored by git)
 - GitHub repo for the project: git@github.com:IvanKare-AQ/ERP_DB_Editor.git
 
 ## UI/UX Requirements

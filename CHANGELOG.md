@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Category Hierarchy**: Tree structure built from `data/airq_categories.json` instead of grouping by data columns
 - **ERP Name Editing**: Removed "User ERP Name" staging column; users now edit "ERP name" directly
 - **Dropdown Placeholders**: Removed "Select Category..." placeholders when actual items are available
+- **ERP Name Structure**: ERP Name is now stored as an object with `full_name`, `type`, `part_number`, and `additional_parameters` properties
+- **Git Tracking**: JSON database files (`component_database.json`, `airq_categories.json`) are now tracked in git; Images folder remains ignored
 
 ### Removed
 - **User ERP Name Column**: Removed separate "User ERP Name" column - users now edit "ERP name" directly
@@ -26,7 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Column Visibility**: Column visibility now automatically saves to config when changed
-- **ERP Name Display**: Fixed "ERP Name" object extraction - now properly extracts `full_name` from nested structure
+- **ERP Name Object Handling**: Fixed ERP Name object structure preservation throughout the application
+  - Tree view now displays `full_name` from ERP Name object
+  - Manual editor connects to object properties (`type`, `part_number`, `additional_parameters`)
+  - Update All Fields button reconstructs object structure correctly
+  - Save operation preserves object structure (no restructuring to NaN)
+  - Fixed pandas assignment issues by using `.at` instead of `.loc` for dict objects
+  - Ensured object dtype is maintained throughout data operations
 - **Dropdown Population**: Dropdowns now only show placeholders when no items are available
 - **Data Source**: All column lists and dropdowns now use actual data as source of truth
 

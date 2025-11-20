@@ -104,17 +104,8 @@ class JsonHandler:
             # Normalize column names to remove leading/trailing spaces
             self.data.columns = self.data.columns.str.strip()
             
-            # Handle "ERP Name" if it's an object/dict - extract full_name
-            if "ERP Name" in self.data.columns:
-                def extract_erp_name(value):
-                    if isinstance(value, dict):
-                        return value.get('full_name', '')
-                    elif pd.isna(value):
-                        return ''
-                    else:
-                        return str(value)
-                
-                self.data["ERP Name"] = self.data["ERP Name"].apply(extract_erp_name)
+            # Keep "ERP Name" as object - don't extract full_name (preserve structure)
+            # The object structure will be preserved and accessed via tree view and manual editor
             
             # Rename map for standardization
             rename_map = {
@@ -128,6 +119,11 @@ class JsonHandler:
             
             self.data = self.data.rename(columns=rename_map)
             
+            # Ensure ERP name column is object dtype to preserve dict structure
+            if 'ERP name' in self.data.columns:
+                if self.data['ERP name'].dtype != 'object':
+                    self.data['ERP name'] = self.data['ERP name'].astype('object')
+            
             # Ensure required columns exist
             required_columns = [
                 'Article Category', 'Article Subcategory', 'Article Sublevel', 'ERP name'
@@ -137,7 +133,13 @@ class JsonHandler:
                 # Check if column exists (with or without trailing spaces)
                 col_exists = any(existing_col.strip() == col.strip() for existing_col in self.data.columns)
                 if not col_exists:
-                    self.data[col] = ''
+                    if col == 'ERP name':
+                        # Initialize ERP name as empty dict structure - create separate dict for each row
+                        import copy
+                        empty_dict = {'full_name': '', 'type': '', 'part_number': '', 'additional_parameters': ''}
+                        self.data[col] = pd.Series([copy.deepcopy(empty_dict) for _ in range(len(self.data))], dtype='object')
+                    else:
+                        self.data[col] = ''
             
             # Ensure Image column exists
             image_col_exists = any(existing_col.strip() == 'Image' for existing_col in self.data.columns)

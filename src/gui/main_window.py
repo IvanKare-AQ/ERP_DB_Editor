@@ -422,7 +422,8 @@ class MainWindow:
                 if len(erp_items) == 1:
                     original_data, row_id = erp_items[0]
                     self.edit_panel.manual_editor.set_selected_item(original_data, row_id)
-                    erp_name = original_data.get('ERP name', 'Unknown')
+                    erp_name_obj = original_data.get('ERP name', {})
+                    erp_name = erp_name_obj.get('full_name', 'Unknown') if isinstance(erp_name_obj, dict) else str(erp_name_obj) if erp_name_obj else 'Unknown'
                     self.update_status(f"Selected: {erp_name}")
                 else:
                     # Multiple ERP items selected
@@ -453,14 +454,28 @@ class MainWindow:
         # This is a simplified approach - in a real implementation,
         # you might want to store row IDs in tree items
         if not self.tree_view.data.empty:
+            # Extract full_name from ERP name object for comparison
+            import pandas as pd
+            def get_erp_full_name(erp_obj):
+                if isinstance(erp_obj, dict):
+                    return erp_obj.get('full_name', '')
+                elif pd.isna(erp_obj):
+                    return ''
+                else:
+                    return str(erp_obj)
+            
+            erp_name_series = self.tree_view.data['ERP name'].apply(get_erp_full_name)
             # Find matching row in data
             matching_rows = self.tree_view.data[
-                (self.tree_view.data['ERP name'] == item_text)
+                (erp_name_series == item_text)
             ]
             if not matching_rows.empty:
                 row = matching_rows.iloc[0]
                 delimiter = "◆◆◆"
-                return f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel', '')}"
+                # Extract full_name for row_id
+                erp_name_obj = row.get('ERP name', {})
+                erp_name_full = get_erp_full_name(erp_name_obj)
+                return f"{erp_name_full}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel', '')}"
         return None
     
     def get_original_row_data(self, row_id):
@@ -476,8 +491,19 @@ class MainWindow:
                 
                 # Use the clean column name (without duplicates)
                 sublevel_col = 'Article Sublevel'
+                # Extract full_name from ERP name object for comparison
+                import pandas as pd
+                def get_erp_full_name(erp_obj):
+                    if isinstance(erp_obj, dict):
+                        return erp_obj.get('full_name', '')
+                    elif pd.isna(erp_obj):
+                        return ''
+                    else:
+                        return str(erp_obj)
+                
+                erp_name_series = self.tree_view.data['ERP name'].apply(get_erp_full_name)
                 matching_rows = self.tree_view.data[
-                    (self.tree_view.data['ERP name'] == erp_name) &
+                    (erp_name_series == erp_name) &
                     (self.tree_view.data['Article Category'] == category) &
                     (self.tree_view.data['Article Subcategory'] == subcategory) &
                     (self.tree_view.data[sublevel_col] == sublevel)
@@ -534,9 +560,18 @@ class MainWindow:
                 
                 # Use the clean column name (without duplicates)
                 sublevel_col = 'Article Sublevel'
-                # Find matching row
+                # Find matching row - extract full_name from ERP name object for comparison
+                def get_erp_full_name(erp_obj):
+                    if isinstance(erp_obj, dict):
+                        return erp_obj.get('full_name', '')
+                    elif pd.isna(erp_obj):
+                        return ''
+                    else:
+                        return str(erp_obj)
+                
+                erp_name_series = data['ERP name'].apply(get_erp_full_name)
                 mask = (
-                    (data['ERP name'] == erp_name) &
+                    (erp_name_series == erp_name) &
                     (data['Article Category'] == category) &
                     (data['Article Subcategory'] == subcategory) &
                     (data[sublevel_col] == sublevel)
@@ -544,8 +579,28 @@ class MainWindow:
                 
                 if mask.any():
                     # Apply ERP name modification
-                    if 'erp_name' in mods:
-                        data.loc[mask, 'ERP name'] = mods['erp_name']
+                    if 'erp_name' in mods and mods['erp_name']:
+                        # Ensure ERP name column is object dtype to handle dict values
+                        if data['ERP name'].dtype != 'object':
+                            data['ERP name'] = data['ERP name'].astype('object')
+                        # Create a copy of the dict to avoid reference issues
+                        import copy
+                        erp_name_obj = mods['erp_name']
+                        # Validate that it's a dict with required keys
+                        if isinstance(erp_name_obj, dict):
+                            erp_name_obj = copy.deepcopy(erp_name_obj)
+                            # Ensure all required keys exist
+                            if 'full_name' not in erp_name_obj:
+                                erp_name_obj['full_name'] = ''
+                            if 'type' not in erp_name_obj:
+                                erp_name_obj['type'] = ''
+                            if 'part_number' not in erp_name_obj:
+                                erp_name_obj['part_number'] = ''
+                            if 'additional_parameters' not in erp_name_obj:
+                                erp_name_obj['additional_parameters'] = ''
+                        # Assign the dict object directly - iterate to ensure proper assignment
+                        for idx in data[mask].index:
+                            data.at[idx, 'ERP name'] = erp_name_obj
                     
                     # Apply Manufacturer modification
                     if 'manufacturer' in mods:

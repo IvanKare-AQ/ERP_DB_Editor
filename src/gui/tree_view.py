@@ -324,13 +324,24 @@ class TreeViewWidget(ctk.CTkFrame):
                     for index, (_, row) in enumerate(erp_items):
                         self._insert_erp_item(sublevel_node, row, index)
 
+    def _get_erp_name_full(self, row):
+        """Extract full_name from ERP name object or return string value."""
+        erp_name = row.get('ERP name', '')
+        if isinstance(erp_name, dict):
+            return erp_name.get('full_name', '')
+        elif pd.isna(erp_name):
+            return ''
+        else:
+            return str(erp_name)
+    
     def _insert_erp_item(self, parent_node, row, index, visible_columns=None):
         """Helper to insert an ERP item into the tree."""
         # Create row ID for this item (use the Article Sublevelcolumn with trailing space)
         sublevel = row.get('Article Sublevel', '')
         # Use a unique delimiter that's unlikely to appear in the data
         delimiter = "◆◆◆"  # Using a unique Unicode character sequence
-        row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{sublevel}"
+        erp_name_full = self._get_erp_name_full(row)
+        row_id = f"{erp_name_full}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{sublevel}"
         
         if visible_columns:
             # Use provided visible columns
@@ -344,14 +355,18 @@ class TreeViewWidget(ctk.CTkFrame):
         for col in columns_to_use:
             # Use mapping to get data column name
             data_col = self.get_data_column_name(col)
-            values.append(row.get(data_col, ''))
+            if col == "ERP Name":
+                # Extract full_name from ERP name object for display
+                values.append(self._get_erp_name_full(row))
+            else:
+                values.append(row.get(data_col, ''))
         
         # Determine alternating background tag
         row_tag = "erp_item_even" if index % 2 == 0 else "erp_item_odd"
         
         # Create ERP item node with row ID and alternating color tag stored in tags
         self.tree.insert(parent_node, "end", 
-                       text=row.get('ERP name', ''),
+                       text=erp_name_full,
                        values=tuple(values),
                        tags=(row_tag, row_id))
         
@@ -627,9 +642,18 @@ class TreeViewWidget(ctk.CTkFrame):
                 subcategory = parts[2]
                 sublevel = parts[3]
                 
-                # Find matching row
+                # Find matching row - extract full_name from ERP name object for comparison
+                def get_erp_full_name(erp_obj):
+                    if isinstance(erp_obj, dict):
+                        return erp_obj.get('full_name', '')
+                    elif pd.isna(erp_obj):
+                        return ''
+                    else:
+                        return str(erp_obj)
+                
+                erp_name_series = data['ERP name'].apply(get_erp_full_name)
                 mask = (
-                    (data['ERP name'] == erp_name) &
+                    (erp_name_series == erp_name) &
                     (data['Article Category'] == category) &
                     (data['Article Subcategory'] == subcategory) &
                     (data['Article Sublevel'] == sublevel)
@@ -759,24 +783,30 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def update_tree_item_erp_name(self, row_id, erp_name):
         """Update the ERP name (tree item text) for a specific tree item without refreshing the entire view."""
+        # Extract full_name from object if it's a dict
+        if isinstance(erp_name, dict):
+            display_name = erp_name.get('full_name', '')
+        else:
+            display_name = str(erp_name) if erp_name else ''
+        
         # Find the tree item with the matching row_id
         for item in self.tree.get_children():
             # Check ERP items recursively
-            if self._update_item_erp_name_recursive(item, row_id, erp_name):
+            if self._update_item_erp_name_recursive(item, row_id, display_name):
                 break
     
-    def _update_item_erp_name_recursive(self, item, row_id, erp_name):
+    def _update_item_erp_name_recursive(self, item, row_id, display_name):
         """Recursively search for and update the ERP name (tree item text) for a specific item."""
         # Check if this item has the matching row_id
         tags = self.tree.item(item, "tags")
         if tags and len(tags) >= 2 and tags[1] == row_id:
-            # Found the item, update its text (which displays ERP name)
-            self.tree.item(item, text=erp_name)
+            # Found the item, update its text (which displays ERP name full_name)
+            self.tree.item(item, text=display_name)
             return True
         
         # Check children recursively
         for child in self.tree.get_children(item):
-            if self._update_item_erp_name_recursive(child, row_id, erp_name):
+            if self._update_item_erp_name_recursive(child, row_id, display_name):
                 return True
         
         return False
@@ -892,9 +922,18 @@ class TreeViewWidget(ctk.CTkFrame):
             if len(parts) >= 4:
                 erp_name, category, subcategory, sublevel = parts[0], parts[1], parts[2], parts[3]
                 
-                # Create mask to find the row to delete
+                # Create mask to find the row to delete - extract full_name from ERP name object
+                def get_erp_full_name(erp_obj):
+                    if isinstance(erp_obj, dict):
+                        return erp_obj.get('full_name', '')
+                    elif pd.isna(erp_obj):
+                        return ''
+                    else:
+                        return str(erp_obj)
+                
+                erp_name_series = self.data['ERP name'].apply(get_erp_full_name)
                 mask = (
-                    (self.data['ERP name'] == erp_name) &
+                    (erp_name_series == erp_name) &
                     (self.data['Article Category'] == category) &
                     (self.data['Article Subcategory'] == subcategory) &
                     (self.data['Article Sublevel'] == sublevel)

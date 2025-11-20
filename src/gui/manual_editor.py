@@ -507,21 +507,38 @@ class ManualEditor(ctk.CTkFrame):
         self.selected_row_id = row_id
 
         if item_data:
-            # Populate ERP Name field - priority: user modifications > original ERP name
-            erp_name = item_data.get('ERP name', '')
-
+            # Get ERP name object
+            erp_name_obj = item_data.get('ERP name', {})
+            if not isinstance(erp_name_obj, dict):
+                erp_name_obj = {}
+            
             # First check if user has made modifications
-            current_erp_name = self.tree_view.user_modifications.get(row_id, {}).get('erp_name', '')
-
-            # If no user modifications, use original ERP name
-            if not current_erp_name:
-                current_erp_name = erp_name
-
+            user_mods = self.tree_view.user_modifications.get(row_id, {})
+            erp_name_mod = user_mods.get('erp_name', {})
+            
+            # Use modifications if available, otherwise use original object
+            if erp_name_mod and isinstance(erp_name_mod, dict):
+                current_erp_obj = erp_name_mod
+            else:
+                current_erp_obj = erp_name_obj
+            
+            # Extract full_name for display
+            current_full_name = current_erp_obj.get('full_name', '') if isinstance(current_erp_obj, dict) else ''
+            
             self.user_erp_name_entry.delete(0, tk.END)
-            self.user_erp_name_entry.insert(0, current_erp_name)
+            self.user_erp_name_entry.insert(0, current_full_name)
 
-            # Parse ERP Name into Type, PN, and Details
-            self.parse_user_erp_name(current_erp_name)
+            # Populate Type, PN, Details directly from object structure
+            type_value = current_erp_obj.get('type', '') if isinstance(current_erp_obj, dict) else ''
+            pn_value = current_erp_obj.get('part_number', '') if isinstance(current_erp_obj, dict) else ''
+            details_value = current_erp_obj.get('additional_parameters', '') if isinstance(current_erp_obj, dict) else ''
+            
+            self.type_entry.delete(0, tk.END)
+            self.type_entry.insert(0, type_value)
+            self.pn_entry.delete(0, tk.END)
+            self.pn_entry.insert(0, pn_value)
+            self.details_entry.delete(0, tk.END)
+            self.details_entry.insert(0, details_value)
 
             # Populate Manufacturer field - priority: user modifications > original Manufacturer
             current_manufacturer = self.tree_view.user_modifications.get(row_id, {}).get('manufacturer', '')
@@ -682,7 +699,14 @@ class ManualEditor(ctk.CTkFrame):
         
         # Get PN for initial search
         pn_value = self.pn_entry.get().strip()
-        initial_search = pn_value if pn_value else self.selected_item.get('ERP name', '')
+        if pn_value:
+            initial_search = pn_value
+        else:
+            erp_name_obj = self.selected_item.get('ERP name', {})
+            if isinstance(erp_name_obj, dict):
+                initial_search = erp_name_obj.get('full_name', '')
+            else:
+                initial_search = str(erp_name_obj) if erp_name_obj else ''
         
         # Open image dialog
         from src.gui.image_dialog import ImageSelectionDialog
@@ -847,10 +871,12 @@ class ManualEditor(ctk.CTkFrame):
             return
 
         # Show confirmation dialog
+        erp_name_obj = self.selected_item.get('ERP name', {})
+        erp_name_display = erp_name_obj.get('full_name', 'Unknown') if isinstance(erp_name_obj, dict) else str(erp_name_obj) if erp_name_obj else 'Unknown'
         result = messagebox.askyesno(
             "Delete Item",
             f"Are you sure you want to delete this item?\n\n"
-            f"ERP Name: {self.selected_item.get('ERP name', 'Unknown')}\n"
+            f"ERP Name: {erp_name_display}\n"
             f"Category: {self.selected_item.get('Article Category', 'Unknown')}\n"
             f"Subcategory: {self.selected_item.get('Article Subcategory', 'Unknown')}\n"
             f"Sublevel: {self.selected_item.get('Article Sublevel', 'Unknown')}\n\n"
@@ -870,25 +896,36 @@ class ManualEditor(ctk.CTkFrame):
                 self.main_window.update_status("Item deleted successfully")
 
     def update_all_fields(self):
-        """Update all fields (User ERP Name, Manufacturer, REMARK) for the selected item."""
+        """Update all fields (ERP Name object, Manufacturer, REMARK) for the selected item."""
         if not self.selected_row_id:
             return
 
         # Get values from all input fields
-        user_erp_name = self.user_erp_name_entry.get().strip()
+        full_name = self.user_erp_name_entry.get().strip()
+        type_value = self.type_entry.get().strip()
+        pn_value = self.pn_entry.get().strip()
+        details_value = self.details_entry.get().strip()
         manufacturer = self.manufacturer_entry.get().strip()
         remark = self.remark_entry.get().strip()
 
+        # Reconstruct ERP Name object from parsed fields
+        erp_name_obj = {
+            "full_name": full_name,
+            "type": type_value,
+            "part_number": pn_value,
+            "additional_parameters": details_value
+        }
+
         # Update all fields in tree view
-        self.tree_view.update_user_erp_name(self.selected_row_id, user_erp_name)
+        self.tree_view.update_user_erp_name(self.selected_row_id, erp_name_obj)
         self.tree_view.update_manufacturer(self.selected_row_id, manufacturer)
         self.tree_view.update_remark(self.selected_row_id, remark)
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
             updated_fields = []
-            if user_erp_name:
-                updated_fields.append(f"ERP name: {user_erp_name}")
+            if full_name:
+                updated_fields.append(f"ERP name: {full_name}")
             if manufacturer:
                 updated_fields.append(f"Manufacturer: {manufacturer}")
             if remark:
@@ -900,12 +937,14 @@ class ManualEditor(ctk.CTkFrame):
                 self.main_window.update_status("Cleared all field values")
 
     def reset_user_erp_name(self):
-        """Reset the ERP name for the selected item to original ERP name."""
+        """Reset the ERP name for the selected item to original ERP name object."""
         if not self.selected_row_id or not self.selected_item:
             return
 
-        # Get the original ERP name
-        original_erp_name = self.selected_item.get('ERP name', '')
+        # Get the original ERP name object
+        original_erp_obj = self.selected_item.get('ERP name', {})
+        if not isinstance(original_erp_obj, dict):
+            original_erp_obj = {}
 
         # Remove the modification to reset to original
         if self.selected_row_id in self.tree_view.user_modifications:
@@ -915,9 +954,18 @@ class ManualEditor(ctk.CTkFrame):
         # Refresh the view to show original value
         self.tree_view.refresh_view()
 
-        # Update the input field to show the original ERP name
+        # Update all fields from original object
+        original_full_name = original_erp_obj.get('full_name', '')
         self.user_erp_name_entry.delete(0, tk.END)
-        self.user_erp_name_entry.insert(0, original_erp_name)
+        self.user_erp_name_entry.insert(0, original_full_name)
+        
+        # Update parsed fields
+        self.type_entry.delete(0, tk.END)
+        self.type_entry.insert(0, original_erp_obj.get('type', ''))
+        self.pn_entry.delete(0, tk.END)
+        self.pn_entry.insert(0, original_erp_obj.get('part_number', ''))
+        self.details_entry.delete(0, tk.END)
+        self.details_entry.insert(0, original_erp_obj.get('additional_parameters', ''))
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):

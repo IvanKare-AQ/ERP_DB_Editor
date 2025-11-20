@@ -7,6 +7,7 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import messagebox
 import threading
+import pandas as pd
 from src.backend.ollama_handler import OllamaHandler
 from src.backend.prompt_manager import PromptManager
 from src.gui.prompt_dialog import PromptSelectionDialog
@@ -364,9 +365,18 @@ class AIEditor(ctk.CTkFrame):
 
     def get_selected_item_context(self):
         """Get context for selected item(s) only."""
+        def get_erp_full_name(erp_obj):
+            if isinstance(erp_obj, dict):
+                return erp_obj.get('full_name', 'Unknown')
+            elif erp_obj:
+                return str(erp_obj)
+            else:
+                return 'Unknown'
+        
         # Check for single selected item
         if self.selected_item:
-            erp_name = self.selected_item.get('ERP name', 'Unknown')
+            erp_name_obj = self.selected_item.get('ERP name', {})
+            erp_name = get_erp_full_name(erp_name_obj)
             category = self.selected_item.get('Article Category', 'Unknown')
             subcategory = self.selected_item.get('Article Subcategory', 'Unknown')
             sublevel = self.selected_item.get('Article Sublevel', 'Unknown')
@@ -376,7 +386,8 @@ class AIEditor(ctk.CTkFrame):
         if hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items:
             contexts = []
             for item_data, row_id in self.tree_view.selected_items:
-                erp_name = item_data.get('ERP name', 'Unknown')
+                erp_name_obj = item_data.get('ERP name', {})
+                erp_name = get_erp_full_name(erp_name_obj)
                 category = item_data.get('Article Category', 'Unknown')
                 subcategory = item_data.get('Article Subcategory', 'Unknown')
                 sublevel = item_data.get('Article Sublevel', 'Unknown')
@@ -503,7 +514,8 @@ class AIEditor(ctk.CTkFrame):
 
                     try:
                         # Prepare context for this specific item with all required fields
-                        erp_name = item_data.get('ERP name', 'Unknown')
+                        erp_name_obj = item_data.get('ERP name', {})
+                        erp_name = erp_name_obj.get('full_name', 'Unknown') if isinstance(erp_name_obj, dict) else str(erp_name_obj) if erp_name_obj else 'Unknown'
                         category = item_data.get('Article Category', 'Unknown')
                         subcategory = item_data.get('Article Subcategory', 'Unknown')
                         sublevel = item_data.get('Article Sublevel', 'Unknown')
@@ -652,12 +664,22 @@ class AIEditor(ctk.CTkFrame):
                         break
 
                     try:
-                        # Get row ID for this item
+                        # Get row ID for this item - extract full_name from ERP name object
+                        erp_name_obj = row.get('ERP name', {})
+                        def get_erp_full_name(erp_obj):
+                            if isinstance(erp_obj, dict):
+                                return erp_obj.get('full_name', '')
+                            elif pd.isna(erp_obj):
+                                return ''
+                            else:
+                                return str(erp_obj)
+                        
+                        erp_name_full = get_erp_full_name(erp_name_obj)
                         delimiter = "◆◆◆"
-                        row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel', '')}"
+                        row_id = f"{erp_name_full}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel', '')}"
 
                         # Prepare context for this specific item with all required fields
-                        erp_name = row.get('ERP name', 'Unknown')
+                        erp_name = erp_name_full if erp_name_full else 'Unknown'
                         category = row.get('Article Category', 'Unknown')
                         subcategory = row.get('Article Subcategory', 'Unknown')
                         sublevel = row.get('Article Sublevel', 'Unknown')
