@@ -100,6 +100,15 @@ class MainWindow:
         )
         self.save_button.pack(side="left", padx=5, pady=5)
         
+        self.export_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Export",
+            command=self.export_to_excel,
+            width=100,
+            state="disabled"
+        )
+        self.export_button.pack(side="left", padx=5, pady=5)
+        
         # Separator
         separator = ctk.CTkFrame(self.toolbar_frame, width=2, height=30)
         separator.pack(side="left", padx=10, pady=5)
@@ -248,6 +257,7 @@ class MainWindow:
             
             # Enable buttons
             self.save_button.configure(state="normal")
+            self.export_button.configure(state="normal")
             self.column_visibility_button.configure(state="normal")
             self.save_view_button.configure(state="normal")
             self.filter_button.configure(state="normal")
@@ -274,6 +284,73 @@ class MainWindow:
         except Exception as e:
             self.update_status("Error saving database")
             messagebox.showerror("Error", f"Failed to save database: {str(e)}")
+    
+    def export_to_excel(self):
+        """Export all data (filtered and unfiltered) to Excel file."""
+        try:
+            # Get file path from user
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
+                title="Export to Excel"
+            )
+            
+            if not file_path:
+                self.update_status("Export cancelled")
+                return
+            
+            self.update_status("Exporting to Excel...")
+            
+            # Get all data with user modifications applied
+            data = self.get_data_with_modifications()
+            
+            # Create a copy for export (we'll modify ERP Name for Excel)
+            export_data = data.copy()
+            
+            # Convert ERP Name objects to full_name strings for Excel
+            if 'ERP name' in export_data.columns:
+                import pandas as pd
+                def get_erp_full_name(erp_obj):
+                    if isinstance(erp_obj, dict):
+                        return erp_obj.get('full_name', '')
+                    elif pd.isna(erp_obj):
+                        return ''
+                    else:
+                        return str(erp_obj)
+                
+                export_data['ERP name'] = export_data['ERP name'].apply(get_erp_full_name)
+            
+            # Reverse column renaming for Excel export (match JSON structure)
+            reverse_rename_map = {
+                "Article Category": "Category",
+                "Article Subcategory": "Subcategory",
+                "Article Sublevel": "Sub-subcategory",
+                "ERP name": "ERP Name",
+                "REMARK": "Remark"
+            }
+            
+            # Only rename columns that exist
+            rename_map = {k: v for k, v in reverse_rename_map.items() if k in export_data.columns}
+            export_data = export_data.rename(columns=rename_map)
+            
+            # Export to Excel using openpyxl
+            try:
+                import openpyxl
+                from openpyxl import Workbook
+            except ImportError:
+                messagebox.showerror("Error", "openpyxl is required for Excel export. Please install it: pip install openpyxl")
+                self.update_status("Export failed: openpyxl not installed")
+                return
+            
+            # Use pandas to_excel method
+            export_data.to_excel(file_path, index=False, engine='openpyxl')
+            
+            self.update_status(f"Data exported successfully to {os.path.basename(file_path)}")
+            messagebox.showinfo("Export Successful", f"Data exported successfully to:\n{file_path}")
+            
+        except Exception as e:
+            self.update_status("Error exporting to Excel")
+            messagebox.showerror("Error", f"Failed to export to Excel: {str(e)}")
             
     def open_column_visibility(self):
         """Open the column visibility dialog."""

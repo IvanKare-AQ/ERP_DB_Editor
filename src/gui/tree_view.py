@@ -674,7 +674,6 @@ class TreeViewWidget(ctk.CTkFrame):
             "Image": "Image",
             "SKU NR": "SKU NR",
             "ERP Name": "ERP name",
-            "KEN NAME": "KEN NAME",
             "CAD Name": "CAD name",
             "Electronics": "Electronics",
             "Product Value": "Product Value",

@@ -149,15 +149,6 @@ class JsonHandler:
                     self.data.insert(erp_name_pos, 'Image', '')
                 else:
                     self.data['Image'] = ''
-            
-            # Ensure KEN NAME column exists
-            ken_name_col_exists = any(existing_col.strip() == 'KEN NAME' for existing_col in self.data.columns)
-            if not ken_name_col_exists:
-                if 'CAD name' in self.data.columns:
-                    cad_name_pos = self.data.columns.get_loc('CAD name') + 1
-                    self.data.insert(cad_name_pos, 'KEN NAME', '')
-                else:
-                    self.data['KEN NAME'] = ''
                     
     def save_file(self, file_path: Optional[str] = None, data: Optional[pd.DataFrame] = None) -> None:
         """Save data to a JSON file."""
