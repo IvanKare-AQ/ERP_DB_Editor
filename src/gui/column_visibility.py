@@ -110,7 +110,7 @@ class ColumnVisibilityDialog:
         # Get selected columns
         visible_columns = [col for col, var in self.column_states.items() if var.get()]
         
-        # Apply to tree view only (don't save to config)
+        # Apply to tree view (which will save to config automatically)
         self.tree_view.set_visible_columns(visible_columns)
         
         # Notify main window that view has changed

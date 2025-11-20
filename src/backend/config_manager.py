@@ -32,27 +32,6 @@ class ConfigManager:
     def get_default_config(self) -> Dict[str, Any]:
         """Get default configuration."""
         return {
-            "rows": [
-                "SN",
-                "SKU NR", 
-                "KEN NAME",
-                "ERP name",
-                "CAD name",
-                "Electronics",
-                "Article Category",
-                "Article Subcategory",
-                "Article Sublevel",
-                "Product Value",
-                "Manufacturer",
-                "SKU",
-                "EAN 13",
-                "Unit",
-                "Supplier",
-                "Expiry Date (Y/N)",
-                "Tracking Method",
-                "Procurement Method (Buy/Make)",
-                "REMARK"
-            ],
             "column_visibility": {},
             "view_settings": {}
         }
@@ -89,15 +68,6 @@ class ConfigManager:
         self.config["view_settings"] = settings
         self.save_config()
         
-    def get_available_columns(self) -> List[str]:
-        """Get available columns from configuration."""
-        return self.config.get("rows", [])
-        
-    def update_available_columns(self, columns: List[str]) -> None:
-        """Update available columns in configuration."""
-        self.config["rows"] = columns
-        self.save_config()
-    
     def save_filters(self, filters: Dict[str, Dict[str, Any]]) -> None:
         """Save filter settings."""
         if "view_settings" not in self.config:

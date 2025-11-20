@@ -5,6 +5,31 @@ All notable changes to the ERP Database Editor project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Database Storage**: Switched from Excel to JSON (`data/component_database.json`) for database storage
+- **File Operations**: Removed "Open Excel" and "Save As" buttons; application now loads database on startup
+- **Dependencies**: Removed `openpyxl` dependency as Excel is no longer used
+- **Column Source**: Columns are now dynamically determined from `data/component_database.json` instead of hardcoded lists
+- **Data Enrichment**: Level 3 parameters (Stage, Origin, Serialized, Usage) automatically enriched from `data/airq_categories.json`
+- **Category Hierarchy**: Tree structure built from `data/airq_categories.json` instead of grouping by data columns
+- **ERP Name Editing**: Removed "User ERP Name" staging column; users now edit "ERP name" directly
+- **Dropdown Placeholders**: Removed "Select Category..." placeholders when actual items are available
+
+### Removed
+- **User ERP Name Column**: Removed separate "User ERP Name" column - users now edit "ERP name" directly
+- **Apply User ERP Names Button**: Removed button that moved User ERP Name to ERP name (no longer needed)
+- **Clear User ERP Name Button**: Removed button for clearing User ERP Name (no longer needed)
+- **Hardcoded Column Lists**: Removed all hardcoded column lists - columns now come from data structure
+- **Rows Configuration**: Removed "rows" array from `config/default_settings.json` (columns now dynamic)
+
+### Fixed
+- **Column Visibility**: Column visibility now automatically saves to config when changed
+- **ERP Name Display**: Fixed "ERP Name" object extraction - now properly extracts `full_name` from nested structure
+- **Dropdown Population**: Dropdowns now only show placeholders when no items are available
+- **Data Source**: All column lists and dropdowns now use actual data as source of truth
+
 ## [1.3.1] - 2025-01-XX
 
 ### Fixed
