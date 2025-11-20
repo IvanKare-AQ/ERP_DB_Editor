@@ -14,8 +14,6 @@ class AddEditor(ctk.CTkFrame):
         self.tree_view = tree_view
         self.main_window = main_window
 
-        self.configure(padx=20, pady=20)
-
         self.title_label = ctk.CTkLabel(
             self,
             text="Add New Item",

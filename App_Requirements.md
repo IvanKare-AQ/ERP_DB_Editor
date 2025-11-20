@@ -142,15 +142,6 @@
 - Real-time progress tracking with stop instructions during processing
 - Safe process termination ensuring no data loss or hanging threads
 
-## Data Cleaning Requirements
-- Multiline cell conversion functionality to convert multiline JSON cell values to single line entries
-- "NEN" prefix removal functionality to remove "NEN" and subsequent spaces from all cells
-- Data cleaning buttons in Manual tab for easy access to cleaning operations
-- Confirmation dialogs for irreversible data cleaning operations
-- Progress tracking and statistics for data cleaning operations
-- Automatic tree view refresh after data cleaning operations
-- Real-time status updates during data cleaning processes
-
 ## Data Integrity and Display Requirements
 - Immediate visual updates after item reassignment operations
 - Tree view must reflect user modifications in real-time without requiring file reload
@@ -223,7 +214,7 @@
 
 ### Tabbed Interface Redesign (v1.2.0)
 - **Modular Edit Panel Architecture**: Restructured right panel into three specialized tabs
-  - **Manual Tab (✏️)**: Manual editing, reassignment, and data cleaning tools
+  - **Manual Tab (✏️)**: Manual editing, reassignment tools, and image management
   - **AI Tab (🤖)**: AI-powered editing with model management and prompt tools
   - **ML Tab (🧠)**: Placeholder for future machine learning features
 - **Fixed Width Layout**: Right panel now uses consistent 1000px width across all tabs
@@ -231,7 +222,7 @@
   - `manual_editor.py`: Manual editing functionality (ERP Name, Manufacturer, REMARK)
   - `ai_editor.py`: AI tools and model management (completely self-contained)
   - `ml_editor.py`: ML placeholder for future expansion
-- **Enhanced Data Cleaning**: Moved "Convert Multiline" and "Remove NEN" buttons to Manual tab
+- **Manual Editor Streamlining**: Removed legacy data-cleaning controls that depended on Excel workflows
 - **Unified UI Constants**: Width and height parameters standardized across all UI components
   - Consistent button heights (35px standard, 90px for reassign)
   - Standardized input field widths (400px)
@@ -259,6 +250,7 @@
 - **Image Management System**: Complete image handling with web search and preview
   - Automatic Image column creation in JSON database (positioned after ERP name)
   - Image preview display (150x150) in Manual Editing tab
+  - “Add Image” button located directly below the preview to keep acquisition workflow in one place
   - Modal dialog for image selection with multiple sources
   - Web image search using DuckDuckGo (no API key required)
   - Local file selection via file browser with full preview (up to 400x400)
@@ -316,7 +308,7 @@
 - **Column Order Consistency**: Tree view column order matches JSON file structure
 - **Extended Column Support**: Support for all data columns including:
   - Standard ERP columns (Image, SKU NR, ERP Name, KEN NAME, CAD Name, etc.)
-  - Processing status columns (SN, Manually processed)
+  - Processing status columns (PN, Manually processed)
   - Level 3 parameters (Stage, Origin, Serialized, Usage) enriched from categories
   - AI suggestion columns (SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL)
   - AI/ML status columns (AI_STATUS, USE_FOR_ML)

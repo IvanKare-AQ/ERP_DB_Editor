@@ -1,7 +1,7 @@
 {
     "column_visibility": {
         "visible_columns": [
-            "SN",
+            "PN",
             "Manufacturer",
             "Remark",
             "Stage",

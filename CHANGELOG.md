@@ -417,7 +417,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Root Cause**: Missing cases in `populate_tree_with_visibility()` method for several columns
   - **KEN NAME Column**: Fixed missing case that caused empty data display despite column being visible
   - **Extended Column Support**: Added support for all missing Excel columns:
-    - SN (Serial Number)
+   - PN (Part Number)
     - Manually processed (Processing status)
     - SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL (AI suggestions)
     - AI_STATUS, USE_FOR_ML (AI/ML status columns)
@@ -442,7 +442,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Comprehensive Column Support**: Full support for all Excel file columns
   - Standard ERP columns: User ERP Name, Image, SKU NR, ERP Name, KEN NAME, CAD Name, etc.
-  - Processing status columns: SN, Manually processed
+  - Processing status columns: PN, Manually processed
   - AI suggestion columns: SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL
   - AI/ML status columns: AI_STATUS, USE_FOR_ML
 - **Data Verification**: Systematic testing framework for column data integrity
@@ -541,6 +541,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic parameter initialization for new models
   - Robust error handling for parameter operations
   - Better user feedback and status updates
+
+### Changed
+- **Manual Editor Layout**: Moved the “Add Image” action directly under the preview frame and removed the legacy data-cleaning section (Convert Multiline / Remove NEN) that relied on the deprecated Excel flow. The Manual tab now focuses solely on editing, reassignment, and image management.
+- **Column Naming Consistency**: Renamed the `SN` column/value references to `PN` across `component_database.json`, default column-visibility settings, and the documentation to keep the UI and data model terminology aligned.
 
 ### Added
 - **Item Deletion Functionality**: Complete item removal system

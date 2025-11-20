@@ -21,7 +21,6 @@ class ManualEditor(ctk.CTkFrame):
     RESET_BUTTON_WIDTH = 60      # Width for reset buttons
     UPDATE_BUTTON_WIDTH = 120    # Width for update button
     DELETE_BUTTON_WIDTH = 150    # Width for delete button
-    ACTION_BUTTON_WIDTH = 150    # Width for action buttons (Convert Multiline, Remove NEN)
     REASSIGN_BUTTON_WIDTH = 100  # Width for reassign button
 
     # Height constants for consistent UI sizing
@@ -71,6 +70,17 @@ class ManualEditor(ctk.CTkFrame):
         )
         self.image_preview_label.place(x=0, y=0, width=self.IMAGE_PREVIEW_SIZE, height=self.IMAGE_PREVIEW_SIZE)
 
+        # Add Image button below the preview
+        self.add_image_button = ctk.CTkButton(
+            self,
+            text="Add Image",
+            command=self.open_image_dialog,
+            width=self.UPDATE_BUTTON_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT,
+            state="disabled"
+        )
+        self.add_image_button.pack(pady=(0, 15))
+
         # User ERP Name section
         self.setup_user_erp_name_section(self)
 
@@ -81,8 +91,6 @@ class ManualEditor(ctk.CTkFrame):
         # Reassignment section
         self.setup_reassignment_section(self)
 
-        # Data cleaning section at the bottom
-        self.setup_data_cleaning_section(self)
 
     def setup_user_erp_name_section(self, parent):
         """Setup the ERP Name editing section."""
@@ -328,17 +336,6 @@ class ManualEditor(ctk.CTkFrame):
         )
         self.update_name_button.pack(side="left", padx=5)
         
-        # Add Image button
-        self.add_image_button = ctk.CTkButton(
-            update_frame,
-            text="Add Image",
-            command=self.open_image_dialog,
-            width=self.UPDATE_BUTTON_WIDTH,
-            height=self.INPUT_FIELD_HEIGHT,
-            state="disabled"
-        )
-        self.add_image_button.pack(side="left", padx=5)
-        
         # Delete button (moved here from top)
         self.delete_button = ctk.CTkButton(
             update_frame,
@@ -420,44 +417,6 @@ class ManualEditor(ctk.CTkFrame):
             state="disabled"
         )
         self.reassign_button.pack(pady=5)
-
-    def setup_data_cleaning_section(self, parent):
-        """Setup the data cleaning section."""
-        # Data cleaning frame at the bottom
-        cleaning_frame = ctk.CTkFrame(parent)
-        cleaning_frame.pack(fill="x", pady=(20, 0))
-
-        # Title
-        cleaning_title = ctk.CTkLabel(
-            cleaning_frame,
-            text="Data Cleaning Operations",
-            font=ctk.CTkFont(size=14, weight="bold")
-        )
-        cleaning_title.pack(pady=(10, 10))
-
-        # Buttons frame
-        buttons_frame = ctk.CTkFrame(cleaning_frame)
-        buttons_frame.pack(fill="x", padx=10, pady=(0, 10))
-
-        # Convert Multiline button
-        self.convert_multiline_button = ctk.CTkButton(
-            buttons_frame,
-            text="Convert Multiline Cells",
-            command=self.convert_multiline_cells,
-            width=self.ACTION_BUTTON_WIDTH,
-            state="disabled"
-        )
-        self.convert_multiline_button.pack(side="left", padx=5, pady=5)
-
-        # Remove NEN button
-        self.remove_nen_button = ctk.CTkButton(
-            buttons_frame,
-            text="Remove NEN Prefix",
-            command=self.remove_nen_prefix,
-            width=self.ACTION_BUTTON_WIDTH,
-            state="disabled"
-        )
-        self.remove_nen_button.pack(side="left", padx=5, pady=5)
 
     def load_categories(self):
         """Load categories into the dropdown."""
@@ -1028,112 +987,3 @@ class ManualEditor(ctk.CTkFrame):
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
             self.main_window.update_status(f"Reassigned item to: {category} > {subcategory} > {sub_subcategory}")
-
-    def convert_multiline_cells(self):
-        """Convert multiline cells to single line entries."""
-        if not hasattr(self.main_window, 'excel_handler') or self.main_window.excel_handler is None:
-            messagebox.showwarning("Warning", "No data loaded. Please open an Excel file first.")
-            return
-
-        # Show confirmation dialog
-        response = messagebox.askyesno(
-            "Convert Multiline Cells",
-            "This will convert all multiline cells to single line entries.\n\n"
-            "Multiline content will be converted to single lines with spaces.\n"
-            "This operation cannot be undone.\n\n"
-            "Do you want to continue?"
-        )
-
-        if not response:
-            if self.main_window and hasattr(self.main_window, 'update_status'):
-                self.main_window.update_status("Multiline conversion cancelled")
-            return
-
-        # Show progress
-        if self.main_window and hasattr(self.main_window, 'update_status'):
-            self.main_window.update_status("Converting multiline cells to single line...")
-
-        # Perform the conversion
-        try:
-            result = self.main_window.excel_handler.convert_multiline_to_single_line()
-
-            # Reload the tree view with the updated data from Excel handler
-            self.tree_view.load_data(self.main_window.excel_handler.get_data())
-
-            # Update status with results
-            if result["converted"] > 0:
-                if self.main_window and hasattr(self.main_window, 'update_status'):
-                    self.main_window.update_status(
-                        f"Converted {result['converted']} multiline cells to single line "
-                        f"({result['percentage']:.1f}% of total cells)"
-                    )
-                messagebox.showinfo(
-                    "Conversion Complete",
-                    f"Successfully converted {result['converted']} multiline cells to single line.\n\n"
-                    f"Total cells processed: {result['total_cells']}\n"
-                    f"Percentage converted: {result['percentage']:.1f}%"
-                )
-            else:
-                if self.main_window and hasattr(self.main_window, 'update_status'):
-                    self.main_window.update_status("No multiline cells found to convert")
-                messagebox.showinfo("No Conversion Needed", "No multiline cells were found in the data.")
-
-        except Exception as e:
-            error_msg = f"Error converting multiline cells: {str(e)}"
-            if self.main_window and hasattr(self.main_window, 'update_status'):
-                self.main_window.update_status(error_msg)
-            messagebox.showerror("Conversion Error", error_msg)
-
-    def remove_nen_prefix(self):
-        """Remove 'NEN' prefix and subsequent spaces from all cells."""
-        if not hasattr(self.main_window, 'excel_handler') or self.main_window.excel_handler is None:
-            messagebox.showwarning("Warning", "No data loaded. Please open an Excel file first.")
-            return
-
-        # Show confirmation dialog
-        response = messagebox.askyesno(
-            "Remove NEN Prefix",
-            "This will remove 'NEN' prefix and subsequent spaces from all cells.\n\n"
-            "This operation cannot be undone.\n\n"
-            "Do you want to continue?"
-        )
-
-        if not response:
-            if self.main_window and hasattr(self.main_window, 'update_status'):
-                self.main_window.update_status("NEN removal cancelled")
-            return
-
-        # Show progress
-        if self.main_window and hasattr(self.main_window, 'update_status'):
-            self.main_window.update_status("Removing 'NEN' prefix from cells...")
-
-        # Perform the removal
-        try:
-            result = self.main_window.excel_handler.remove_nen_prefix()
-
-            # Reload the tree view with the updated data from Excel handler
-            self.tree_view.load_data(self.main_window.excel_handler.get_data())
-
-            # Update status with results
-            if result["converted"] > 0:
-                if self.main_window and hasattr(self.main_window, 'update_status'):
-                    self.main_window.update_status(
-                        f"Removed 'NEN' prefix from {result['converted']} cells "
-                        f"({result['percentage']:.1f}% of total cells)"
-                    )
-                messagebox.showinfo(
-                    "NEN Removal Complete",
-                    f"Successfully removed 'NEN' prefix from {result['converted']} cells.\n\n"
-                    f"Total cells processed: {result['total_cells']}\n"
-                    f"Percentage converted: {result['percentage']:.1f}%"
-                )
-            else:
-                if self.main_window and hasattr(self.main_window, 'update_status'):
-                    self.main_window.update_status("No cells with 'NEN' prefix found")
-                messagebox.showinfo("No NEN Prefix Found", "No cells starting with 'NEN' were found in the data.")
-
-        except Exception as e:
-            error_msg = f"Error removing 'NEN' prefix: {str(e)}"
-            if self.main_window and hasattr(self.main_window, 'update_status'):
-                self.main_window.update_status(error_msg)
-            messagebox.showerror("NEN Removal Error", error_msg)
