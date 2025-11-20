@@ -7,7 +7,9 @@
             "Stage",
             "Origin",
             "Serialized",
-            "Usage"
+            "Usage",
+            "CAD Name",
+            "EAN13"
         ]
     },
     "view_settings": {

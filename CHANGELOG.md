@@ -451,6 +451,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **CAD/EAN Metadata Columns**: Each record in `data/component_database.json` now includes empty `CAD Name` and `EAN13` fields so upcoming UI and export work can rely on a consistent schema.
 - **AI Model Management System**: Complete model management functionality
   - Model Manager dialog (900x700) for downloading, removing, and configuring AI models
   - Dynamic parameter display based on model capabilities using `ollama show` command
@@ -545,6 +546,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Manual Editor Layout**: Moved the “Add Image” action directly under the preview frame and removed the legacy data-cleaning section (Convert Multiline / Remove NEN) that relied on the deprecated Excel flow. The Manual tab now focuses solely on editing, reassignment, and image management.
 - **Column Naming Consistency**: Renamed the `SN` column/value references to `PN` across `component_database.json`, default column-visibility settings, and the documentation to keep the UI and data model terminology aligned.
+- **Add Tab Visibility**: Replaced the emoji placeholder with a programmatically rendered green plus icon inside the Add tab’s button so it remains readable on dark backgrounds.
 
 ### Added
 - **Item Deletion Functionality**: Complete item removal system

@@ -217,6 +217,7 @@
   - **Manual Tab (✏️)**: Manual editing, reassignment tools, and image management
   - **AI Tab (🤖)**: AI-powered editing with model management and prompt tools
   - **ML Tab (🧠)**: Placeholder for future machine learning features
+- **Accessible Add Tab Iconography**: The Add tab must include a high-contrast green "+" icon rendered via `CTkImage` so it remains visible regardless of theme background colors.
 - **Fixed Width Layout**: Right panel now uses consistent 1000px width across all tabs
 - **Component Separation**: Each tab is a self-contained module with dedicated file
   - `manual_editor.py`: Manual editing functionality (ERP Name, Manufacturer, REMARK)
@@ -307,7 +308,7 @@
 - **Missing Column Detection**: Automatic detection and handling of columns missing from tree view
 - **Column Order Consistency**: Tree view column order matches JSON file structure
 - **Extended Column Support**: Support for all data columns including:
-  - Standard ERP columns (Image, SKU NR, ERP Name, KEN NAME, CAD Name, etc.)
+  - Standard ERP columns (Image, SKU NR, ERP Name, KEN NAME, CAD Name, EAN13, etc.)
   - Processing status columns (PN, Manually processed)
   - Level 3 parameters (Stage, Origin, Serialized, Usage) enriched from categories
   - AI suggestion columns (SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL)
