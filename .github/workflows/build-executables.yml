@@ -6,6 +6,7 @@ permissions:
 on:
   push:
     branches: [ main, Crossplatform-runner ]
+    tags: ['*']
   pull_request:
     branches: [ main, Crossplatform-runner ]
   workflow_dispatch:
