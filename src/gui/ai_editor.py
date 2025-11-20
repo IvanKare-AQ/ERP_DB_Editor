@@ -379,8 +379,8 @@ class AIEditor(ctk.CTkFrame):
             erp_name = get_erp_full_name(erp_name_obj)
             category = self.selected_item.get('Category', 'Unknown')
             subcategory = self.selected_item.get('Subcategory', 'Unknown')
-            sublevel = self.selected_item.get('Sub-subcategory', 'Unknown')
-            return f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sub-subcategory: {sublevel}"
+            sub_subcategory = self.selected_item.get('Sub-subcategory', 'Unknown')
+            return f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sub-subcategory: {sub_subcategory}"
 
         # Check for multiple selected items
         if hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items:
@@ -390,8 +390,8 @@ class AIEditor(ctk.CTkFrame):
                 erp_name = get_erp_full_name(erp_name_obj)
                 category = item_data.get('Category', 'Unknown')
                 subcategory = item_data.get('Subcategory', 'Unknown')
-                sublevel = item_data.get('Sub-subcategory', 'Unknown')
-                contexts.append(f"ERP: {erp_name}, Cat: {category}, Sub: {subcategory}, Level: {sublevel}")
+                sub_subcategory = item_data.get('Sub-subcategory', 'Unknown')
+                contexts.append(f"ERP: {erp_name}, Cat: {category}, Sub: {subcategory}, Level: {sub_subcategory}")
 
             if len(contexts) == 1:
                 return f"Current item: {contexts[0]}"
@@ -518,9 +518,9 @@ class AIEditor(ctk.CTkFrame):
                         erp_name = erp_name_obj.get('full_name', 'Unknown') if isinstance(erp_name_obj, dict) else str(erp_name_obj) if erp_name_obj else 'Unknown'
                         category = item_data.get('Category', 'Unknown')
                         subcategory = item_data.get('Subcategory', 'Unknown')
-                        sublevel = item_data.get('Sub-subcategory', 'Unknown')
+                        sub_subcategory = item_data.get('Sub-subcategory', 'Unknown')
 
-                        context = f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sub-subcategory: {sublevel}"
+                        context = f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sub-subcategory: {sub_subcategory}"
 
                         # Get model parameters
                         model_parameters = None
@@ -682,9 +682,9 @@ class AIEditor(ctk.CTkFrame):
                         erp_name = erp_name_full if erp_name_full else 'Unknown'
                         category = row.get('Category', 'Unknown')
                         subcategory = row.get('Subcategory', 'Unknown')
-                        sublevel = row.get('Sub-subcategory', 'Unknown')
+                        sub_subcategory = row.get('Sub-subcategory', 'Unknown')
 
-                        context = f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sub-subcategory: {sublevel}"
+                        context = f"Current ERP name: {erp_name}, Category: {category}, Subcategory: {subcategory}, Sub-subcategory: {sub_subcategory}"
 
                         # Get model parameters
                         model_parameters = None

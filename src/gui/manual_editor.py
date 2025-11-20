@@ -393,18 +393,18 @@ class ManualEditor(ctk.CTkFrame):
         self.subcategory_dropdown.pack(side="left", padx=5, pady=5)
 
         # Sub-subcategory dropdown
-        sublevel_frame = ctk.CTkFrame(left_column)
-        sublevel_frame.pack(fill="x", pady=2)
+        sub_subcategory_frame = ctk.CTkFrame(left_column)
+        sub_subcategory_frame.pack(fill="x", pady=2)
 
-        sublevel_label = ctk.CTkLabel(sublevel_frame, text="Sub-subcategory:", width=self.DROPDOWN_LABEL_WIDTH)
-        sublevel_label.pack(side="left", padx=(10, 5), pady=5)
+        sub_subcategory_label = ctk.CTkLabel(sub_subcategory_frame, text="Sub-subcategory:", width=self.DROPDOWN_LABEL_WIDTH)
+        sub_subcategory_label.pack(side="left", padx=(10, 5), pady=5)
 
-        self.sublevel_dropdown = ctk.CTkOptionMenu(
-            sublevel_frame,
+        self.sub_subcategory_dropdown = ctk.CTkOptionMenu(
+            sub_subcategory_frame,
             values=["Select Sub-subcategory..."],
             width=self.DROPDOWN_WIDTH
         )
-        self.sublevel_dropdown.pack(side="left", padx=5, pady=5)
+        self.sub_subcategory_dropdown.pack(side="left", padx=5, pady=5)
 
         # Right column for Reassign button
         right_column = ctk.CTkFrame(main_frame)
@@ -471,7 +471,7 @@ class ManualEditor(ctk.CTkFrame):
         """Handle category selection change."""
         if not category or category == "Select Category...":
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
-            self.sublevel_dropdown.configure(values=["Select Sub-subcategory..."])
+            self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
             return
 
         # Load subcategories for selected category
@@ -481,25 +481,25 @@ class ManualEditor(ctk.CTkFrame):
         else:
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
 
-        # Reset sublevel dropdown
-        self.sublevel_dropdown.configure(values=["Select Sub-subcategory..."])
+        # Reset sub_subcategory dropdown
+        self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
 
     def on_subcategory_change(self, subcategory):
         """Handle subcategory selection change."""
         if not subcategory or subcategory == "Select Subcategory...":
-            self.sublevel_dropdown.configure(values=["Select Sub-subcategory..."])
+            self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
             return
 
         category = self.category_dropdown.get()
         if not category or category == "Select Category...":
             return
 
-        # Load sublevels for selected category and subcategory
-        sublevels = self.tree_view.get_unique_sublevels(category, subcategory)
-        if sublevels:
-            self.sublevel_dropdown.configure(values=sublevels)
+        # Load sub_subcategories for selected category and subcategory
+        sub_subcategories = self.tree_view.get_unique_sub_subcategories(category, subcategory)
+        if sub_subcategories:
+            self.sub_subcategory_dropdown.configure(values=sub_subcategories)
         else:
-            self.sublevel_dropdown.configure(values=["Select Sub-subcategory..."])
+            self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
 
     def set_selected_item(self, item_data, row_id):
         """Set the selected item and populate the edit fields."""
@@ -564,10 +564,10 @@ class ManualEditor(ctk.CTkFrame):
             self.delete_button.configure(state="normal")
             self.add_image_button.configure(state="normal")
 
-            # Set the dropdowns to current item's category/subcategory/sublevel
+            # Set the dropdowns to current item's category/subcategory/sub_subcategory
             current_category = item_data.get('Category', '')
             current_subcategory = item_data.get('Subcategory', '')
-            current_sublevel = item_data.get('Sub-subcategory', '')
+            current_sub_subcategory = item_data.get('Sub-subcategory', '')
 
             # Load categories first
             self.load_categories()
@@ -581,12 +581,12 @@ class ManualEditor(ctk.CTkFrame):
                     self.subcategory_dropdown.configure(values=subcategories)
                     if current_subcategory:
                         self.subcategory_dropdown.set(current_subcategory)
-                        # Load sublevels for this category and subcategory
-                        sublevels = self.tree_view.get_unique_sublevels(current_category, current_subcategory)
-                        if sublevels:
-                            self.sublevel_dropdown.configure(values=sublevels)
-                            if current_sublevel:
-                                self.sublevel_dropdown.set(current_sublevel)
+                        # Load sub-subcategories for this category and subcategory
+                        sub_subcategories = self.tree_view.get_unique_sub_subcategories(current_category, current_subcategory)
+                        if sub_subcategories:
+                            self.sub_subcategory_dropdown.configure(values=sub_subcategories)
+                            if current_sub_subcategory:
+                                self.sub_subcategory_dropdown.set(current_sub_subcategory)
 
             # Enable buttons
             self.reassign_button.configure(state="normal")
@@ -619,7 +619,7 @@ class ManualEditor(ctk.CTkFrame):
             # Reset dropdowns
             self.category_dropdown.configure(values=["Select Category..."])
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
-            self.sublevel_dropdown.configure(values=["Select Sub-subcategory..."])
+            self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
             
             # Clear image preview
             self.update_image_preview()
@@ -1016,18 +1016,18 @@ class ManualEditor(ctk.CTkFrame):
 
         category = self.category_dropdown.get()
         subcategory = self.subcategory_dropdown.get()
-        sublevel = self.sublevel_dropdown.get()
+        sub_subcategory = self.sub_subcategory_dropdown.get()
 
         if (not category or category == "Select Category..." or
             not subcategory or subcategory == "Select Subcategory..." or
-            not sublevel or sublevel == "Select Sub-subcategory..."):
+            not sub_subcategory or sub_subcategory == "Select Sub-subcategory..."):
             return
 
-        self.tree_view.reassign_item(self.selected_row_id, category, subcategory, sublevel)
+        self.tree_view.reassign_item(self.selected_row_id, category, subcategory, sub_subcategory)
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
-            self.main_window.update_status(f"Reassigned item to: {category} > {subcategory} > {sublevel}")
+            self.main_window.update_status(f"Reassigned item to: {category} > {subcategory} > {sub_subcategory}")
 
     def convert_multiline_cells(self):
         """Convert multiline cells to single line entries."""

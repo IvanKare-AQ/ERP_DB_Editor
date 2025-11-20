@@ -551,10 +551,10 @@ class MainWindow:
                 erp_name = parts[0]
                 category = parts[1]
                 subcategory = parts[2]
-                sublevel = parts[3]
+                sub_subcategory = parts[3]
                 
                 # Use the clean column name (without duplicates)
-                sublevel_col = 'Sub-subcategory'
+                sub_subcategory_col = 'Sub-subcategory'
                 # Extract full_name from ERP name object for comparison
                 import pandas as pd
                 def get_erp_full_name(erp_obj):
@@ -570,7 +570,7 @@ class MainWindow:
                     (erp_name_series == erp_name) &
                     (self.tree_view.data['Category'] == category) &
                     (self.tree_view.data['Subcategory'] == subcategory) &
-                    (self.tree_view.data[sublevel_col] == sublevel)
+                    (self.tree_view.data[sub_subcategory_col] == sub_subcategory)
                 ]
                 if not matching_rows.empty:
                     row_data = matching_rows.iloc[0].to_dict()
@@ -583,8 +583,8 @@ class MainWindow:
                             row_data['Category'] = mods['new_category']
                         if 'new_subcategory' in mods:
                             row_data['Subcategory'] = mods['new_subcategory']
-                        if 'new_sublevel' in mods:
-                            row_data['Sub-subcategory'] = mods['new_sublevel']
+                        if 'new_sub_subcategory' in mods:
+                            row_data['Sub-subcategory'] = mods['new_sub_subcategory']
                     
                     return row_data
         return None
@@ -620,10 +620,10 @@ class MainWindow:
                 erp_name = parts[0]
                 category = parts[1]
                 subcategory = parts[2]
-                sublevel = parts[3]
+                sub_subcategory = parts[3]
                 
                 # Use the clean column name (without duplicates)
-                sublevel_col = 'Sub-subcategory'
+                sub_subcategory_col = 'Sub-subcategory'
                 # Find matching row - extract full_name from ERP name object for comparison
                 def get_erp_full_name(erp_obj):
                     if isinstance(erp_obj, dict):
@@ -638,7 +638,7 @@ class MainWindow:
                     (erp_name_series == erp_name) &
                     (data['Category'] == category) &
                     (data['Subcategory'] == subcategory) &
-                    (data[sublevel_col] == sublevel)
+                    (data[sub_subcategory_col] == sub_subcategory)
                 )
                 
                 if mask.any():
@@ -679,10 +679,10 @@ class MainWindow:
                         data.loc[mask, 'Image'] = mods['image']
                     
                     # Apply reassignment modifications
-                    if 'new_category' in mods and 'new_subcategory' in mods and 'new_sublevel' in mods:
+                    if 'new_category' in mods and 'new_subcategory' in mods and 'new_sub_subcategory' in mods:
                         data.loc[mask, 'Category'] = mods['new_category']
                         data.loc[mask, 'Subcategory'] = mods['new_subcategory']
-                        data.loc[mask, sublevel_col] = mods['new_sublevel']
+                        data.loc[mask, sub_subcategory_col] = mods['new_sub_subcategory']
         
         return data
     

@@ -165,7 +165,7 @@ class OllamaHandler:
             'erp_name': 'Unknown',
             'category': 'Unknown', 
             'subcategory': 'Unknown',
-            'sublevel': 'Unknown'
+            'sub_subcategory': 'Unknown'
         }
         
         try:
@@ -210,15 +210,15 @@ class OllamaHandler:
                     break
             
             # Extract sub-subcategory / level
-            sublevel_patterns = [
+            sub_subcategory_patterns = [
                 r"Sub-subcategory:\s*([^,]+)",
                 r"Sublevel:\s*([^,]+)",
                 r"Level:\s*([^,]+)"
             ]
-            for pattern in sublevel_patterns:
+            for pattern in sub_subcategory_patterns:
                 match = re.search(pattern, context, re.IGNORECASE)
                 if match:
-                    erp_data['sublevel'] = match.group(1).strip()
+                    erp_data['sub_subcategory'] = match.group(1).strip()
                     break
                     
         except Exception as e:
@@ -237,7 +237,8 @@ class OllamaHandler:
                 erp_name=erp_data['erp_name'],
                 category=erp_data['category'],
                 subcategory=erp_data['subcategory'],
-                sublevel=erp_data['sublevel']
+                sub_subcategory=erp_data['sub_subcategory'],
+                sublevel=erp_data['sub_subcategory']
             )
             
             # Prepare the full prompt with context
