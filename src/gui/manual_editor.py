@@ -969,7 +969,7 @@ class ManualEditor(ctk.CTkFrame):
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
-            self.main_window.update_status(f"Reset ERP Name to original: {original_erp_name}")
+            self.main_window.update_status(f"Reset ERP Name to original: {original_full_name}")
 
     def reset_manufacturer(self):
         """Reset the manufacturer for the selected item to original value."""

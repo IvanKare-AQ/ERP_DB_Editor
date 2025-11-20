@@ -47,6 +47,7 @@
 - "Update All Fields" button saves all field modifications (ERP Name, Manufacturer, Remark)
 - "Reassign Item" button moves items to new Category/Subcategory/Sub-subcategory combinations
 - All user modifications tracked in memory until saved; column names must match the JSON schema when persisting to `data/component_database.json`
+- Reset actions must repopulate fields and status messages from the original JSON values (e.g., ERP Name resets use the stored `full_name`)
 
 ## Technical Requirements
 - Python GUI application using CustomTkinter as GUI framework
