@@ -6,7 +6,7 @@
 - GUI elements will be within src/gui folder
 - Backend elements will be within src/backend folder
 - src folder will contain main app and all application code
-- data will contain all generated and used data and will be ignored for git
+- data will contain JSON database files (tracked in git) and Images folder (ignored by git)
 - GitHub repo for the project: git@github.com:IvanKare-AQ/ERP_DB_Editor.git
 
 ## UI/UX Requirements
@@ -16,37 +16,41 @@
 ## Initial Functional Requirements
 
 ### File Operations
-- Open button to load Excel file
-- Save button to save changes to the opened Excel sheet
-- Save As to save in new file
+- Load Database: Application automatically loads database from `data/component_database.json` on startup
+- Load Categories: Application automatically loads category hierarchy from `data/airq_categories.json` on startup
+- Save button to save changes to `data/component_database.json`
+- No Excel file support - all data stored in JSON format
 
 ### Data Display and Navigation
-- Table will be represented in tree format with hierarchy:
-  - "Article Category" as top level
-  - "Article Subcategory" as second level
-  - "Article Sublevel" as third level
-  - All items from "ERP Names" column will be under relevant "Article Sublevel"
-- This setting will be reflected in the existing default_settings.json file
+- Table hierarchy is driven directly from the JSON schema:
+  - `"Category"` (top level)
+  - `"Subcategory"` (second level)
+  - `"Sub-subcategory"` (third level)
+  - Each `"ERP Name"` object is rendered under its corresponding Sub-subcategory node with no intermediate “Article …” mappings.
+- Default column visibility definitions in `default_settings.json` must reference these exact JSON field names.
 
 ### Column Management
+- Columns are dynamically determined from `data/component_database.json` (source of truth)
 - User will be able to set visible and non-visible columns
-- "Save View" button that will store column visibility settings to default_settings.json
-- "User ERP Name" column added after "Hierarchy" column for user modifications
+- "Save View" button that will store column visibility settings to `config/default_settings.json`
+- Column visibility settings automatically saved when changed via Column Visibility dialog
+- All available columns derived from the actual JSON schema (no renaming to internal “Article …” aliases)
 
 ### Data Editing and Modification
 - Right panel edit section for modifying selected ERP items
-- Input field that populates with priority: user modifications > existing "User ERP Name" > "ERP name"
-- User can modify ERP names and save changes
-- Category, subcategory, and sublevel dropdowns for item reassignment
-- "Update Name" button to save user ERP name modifications
-- "Reassign Item" button to move items to different categories
-- All user modifications tracked in memory until saved
-- Save functionality applies all modifications to Excel file
-- Existing "User ERP Name" values from Excel files are preserved and displayed
+- Direct editing of the `"ERP Name"` object (`full_name`, `type`, `part_number`, `additional_parameters`)—no staging column
+- Input fields populate with priority: user modifications > original JSON values
+- User can modify ERP names directly and persist them to JSON
+- Category, subcategory, and sub-subcategory dropdowns for item reassignment
+  - Dropdowns sourced from the `data/airq_categories.json` hierarchy
+  - Placeholder options ("Select Category...", etc.) only appear when a level has no available values
+- "Update All Fields" button saves all field modifications (ERP Name, Manufacturer, Remark)
+- "Reassign Item" button moves items to new Category/Subcategory/Sub-subcategory combinations
+- All user modifications tracked in memory until saved; column names must match the JSON schema when persisting to `data/component_database.json`
 
 ## Technical Requirements
 - Python GUI application using CustomTkinter as GUI framework
-- Excel file handling capabilities
+- JSON database handling capabilities
 - JSON configuration management
 - Tree view implementation for hierarchical data display
 - Column visibility management with persistence
@@ -75,7 +79,7 @@
 - Hidden columns must remain accessible for re-showing through visibility dialog
 
 ## Data Filtering Requirements
-- Excel-style filtering functionality for columns in tree view
+- Spreadsheet-style filtering functionality for columns in tree view
 - Filter types: contains, equals, starts with, ends with
 - Filter dialog with individual column filter controls
 - Multiple column filters can be applied simultaneously
@@ -88,12 +92,11 @@
 - Filter state must be properly synchronized with Save View button state
 
 ## Data Export and Save Requirements
-- "User ERP Name" column must be positioned immediately after "ERP name" column in saved Excel files
-- Column reordering must preserve all existing data during save operations
-- Save functionality must handle both scenarios: existing column in wrong position and missing column
-- Consistent column order must be maintained across all save operations
-- Duplicate columns must be cleaned up during save operations (keep only first occurrence)
-- Existing "User ERP Name" values must be preserved when saving Excel files
+- Save functionality writes all modifications to `data/component_database.json`
+- Column order is preserved from the original JSON structure
+- No column renaming occurs during export or save; the exact JSON field names remain intact (only the `"ERP Name"` object is flattened when generating Excel files)
+- All user modifications (ERP Name object, Manufacturer, Remark, Category/Subcategory/Sub-subcategory reassignments) are persisted to JSON
+- Data enrichment: Level 3 parameters (Stage, Origin, Serialized, Usage) automatically enriched from `data/airq_categories.json`
 
 ## User Interface Requirements
 - Status message bar at the bottom of the application window
@@ -103,12 +106,12 @@
 - Status bar must be properly sized and positioned on application startup
 
 ## Data Integrity and Column Handling Requirements
-- Excel data may contain duplicate column names with trailing spaces (e.g., "Article Sublevel " vs "Article Sublevel")
-- Application must correctly identify and use the column containing actual data
+- JSON data column names are normalized (trailing spaces removed) during loading
+- Application must correctly identify and use columns from JSON structure
 - All tree view operations must use consistent column references throughout the application
 - Row ID generation must use the correct column name to ensure proper item identification
-- Dropdown population in edit panel must use the same column references as tree view operations
-- User ERP Name updates must work correctly with the tree view's tag structure
+- Dropdown population in edit panel uses category structure from `data/airq_categories.json`
+- ERP name updates must work correctly with the tree view's tag structure
 
 ## Visual Design Requirements
 - Dark mode theme for table view with professional appearance
@@ -139,9 +142,9 @@
 - Safe process termination ensuring no data loss or hanging threads
 
 ## Data Cleaning Requirements
-- Multiline cell conversion functionality to convert multiline Excel cells to single line entries
+- Multiline cell conversion functionality to convert multiline JSON cell values to single line entries
 - "NEN" prefix removal functionality to remove "NEN" and subsequent spaces from all cells
-- Data cleaning buttons in toolbar for easy access to cleaning operations
+- Data cleaning buttons in Manual tab for easy access to cleaning operations
 - Confirmation dialogs for irreversible data cleaning operations
 - Progress tracking and statistics for data cleaning operations
 - Automatic tree view refresh after data cleaning operations
@@ -150,30 +153,21 @@
 ## Data Integrity and Display Requirements
 - Immediate visual updates after item reassignment operations
 - Tree view must reflect user modifications in real-time without requiring file reload
-- Proper handling of duplicate columns with trailing spaces in Excel data
-- Clean Excel file output without duplicate columns during save operations
+- Proper handling of column name normalization (trailing spaces removed) in JSON data
+- Clean JSON file output with consistent column naming during save operations
 - Consistent column naming and structure throughout all operations
 - User modifications must be applied to tree view data for immediate display
 
 ## Extended Field Editing Requirements
-- Additional input fields for "Manufacturer" and "REMARK" columns
-- Individual reset buttons for each input field (User ERP Name, Manufacturer, REMARK)
+- Input fields for "ERP Name", "Manufacturer", and "REMARK" columns
+- Individual reset buttons for each input field (ERP Name, Manufacturer, REMARK)
 - Consolidated "Update All Fields" button to update all three fields simultaneously
 - Priority system for field population: user modifications > original column values
 - Real-time status updates for all field modifications
-- Proper integration with save functionality to persist all field changes
+- Proper integration with save functionality to persist all field changes to JSON
 - Individual field validation and error handling
 - Consistent UI layout with inline reset buttons for each field
 
-## User ERP Name Application Requirements
-- "Apply User ERP Names" button to permanently move User ERP Name values to ERP name column
-- Destructive operation that replaces existing ERP name values with User ERP Name values
-- Clears User ERP Name column after successful application
-- Confirmation dialog with clear warning about permanent nature of operation
-- Real-time count of User ERP Names available for application
-- Immediate tree view update to reflect changes
-- Proper error handling and status feedback
-- Integration with existing save functionality
 
 ## AI Prompt Management Requirements
 - "Save Prompt" and "Select Prompt" buttons in AI Settings section
@@ -219,7 +213,7 @@
 
 ### Latest Enhancements (v1.1.0)
 - **Item Deletion Functionality**: Added "Delete Selected Item" button with confirmation dialog
-- **Input Field Labels**: Added descriptive labels for User ERP Name, Manufacturer, and REMARK fields
+- **Input Field Labels**: Added descriptive labels for ERP Name, Manufacturer, and REMARK fields
 - **Streamlined AI Interface**: Moved "Prompt Tool" button to AI Settings section for better organization
 - **Removed Prompt Section**: Eliminated redundant prompt text area for cleaner interface
 - **Enhanced Prompt Management**: "Load to Editor" functionality now works with stored prompts
@@ -233,7 +227,7 @@
   - **ML Tab (🧠)**: Placeholder for future machine learning features
 - **Fixed Width Layout**: Right panel now uses consistent 1000px width across all tabs
 - **Component Separation**: Each tab is a self-contained module with dedicated file
-  - `manual_editor.py`: Manual editing functionality (User ERP Name, Manufacturer, REMARK)
+  - `manual_editor.py`: Manual editing functionality (ERP Name, Manufacturer, REMARK)
   - `ai_editor.py`: AI tools and model management (completely self-contained)
   - `ml_editor.py`: ML placeholder for future expansion
 - **Enhanced Data Cleaning**: Moved "Convert Multiline" and "Remove NEN" buttons to Manual tab
@@ -251,18 +245,18 @@
   - Prompt changes take effect immediately without requiring "Save View"
   - Reassigned items now retain their new category information for further reassignment
   - Category/subcategory/sublevel dropdowns populate correctly after reassignment
-- **User ERP Name Parsing System**: Advanced parsing and editing capabilities for structured naming
-  - Automatic parsing of User ERP Name into Type, PN (Part Number), and Details components
+- **ERP Name Parsing System**: Advanced parsing and editing capabilities for structured naming
+  - Automatic parsing of ERP Name into Type, PN (Part Number), and Details components
   - Format: Type_PN_Details (separated by underscores)
-  - Bidirectional synchronization between User ERP Name and parsed fields
-  - Real-time updates when editing either User ERP Name or individual components
+  - Bidirectional synchronization between ERP Name and parsed fields
+  - Real-time updates when editing either ERP Name or individual components
   - Underscore to hyphen conversion buttons for all three fields
   - Combined conversion and update button for Details field ("_ → - + Update")
   - NO-PN quick-insert button for items without part numbers
   - Flexible naming convention support (structural _ vs descriptive - separators)
   - Visual separator between standard fields and parsed fields for clarity
 - **Image Management System**: Complete image handling with web search and preview
-  - Automatic Image column creation in Excel files (positioned after ERP name)
+  - Automatic Image column creation in JSON database (positioned after ERP name)
   - Image preview display (150x150) in Manual Editing tab
   - Modal dialog for image selection with multiple sources
   - Web image search using DuckDuckGo (no API key required)
@@ -274,9 +268,9 @@
   - Intelligent retry logic for unreliable image URLs
   - Enhanced error messages with specific reasons and helpful tips
   - Automatic image processing and standardization
-  - Image storage in Images/ folder alongside Excel file
+  - Image storage in Images/ folder alongside JSON database file
   - Configurable image settings (size, format, quality)
-  - Relative path storage in Excel for portability
+  - Relative path storage in JSON for portability
   - Support for PNG, JPEG, WEBP, and other common formats
   - Thumbnail preview in search results
   - Multi-item selection handling with placeholder icons
@@ -314,19 +308,20 @@
   - Integration with existing Save View functionality
 
 ## Column Management and Data Integrity Requirements
-- **Comprehensive Column Support**: All Excel columns must be accessible through Column Visibility dialog
-- **Complete Column Mapping**: Proper mapping between display names and Excel column names
-- **Data Population Integrity**: All columns must display actual data from Excel files
+- **Dynamic Column Source**: Columns are dynamically determined from `data/component_database.json` (source of truth)
+- **Complete Column Mapping**: Proper mapping between display names and JSON column names
+- **Data Population Integrity**: All columns must display actual data from JSON database
 - **Missing Column Detection**: Automatic detection and handling of columns missing from tree view
-- **Column Order Consistency**: Tree view column order must match Excel file structure
+- **Column Order Consistency**: Tree view column order matches JSON file structure
 - **Extended Column Support**: Support for all data columns including:
-  - Standard ERP columns (User ERP Name, Image, SKU NR, ERP Name, KEN NAME, CAD Name, etc.)
+  - Standard ERP columns (Image, SKU NR, ERP Name, KEN NAME, CAD Name, etc.)
   - Processing status columns (SN, Manually processed)
+  - Level 3 parameters (Stage, Origin, Serialized, Usage) enriched from categories
   - AI suggestion columns (SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL)
   - AI/ML status columns (AI_STATUS, USE_FOR_ML)
-- **Column Visibility Fixes**: Resolved issues where columns appeared in visibility dialog but showed empty data
-- **Data Extraction Verification**: Systematic testing of all columns to ensure proper data display
-- **Column Count Synchronization**: Tree view structure must handle all available columns correctly
+- **No Hardcoded Column Lists**: All column lists derived from actual data structure
+- **Data Extraction Verification**: All columns display actual data from JSON database
+- **Column Count Synchronization**: Tree view structure dynamically adapts to available columns
 
 ## Cross-Platform Build and Deployment Requirements
 - **Automated Cross-Platform Builds**: GitHub Actions workflow for automated builds
@@ -355,12 +350,12 @@
   - Console mode for macOS (better debugging and error visibility)
 
 ## Dependencies
-- customtkinter
-- pandas (for Excel file handling)
-- openpyxl (for Excel file reading/writing)
+- customtkinter (for GUI framework)
+- pandas (for data handling and DataFrame operations)
 - tkinter (built-in, for additional GUI components)
 - requests (for Ollama API communication)
 - ollama (for AI model management and text generation)
 - Pillow (for image processing)
 - ddgs (for web image search)
 - pyinstaller (for cross-platform executable creation)
+- Note: openpyxl removed - Excel support no longer needed

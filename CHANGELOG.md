@@ -5,6 +5,45 @@ All notable changes to the ERP Database Editor project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- _No unreleased changes._
+
+## [1.4.0] - 2025-11-20
+
+### Changed
+- **Database Storage**: Switched from Excel to JSON (`data/component_database.json`) for database storage
+- **File Operations**: Removed "Open Excel" and "Save As" buttons; application now loads database on startup
+- **Dependencies**: Removed `openpyxl` dependency as Excel is no longer used
+- **Column Source**: Columns are now dynamically determined from `data/component_database.json` instead of hardcoded lists
+- **Data Enrichment**: Level 3 parameters (Stage, Origin, Serialized, Usage) automatically enriched from `data/airq_categories.json`
+- **Category Hierarchy**: Tree structure built from `data/airq_categories.json` instead of grouping by data columns
+- **ERP Name Editing**: Removed "User ERP Name" staging column; users now edit "ERP name" directly
+- **Dropdown Placeholders**: Removed "Select Category..." placeholders when actual items are available
+- **ERP Name Structure**: ERP Name is now stored as an object with `full_name`, `type`, `part_number`, and `additional_parameters` properties
+- **Git Tracking**: JSON database files (`component_database.json`, `airq_categories.json`) are now tracked in git; Images folder remains ignored
+- **Terminology Alignment**: All internal references now use the JSON schema (`Category` / `Subcategory` / `Sub-subcategory` / `ERP Name`); the legacy “Article …” columns and `sublevel` terminology were removed
+- **Export Workflow**: Added Export button next to Save and ensured Excel exports flatten only the `ERP Name.full_name` field without renaming columns
+
+### Removed
+- **User ERP Name Column**: Removed separate "User ERP Name" column - users now edit "ERP name" directly
+- **Apply User ERP Names Button**: Removed button that moved User ERP Name to ERP name (no longer needed)
+- **Clear User ERP Name Button**: Removed button for clearing User ERP Name (no longer needed)
+- **Hardcoded Column Lists**: Removed all hardcoded column lists - columns now come from data structure
+- **Rows Configuration**: Removed "rows" array from `config/default_settings.json` (columns now dynamic)
+
+### Fixed
+- **Column Visibility**: Column visibility now automatically saves to config when changed
+- **ERP Name Object Handling**: Fixed ERP Name object structure preservation throughout the application
+  - Tree view now displays `full_name` from ERP Name object
+  - Manual editor connects to object properties (`type`, `part_number`, `additional_parameters`)
+  - Update All Fields button reconstructs object structure correctly
+  - Save operation preserves object structure (no restructuring to NaN)
+  - Fixed pandas assignment issues by using `.at` instead of `.loc` for dict objects
+  - Ensured object dtype is maintained throughout data operations
+- **Dropdown Population**: Dropdowns now only show placeholders when no items are available
+- **Data Source**: All column lists and dropdowns now use actual data as source of truth (no column mapping layer)
+
 ## [1.3.1] - 2025-01-XX
 
 ### Fixed

@@ -1,5 +1,9 @@
-# Data folder - contains generated and used data
-data/
+# Data folder - ignore Images but track JSON files
+data/Images/
+data/*.png
+data/*.jpg
+data/*.jpeg
+data/*.webp
 
 # Python cache
 __pycache__/

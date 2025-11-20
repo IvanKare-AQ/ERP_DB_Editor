@@ -42,11 +42,8 @@ class FilterDialog:
         
         # Filter controls
         self.filter_controls = {}
-        self.available_columns = [
-            "User ERP Name", "ERP Name", "CAD Name", "Electronics", "Product Value", 
-            "Manufacturer", "SKU", "EAN 13", "Unit", "Supplier", 
-            "Expiry Date", "Tracking Method", "Procurement Method", "Remark"
-        ]
+        # Get available columns from tree view (source of truth)
+        self.available_columns = tree_view.get_all_columns() if tree_view.has_data() else []
         
         # Setup the dialog
         self.setup_dialog()

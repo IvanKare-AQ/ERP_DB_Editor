@@ -165,11 +165,11 @@ class OllamaHandler:
             'erp_name': 'Unknown',
             'category': 'Unknown', 
             'subcategory': 'Unknown',
-            'sublevel': 'Unknown'
+            'sub_subcategory': 'Unknown'
         }
         
         try:
-            # Parse context string like: "Current ERP name: Screw M3x20, Category: Hardware, Subcategory: Fasteners, Sublevel: Screws"
+            # Parse context string like: "Current ERP name: Screw M3x20, Category: Hardware, Subcategory: Fasteners, Sub-subcategory: Screws"
             # or: "ERP: Screw M3x20, Cat: Hardware, Sub: Fasteners, Level: Screws"
             import re
             
@@ -209,15 +209,16 @@ class OllamaHandler:
                     erp_data['subcategory'] = match.group(1).strip()
                     break
             
-            # Extract sublevel
-            sublevel_patterns = [
+            # Extract sub-subcategory / level
+            sub_subcategory_patterns = [
+                r"Sub-subcategory:\s*([^,]+)",
                 r"Sublevel:\s*([^,]+)",
                 r"Level:\s*([^,]+)"
             ]
-            for pattern in sublevel_patterns:
+            for pattern in sub_subcategory_patterns:
                 match = re.search(pattern, context, re.IGNORECASE)
                 if match:
-                    erp_data['sublevel'] = match.group(1).strip()
+                    erp_data['sub_subcategory'] = match.group(1).strip()
                     break
                     
         except Exception as e:
@@ -236,7 +237,8 @@ class OllamaHandler:
                 erp_name=erp_data['erp_name'],
                 category=erp_data['category'],
                 subcategory=erp_data['subcategory'],
-                sublevel=erp_data['sublevel']
+                sub_subcategory=erp_data['sub_subcategory'],
+                sublevel=erp_data['sub_subcategory']
             )
             
             # Prepare the full prompt with context

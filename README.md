@@ -76,11 +76,11 @@ python src/main.py
 
 ## Usage
 
-1. **Open Excel File**: Click "Open Excel" to load an Excel file
+1. **Load Database**: The application automatically loads the database (`data/component_database.json`) on startup.
 2. **View Data**: Data is displayed in a hierarchical tree view
 3. **Column Visibility**: Click "Column Visibility" to control which columns are shown
 4. **Save View**: Click "Save View" to save your column visibility preferences
-5. **Save Changes**: Use "Save" or "Save As" to save your changes
+5. **Save Changes**: Use "Save" to save your changes to the database
 
 ## Configuration
 

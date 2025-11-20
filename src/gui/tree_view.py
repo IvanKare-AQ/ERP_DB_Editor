@@ -1,6 +1,6 @@
 """
 Tree View Widget for ERP Database Editor
-Displays data in hierarchical tree format with Article Category, Subcategory, and Sublevel.
+Displays data in hierarchical tree format with Category, Subcategory, and Sub-subcategory.
 """
 
 import customtkinter as ctk
@@ -12,7 +12,7 @@ import pandas as pd
 class TreeViewWidget(ctk.CTkFrame):
     """Tree view widget for displaying hierarchical ERP data."""
     
-    def __init__(self, parent):
+    def __init__(self, parent, config_manager=None):
         """Initialize the tree view widget."""
         super().__init__(parent)
         
@@ -27,11 +27,11 @@ class TreeViewWidget(ctk.CTkFrame):
         self.selected_item = None
         self.selected_items = []  # For multi-selection support
         
-        # Master list of all available columns (never changes)
-        self.all_columns = ("User ERP Name", "Image", "SKU NR", "ERP Name", "KEN NAME", "CAD Name", "Electronics", "Product Value", 
-                           "Manufacturer", "SKU", "EAN 13", "Unit", "Supplier", 
-                           "Expiry Date", "Tracking Method", "Procurement Method", "Remark", "SN", "Manually processed",
-                           "SUGGESTED_CAT", "SUGGESTED_SUBCAT", "SUGGESTED_SUBLEVEL", "AI_STATUS", "USE_FOR_ML")
+        # Config manager for saving visibility settings
+        self.config_manager = config_manager
+        
+        # Columns will be dynamically determined from loaded data
+        self._all_columns = None
         
         # Create the tree view
         self.create_tree_view()
@@ -123,7 +123,7 @@ class TreeViewWidget(ctk.CTkFrame):
         self.hierarchy_colors = {
             'category': '#404040',      # Dark gray for categories
             'subcategory': '#4a4a4a',   # Slightly lighter gray for subcategories  
-            'sublevel': '#545454',      # Even lighter gray for sublevels
+            'sub_subcategory': '#545454',      # Even lighter gray for sub-subcategories
             'erp_item': '#2b2b2b'       # Dark background for ERP items
         }
         
@@ -138,8 +138,8 @@ class TreeViewWidget(ctk.CTkFrame):
                                font=("Arial", 9, "bold"),
                                foreground="#ba68c8")  # Light purple text
         
-        self.tree.tag_configure('sublevel',
-                               background=self.hierarchy_colors['sublevel'],
+        self.tree.tag_configure('sub_subcategory',
+                               background=self.hierarchy_colors['sub_subcategory'],
                                font=("Arial", 9, "bold"),
                                foreground="#81c784")  # Light green text
         
@@ -174,37 +174,50 @@ class TreeViewWidget(ctk.CTkFrame):
         
     def setup_columns(self):
         """Setup the tree view columns."""
-        # Use the master list of all columns
-        self.tree["columns"] = self.all_columns
+        # Get columns from data (or fallback)
+        columns = self.get_all_columns()
+        self.tree["columns"] = columns
         
-        # Configure column headings
+        # Configure column headings dynamically
         self.tree.heading("#0", text="Hierarchy", anchor="w")
-        self.tree.heading("User ERP Name", text="User ERP Name")
-        self.tree.heading("Image", text="Image")
-        self.tree.heading("SKU NR", text="SKU NR")
-        self.tree.heading("ERP Name", text="ERP Name")
-        self.tree.heading("CAD Name", text="CAD Name")
-        self.tree.heading("Electronics", text="Electronics")
-        self.tree.heading("Product Value", text="Product Value")
-        self.tree.heading("Manufacturer", text="Manufacturer")
-        self.tree.heading("SKU", text="SKU")
-        self.tree.heading("EAN 13", text="EAN 13")
-        self.tree.heading("Unit", text="Unit")
-        self.tree.heading("Supplier", text="Supplier")
-        self.tree.heading("Expiry Date", text="Expiry Date")
-        self.tree.heading("Tracking Method", text="Tracking Method")
-        self.tree.heading("Procurement Method", text="Procurement Method")
-        self.tree.heading("Remark", text="Remark")
+        for col in columns:
+            self.tree.heading(col, text=col)
         
         # Configure column widths
         self.tree.column("#0", width=200, minwidth=150)
-        self.tree.column("User ERP Name", width=150, minwidth=120)
-        for col in self.tree["columns"][1:]:  # Skip User ERP Name as it's already configured
+        for col in columns:
             self.tree.column(col, width=100, minwidth=80)
             
-    def load_data(self, data):
+    def load_data(self, data, categories=None):
         """Load data into the tree view."""
         self.data = data
+        self.categories = categories
+        
+        # Extract columns from data (source of truth)
+        if data is not None and not data.empty:
+            # Get all columns from the data
+            data_columns = list(data.columns)
+            
+            # Map data column names to display names
+            display_columns = []
+            for col in data_columns:
+                # Map internal column names to display names
+                display_name = self.get_display_column_name(col)
+                if display_name not in display_columns:
+                    display_columns.append(display_name)
+            
+            self._all_columns = tuple(display_columns)
+        else:
+            # Fallback if no data
+            self._all_columns = tuple()
+        
+        # Update tree columns to match data
+        # If visibility settings exist, use them; otherwise use all columns
+        if self.visible_columns:
+            self.setup_columns_with_visibility(self.visible_columns)
+        else:
+            self.setup_columns()
+        
         # Clear filters when loading new data
         self.active_filters.clear()
         self.refresh_view()
@@ -216,76 +229,145 @@ class TreeViewWidget(ctk.CTkFrame):
             
     def populate_tree(self, data):
         """Populate the tree with hierarchical data."""
-        # Group by Article Category
-        categories = data.groupby('Article Category')
+        if self.categories:
+            # Use loaded categories to build the tree
+            self._populate_tree_from_categories(data, self.categories)
+        else:
+            # Fallback to grouping by data columns if no categories loaded
+            self._populate_tree_from_data(data)
+            
+    def _populate_tree_from_data(self, data):
+        """Populate the tree by grouping data columns."""
+        # Group by Category
+        categories = data.groupby('Category')
         
         for category_name, category_data in categories:
             # Create category node with color tag
             category_node = self.tree.insert("", "end", text=category_name, 
-                                           values=("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                                           values=self._get_empty_values(),
                                            tags=("category",))
             
-            # Group by Article Subcategory within category
-            subcategories = category_data.groupby('Article Subcategory')
+            # Group by Subcategory within category
+            subcategories = category_data.groupby('Subcategory')
             
             for subcategory_name, subcategory_data in subcategories:
                 # Create subcategory node with color tag
                 subcategory_node = self.tree.insert(category_node, "end", 
                                                   text=subcategory_name,
-                                                  values=("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                                                  values=self._get_empty_values(),
                                                   tags=("subcategory",))
                 
-                # Group by Article Sublevelwithin subcategory
-                sublevels = subcategory_data.groupby('Article Sublevel')
+                # Group by Sub-subcategory within subcategory
+                sub_subcategories = subcategory_data.groupby('Sub-subcategory')
                 
-                for sublevel_name, sublevel_data in sublevels:
-                    # Create sublevel node with color tag
-                    sublevel_node = self.tree.insert(subcategory_node, "end", 
-                                                   text=sublevel_name,
-                                                   values=("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
-                                                   tags=("sublevel",))
+                for sub_subcategory_name, sub_subcategory_data in sub_subcategories:
+                    # Create sub-subcategory node with color tag
+                    sub_subcategory_node = self.tree.insert(subcategory_node, "end", 
+                                                           text=sub_subcategory_name,
+                                                           values=self._get_empty_values(),
+                                                           tags=("sub_subcategory",))
                     
-                    # Add ERP Name items under sublevel with alternating backgrounds
-                    erp_items = list(sublevel_data.iterrows())
+                    # Add ERP Name items under sub-subcategory with alternating backgrounds
+                    erp_items = list(sub_subcategory_data.iterrows())
                     for index, (_, row) in enumerate(erp_items):
-                        # Create row ID for this item (use the Article Sublevelcolumn with trailing space)
-                        sublevel = row.get('Article Sublevel', '')
-                        # Use a unique delimiter that's unlikely to appear in the data
-                        delimiter = "◆◆◆"  # Using a unique Unicode character sequence
-                        row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{sublevel}"
+                        self._insert_erp_item(sub_subcategory_node, row, index)
+
+    def _populate_tree_from_categories(self, data, categories):
+        """Populate the tree using the categories structure."""
+        for category in categories:
+            category_name = category.get('category', '')
+            if not category_name:
+                continue
+                
+            # Create category node
+            category_node = self.tree.insert("", "end", text=category_name, 
+                                           values=self._get_empty_values(),
+                                           tags=("category",))
+            
+            # Filter data for this category
+            category_data = data[data['Category'] == category_name]
+            
+            subcategories = category.get('subcategories', [])
+            for sub in subcategories:
+                subcategory_name = sub.get('name', '')
+                if not subcategory_name:
+                    continue
+                    
+                # Create subcategory node
+                subcategory_node = self.tree.insert(category_node, "end", 
+                                                  text=subcategory_name,
+                                                  values=self._get_empty_values(),
+                                                  tags=("subcategory",))
+                
+                # Filter data for this subcategory
+                subcategory_data = category_data[category_data['Subcategory'] == subcategory_name]
+                
+                sub_subcategories = sub.get('sub_subcategories', [])
+                for subsub in sub_subcategories:
+                    sub_subcategory_name = subsub.get('name', '')
+                    if not sub_subcategory_name:
+                        continue
                         
-                        erp_name = row.get('ERP name', '')
-                        image = row.get('Image', '')
-                        sku_nr = row.get('SKU NR', '')
-                        ken_name = row.get('KEN NAME', '')
-                        cad_name = row.get('CAD name', '')
-                        electronics = row.get('Electronics', '')
-                        product_value = row.get('Product Value', '')
-                        manufacturer = row.get('Manufacturer', '')
-                        sku = row.get('SKU', '')
-                        ean13 = row.get('EAN 13', '')
-                        unit = row.get('Unit', '')
-                        supplier = row.get('Supplier', '')
-                        expiry_date = row.get('Expiry Date (Y/N)', '')
-                        tracking_method = row.get('Tracking Method', '')
-                        procurement_method = row.get('Procurement Method (Buy/Make)', '')
-                        remark = row.get('REMARK', '')
-                        
-                        # Get user ERP name - first check if it exists in original data, then check modifications
-                        user_erp_name = row.get('User ERP Name', '')
-                        if row_id in self.user_modifications and 'user_erp_name' in self.user_modifications[row_id]:
-                            user_erp_name = self.user_modifications[row_id]['user_erp_name']
-                        
-                        # Determine alternating background tag
-                        row_tag = "erp_item_even" if index % 2 == 0 else "erp_item_odd"
-                        
-                        # Create ERP item node with row ID and alternating color tag stored in tags
-                        self.tree.insert(sublevel_node, "end", 
-                                       text=erp_name,
-                                       values=(user_erp_name, image, sku_nr, erp_name, ken_name, cad_name, electronics, product_value,
-                                              manufacturer, sku, ean13, unit, supplier,
-                                              expiry_date, tracking_method, procurement_method, remark),
-                                       tags=(row_tag, row_id))
+                    # Create sub-subcategory node
+                    sub_subcategory_node = self.tree.insert(subcategory_node, "end", 
+                                                   text=sub_subcategory_name,
+                                                   values=self._get_empty_values(),
+                                                   tags=("sub_subcategory",))
+                    
+                    # Filter data for this sub-subcategory
+                    # Note: JSON uses 'name' which maps to 'Sub-subcategory' in DataFrame
+                    sub_subcategory_data = subcategory_data[subcategory_data['Sub-subcategory'] == sub_subcategory_name]
+                    
+                    # Add ERP Name items under sub-subcategory
+                    erp_items = list(sub_subcategory_data.iterrows())
+                    for index, (_, row) in enumerate(erp_items):
+                        self._insert_erp_item(sub_subcategory_node, row, index)
+
+    def _get_erp_name_full(self, row):
+        """Extract full_name from ERP name object or return string value."""
+        erp_name = row.get('ERP Name', '')
+        if isinstance(erp_name, dict):
+            return erp_name.get('full_name', '')
+        elif pd.isna(erp_name):
+            return ''
+        else:
+            return str(erp_name)
+    
+    def _insert_erp_item(self, parent_node, row, index, visible_columns=None):
+        """Helper to insert an ERP item into the tree."""
+        # Create row ID for this item using the Sub-subcategory column
+        sub_subcategory_value = row.get('Sub-subcategory', '')
+        # Use a unique delimiter that's unlikely to appear in the data
+        delimiter = "◆◆◆"  # Using a unique Unicode character sequence
+        erp_name_full = self._get_erp_name_full(row)
+        row_id = f"{erp_name_full}{delimiter}{row.get('Category', '')}{delimiter}{row.get('Subcategory', '')}{delimiter}{sub_subcategory_value}"
+        
+        if visible_columns:
+            # Use provided visible columns
+            columns_to_use = visible_columns
+        else:
+            # Use all columns if not provided
+            columns_to_use = self.tree["columns"]
+
+        # Create values tuple
+        values = []
+        for col in columns_to_use:
+            # Use mapping to get data column name
+            data_col = self.get_data_column_name(col)
+            if col == "ERP Name":
+                # Extract full_name from ERP name object for display
+                values.append(self._get_erp_name_full(row))
+            else:
+                values.append(row.get(data_col, ''))
+        
+        # Determine alternating background tag
+        row_tag = "erp_item_even" if index % 2 == 0 else "erp_item_odd"
+        
+        # Create ERP item node with row ID and alternating color tag stored in tags
+        self.tree.insert(parent_node, "end", 
+                       text=erp_name_full,
+                       values=tuple(values),
+                       tags=(row_tag, row_id))
         
         # Expand all nodes by default
         self.expand_all()
@@ -300,6 +382,11 @@ class TreeViewWidget(ctk.CTkFrame):
         for item in self.tree.get_children():
             self.tree.item(item, open=True)
             expand_children(item)
+    
+    def _get_empty_values(self):
+        """Get empty values tuple matching the number of columns."""
+        columns = self.tree["columns"] if self.tree["columns"] else []
+        return ("",) * len(columns)
             
     def get_data(self):
         """Get the current data from the tree view."""
@@ -310,8 +397,15 @@ class TreeViewWidget(ctk.CTkFrame):
         return self.data is not None and not self.data.empty
         
     def get_all_columns(self):
-        """Get all available columns (master list)."""
-        return self.all_columns
+        """Get all available columns (master list) from loaded data."""
+        if self._all_columns:
+            return self._all_columns
+        # Fallback if no data loaded yet
+        return tuple()
+    
+    def get_display_column_name(self, data_column):
+        """Map data column name to display column name."""
+        return data_column
     
     def get_visible_columns(self):
         """Get the currently visible columns."""
@@ -319,11 +413,15 @@ class TreeViewWidget(ctk.CTkFrame):
             return self.visible_columns
         else:
             # Return all columns if no visibility settings
-            return self.all_columns
+            return self.get_all_columns()
         
     def set_visible_columns(self, visible_columns):
         """Set the visible columns."""
         self.visible_columns = visible_columns
+        
+        # Save to config if config_manager is available
+        if self.config_manager:
+            self.config_manager.save_column_visibility(visible_columns)
         
         # Recreate tree view with only visible columns
         if visible_columns and self.data is not None:
@@ -342,12 +440,8 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def setup_columns_with_visibility(self, visible_columns):
         """Setup tree view columns with only visible columns."""
-        # Create a copy to avoid modifying the original list
-        columns_to_use = visible_columns.copy()
-        
-        # Add User ERP Name column if it's not in visible columns
-        if "User ERP Name" not in columns_to_use:
-            columns_to_use = ["User ERP Name"] + columns_to_use
+        # Use the visible columns as-is (respect user preferences)
+        columns_to_use = visible_columns.copy() if visible_columns else []
         
         # Set only visible columns
         self.tree["columns"] = columns_to_use
@@ -367,15 +461,20 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def populate_tree_with_visibility(self, data, visible_columns):
         """Populate the tree with only visible columns."""
-        # Create a copy to avoid modifying the original list
-        columns_to_use = visible_columns.copy()
+        # Use the visible columns as-is (respect user preferences)
+        columns_to_use = visible_columns.copy() if visible_columns else []
         
-        # Add User ERP Name column if it's not in visible columns
-        if "User ERP Name" not in columns_to_use:
-            columns_to_use = ["User ERP Name"] + columns_to_use
-        
-        # Group by Article Category
-        categories = data.groupby('Article Category')
+        if self.categories:
+            # Use loaded categories to build the tree
+            self._populate_tree_from_categories_with_visibility(data, self.categories, columns_to_use)
+        else:
+            # Fallback to grouping by data columns
+            self._populate_tree_from_data_with_visibility(data, columns_to_use)
+
+    def _populate_tree_from_data_with_visibility(self, data, columns_to_use):
+        """Populate the tree by grouping data columns with visible columns."""
+        # Group by Category
+        categories = data.groupby('Category')
         
         for category_name, category_data in categories:
             # Create category node with color tag
@@ -383,8 +482,8 @@ class TreeViewWidget(ctk.CTkFrame):
                                            values=("",) * len(columns_to_use),
                                            tags=("category",))
             
-            # Group by Article Subcategory within category
-            subcategories = category_data.groupby('Article Subcategory')
+            # Group by Subcategory within category
+            subcategories = category_data.groupby('Subcategory')
             
             for subcategory_name, subcategory_data in subcategories:
                 # Create subcategory node with color tag
@@ -393,95 +492,70 @@ class TreeViewWidget(ctk.CTkFrame):
                                                   values=("",) * len(columns_to_use),
                                                   tags=("subcategory",))
                 
-                # Group by Article Sublevelwithin subcategory
-                sublevels = subcategory_data.groupby('Article Sublevel')
+            # Group by Sub-subcategory within subcategory
+            sub_subcategories = subcategory_data.groupby('Sub-subcategory')
+            
+            for sub_subcategory_name, sub_subcategory_data in sub_subcategories:
+                # Create sub-subcategory node with color tag
+                sub_subcategory_node = self.tree.insert(subcategory_node, "end", 
+                                               text=sub_subcategory_name,
+                                               values=("",) * len(columns_to_use),
+                                               tags=("sub_subcategory",))
                 
-                for sublevel_name, sublevel_data in sublevels:
-                    # Create sublevel node with color tag
-                    sublevel_node = self.tree.insert(subcategory_node, "end", 
-                                                   text=sublevel_name,
-                                                   values=("",) * len(columns_to_use),
-                                                   tags=("sublevel",))
+                # Add ERP Name items under sub-subcategory with alternating backgrounds
+                erp_items = list(sub_subcategory_data.iterrows())
+                for index, (_, row) in enumerate(erp_items):
+                    self._insert_erp_item(sub_subcategory_node, row, index, columns_to_use)
+
+    def _populate_tree_from_categories_with_visibility(self, data, categories, columns_to_use):
+        """Populate the tree using the categories structure with visible columns."""
+        for category in categories:
+            category_name = category.get('category', '')
+            if not category_name:
+                continue
+                
+            # Create category node
+            category_node = self.tree.insert("", "end", text=category_name, 
+                                           values=("",) * len(columns_to_use),
+                                           tags=("category",))
+            
+            # Filter data for this category
+            category_data = data[data['Category'] == category_name]
+            
+            subcategories = category.get('subcategories', [])
+            for sub in subcategories:
+                subcategory_name = sub.get('name', '')
+                if not subcategory_name:
+                    continue
                     
-                    # Add ERP Name items under sublevel with alternating backgrounds
-                    erp_items = list(sublevel_data.iterrows())
+                # Create subcategory node
+                subcategory_node = self.tree.insert(category_node, "end", 
+                                                  text=subcategory_name,
+                                                  values=("",) * len(columns_to_use),
+                                                  tags=("subcategory",))
+                
+                # Filter data for this subcategory
+                subcategory_data = category_data[category_data['Subcategory'] == subcategory_name]
+                
+                sub_subcategories = sub.get('sub_subcategories', [])
+                for subsub in sub_subcategories:
+                    sub_subcategory_name = subsub.get('name', '')
+                    if not sub_subcategory_name:
+                        continue
+                        
+                    # Create sub-subcategory node
+                    sub_subcategory_node = self.tree.insert(subcategory_node, "end", 
+                                                   text=sub_subcategory_name,
+                                                   values=("",) * len(columns_to_use),
+                                                   tags=("sub_subcategory",))
+                    
+                    # Filter data for this sub-subcategory
+                    sub_subcategory_data = subcategory_data[subcategory_data['Sub-subcategory'] == sub_subcategory_name]
+                    
+                    # Add ERP Name items under sub-subcategory
+                    erp_items = list(sub_subcategory_data.iterrows())
                     for index, (_, row) in enumerate(erp_items):
-                        # Create values tuple with only visible columns
-                        values = []
-                        for col in columns_to_use:
-                            if col == "User ERP Name":
-                                # Get user ERP name - first check if it exists in original data, then check modifications
-                                sublevel = row.get('Article Sublevel', '')
-                                # Use a unique delimiter that's unlikely to appear in the data
-                                delimiter = "◆◆◆"  # Using a unique Unicode character sequence
-                                row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{sublevel}"
-                                user_value = row.get('User ERP Name', '')
-                                if row_id in self.user_modifications and 'user_erp_name' in self.user_modifications[row_id]:
-                                    user_value = self.user_modifications[row_id]['user_erp_name']
-                                values.append(user_value)
-                            elif col == "Image":
-                                values.append(row.get('Image', ''))
-                            elif col == "SKU NR":
-                                values.append(row.get('SKU NR', ''))
-                            elif col == "ERP Name":
-                                values.append(row.get('ERP name', ''))
-                            elif col == "KEN NAME":
-                                values.append(row.get('KEN NAME', ''))
-                            elif col == "CAD Name":
-                                values.append(row.get('CAD name', ''))
-                            elif col == "Electronics":
-                                values.append(row.get('Electronics', ''))
-                            elif col == "Product Value":
-                                values.append(row.get('Product Value', ''))
-                            elif col == "Manufacturer":
-                                values.append(row.get('Manufacturer', ''))
-                            elif col == "SKU":
-                                values.append(row.get('SKU', ''))
-                            elif col == "EAN 13":
-                                values.append(row.get('EAN 13', ''))
-                            elif col == "Unit":
-                                values.append(row.get('Unit', ''))
-                            elif col == "Supplier":
-                                values.append(row.get('Supplier', ''))
-                            elif col == "Expiry Date":
-                                values.append(row.get('Expiry Date (Y/N)', ''))
-                            elif col == "Tracking Method":
-                                values.append(row.get('Tracking Method', ''))
-                            elif col == "Procurement Method":
-                                values.append(row.get('Procurement Method (Buy/Make)', ''))
-                            elif col == "Remark":
-                                values.append(row.get('REMARK', ''))
-                            elif col == "SN":
-                                values.append(row.get('SN', ''))
-                            elif col == "Manually processed":
-                                values.append(row.get('Manually processed', ''))
-                            elif col == "SUGGESTED_CAT":
-                                values.append(row.get('SUGGESTED_CAT', ''))
-                            elif col == "SUGGESTED_SUBCAT":
-                                values.append(row.get('SUGGESTED_SUBCAT', ''))
-                            elif col == "SUGGESTED_SUBLEVEL":
-                                values.append(row.get('SUGGESTED_SUBLEVEL', ''))
-                            elif col == "AI_STATUS":
-                                values.append(row.get('AI_STATUS', ''))
-                            elif col == "USE_FOR_ML":
-                                values.append(row.get('USE_FOR_ML', ''))
-                            else:
-                                values.append('')
-                        
-                        # Create row ID for this item (use the Article Sublevelcolumn with trailing space)
-                        sublevel = row.get('Article Sublevel', '')
-                        # Use a unique delimiter that's unlikely to appear in the data
-                        delimiter = "◆◆◆"  # Using a unique Unicode character sequence
-                        row_id = f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{sublevel}"
-                        
-                        # Determine alternating background tag
-                        row_tag = "erp_item_even" if index % 2 == 0 else "erp_item_odd"
-                        
-                        # Create ERP item node with row ID and alternating color tag stored in tags
-                        item = self.tree.insert(sublevel_node, "end", 
-                                               text=row.get('ERP name', ''),
-                                               values=tuple(values),
-                                               tags=(row_tag, row_id))
+                        self._insert_erp_item(sub_subcategory_node, row, index, columns_to_use)
     
     def load_column_visibility(self, config_manager):
         """Load column visibility settings from config manager."""
@@ -554,54 +628,37 @@ class TreeViewWidget(ctk.CTkFrame):
                 erp_name = parts[0]
                 category = parts[1]
                 subcategory = parts[2]
-                sublevel = parts[3]
+                sub_subcategory = parts[3]
                 
-                # Find matching row
+                # Find matching row - extract full_name from ERP name object for comparison
+                def get_erp_full_name(erp_obj):
+                    if isinstance(erp_obj, dict):
+                        return erp_obj.get('full_name', '')
+                    elif pd.isna(erp_obj):
+                        return ''
+                    else:
+                        return str(erp_obj)
+                
+                erp_name_series = data['ERP Name'].apply(get_erp_full_name)
                 mask = (
-                    (data['ERP name'] == erp_name) &
-                    (data['Article Category'] == category) &
-                    (data['Article Subcategory'] == subcategory) &
-                    (data['Article Sublevel'] == sublevel)
+                    (erp_name_series == erp_name) &
+                    (data['Category'] == category) &
+                    (data['Subcategory'] == subcategory) &
+                    (data['Sub-subcategory'] == sub_subcategory)
                 )
                 
                 if mask.any():
                     # Apply reassignment modifications
-                    if 'new_category' in mods and 'new_subcategory' in mods and 'new_sublevel' in mods:
-                        data.loc[mask, 'Article Category'] = mods['new_category']
-                        data.loc[mask, 'Article Subcategory'] = mods['new_subcategory']
-                        data.loc[mask, 'Article Sublevel'] = mods['new_sublevel']
+                    if 'new_category' in mods and 'new_subcategory' in mods and 'new_sub_subcategory' in mods:
+                        data.loc[mask, 'Category'] = mods['new_category']
+                        data.loc[mask, 'Subcategory'] = mods['new_subcategory']
+                        data.loc[mask, 'Sub-subcategory'] = mods['new_sub_subcategory']
         
         return data
     
     def get_data_column_name(self, display_column):
         """Map display column names to data column names."""
-        column_mapping = {
-            "User ERP Name": "User ERP Name",  # This is a virtual column
-            "Image": "Image",
-            "SKU NR": "SKU NR",
-            "ERP Name": "ERP name",
-            "KEN NAME": "KEN NAME",
-            "CAD Name": "CAD name",
-            "Electronics": "Electronics",
-            "Product Value": "Product Value",
-            "Manufacturer": "Manufacturer",
-            "SKU": "SKU",
-            "EAN 13": "EAN 13",
-            "Unit": "Unit",
-            "Supplier": "Supplier",
-            "Expiry Date": "Expiry Date (Y/N)",
-            "Tracking Method": "Tracking Method",
-            "Procurement Method": "Procurement Method (Buy/Make)",
-            "Remark": "REMARK",
-            "SN": "SN",
-            "Manually processed": "Manually processed",
-            "SUGGESTED_CAT": "SUGGESTED_CAT",
-            "SUGGESTED_SUBCAT": "SUGGESTED_SUBCAT",
-            "SUGGESTED_SUBLEVEL": "SUGGESTED_SUBLEVEL",
-            "AI_STATUS": "AI_STATUS",
-            "USE_FOR_ML": "USE_FOR_ML"
-        }
-        return column_mapping.get(display_column, display_column)
+        return display_column
     
     def refresh_view(self):
         """Refresh the tree view with current filters and visibility settings."""
@@ -653,12 +710,12 @@ class TreeViewWidget(ctk.CTkFrame):
         """Set the selected item data."""
         self.selected_item = item_data
     
-    def update_user_erp_name(self, row_id, user_erp_name):
-        """Update user ERP name for a specific row."""
+    def update_user_erp_name(self, row_id, erp_name):
+        """Update ERP name for a specific row."""
         if row_id not in self.user_modifications:
             self.user_modifications[row_id] = {}
-        self.user_modifications[row_id]['user_erp_name'] = user_erp_name
-        self.update_tree_item_user_erp_name(row_id, user_erp_name)
+        self.user_modifications[row_id]['erp_name'] = erp_name
+        self.update_tree_item_erp_name(row_id, erp_name)
     
     def update_manufacturer(self, row_id, manufacturer):
         """Update manufacturer for a specific row."""
@@ -674,38 +731,41 @@ class TreeViewWidget(ctk.CTkFrame):
         self.user_modifications[row_id]['remark'] = remark
         # Note: Remark updates will be reflected in tree view when data is refreshed
     
-    def reassign_item(self, row_id, new_category, new_subcategory, new_sublevel):
-        """Reassign an item to a new category, subcategory, and sublevel."""
+    def reassign_item(self, row_id, new_category, new_subcategory, new_sub_subcategory):
+        """Reassign an item to a new category, subcategory, and sub_subcategory."""
         if row_id not in self.user_modifications:
             self.user_modifications[row_id] = {}
         self.user_modifications[row_id]['new_category'] = new_category
         self.user_modifications[row_id]['new_subcategory'] = new_subcategory
-        self.user_modifications[row_id]['new_sublevel'] = new_sublevel
+        self.user_modifications[row_id]['new_sub_subcategory'] = new_sub_subcategory
         self.refresh_view()
     
-    def update_tree_item_user_erp_name(self, row_id, user_erp_name):
-        """Update the User ERP Name column for a specific tree item without refreshing the entire view."""
+    def update_tree_item_erp_name(self, row_id, erp_name):
+        """Update the ERP name (tree item text) for a specific tree item without refreshing the entire view."""
+        # Extract full_name from object if it's a dict
+        if isinstance(erp_name, dict):
+            display_name = erp_name.get('full_name', '')
+        else:
+            display_name = str(erp_name) if erp_name else ''
+        
         # Find the tree item with the matching row_id
         for item in self.tree.get_children():
             # Check ERP items recursively
-            if self._update_item_user_erp_name_recursive(item, row_id, user_erp_name):
+            if self._update_item_erp_name_recursive(item, row_id, display_name):
                 break
     
-    def _update_item_user_erp_name_recursive(self, item, row_id, user_erp_name):
-        """Recursively search for and update the User ERP Name for a specific item."""
+    def _update_item_erp_name_recursive(self, item, row_id, display_name):
+        """Recursively search for and update the ERP name (tree item text) for a specific item."""
         # Check if this item has the matching row_id
         tags = self.tree.item(item, "tags")
         if tags and len(tags) >= 2 and tags[1] == row_id:
-            # Found the item, update its values
-            current_values = list(self.tree.item(item, "values"))
-            if len(current_values) > 0:
-                current_values[0] = user_erp_name  # User ERP Name is the first column after #0
-                self.tree.item(item, values=current_values)
+            # Found the item, update its text (which displays ERP name full_name)
+            self.tree.item(item, text=display_name)
             return True
         
         # Check children recursively
         for child in self.tree.get_children(item):
-            if self._update_item_user_erp_name_recursive(child, row_id, user_erp_name):
+            if self._update_item_erp_name_recursive(child, row_id, display_name):
                 return True
         
         return False
@@ -715,55 +775,58 @@ class TreeViewWidget(ctk.CTkFrame):
         return self.user_modifications.copy()
     
     def get_unique_categories(self):
-        """Get unique categories from data."""
+        """Get unique categories from data or loaded categories structure."""
+        if self.categories:
+            return sorted([cat.get('category', '') for cat in self.categories if cat.get('category')])
+            
         if self.data is None or self.data.empty:
             return []
-        return sorted(self.data['Article Category'].dropna().unique().tolist())
+        return sorted(self.data['Category'].dropna().unique().tolist())
     
     def get_unique_subcategories(self, category=None):
-        """Get unique subcategories from data."""
+        """Get unique subcategories from data or loaded categories structure."""
+        if self.categories:
+            subcategories = []
+            for cat in self.categories:
+                if not category or cat.get('category') == category:
+                    for sub in cat.get('subcategories', []):
+                        name = sub.get('name')
+                        if name:
+                            subcategories.append(name)
+            return sorted(list(set(subcategories)))
+            
         if self.data is None or self.data.empty:
             return []
         if category:
-            filtered_data = self.data[self.data['Article Category'] == category]
-            return sorted(filtered_data['Article Subcategory'].dropna().unique().tolist())
-        return sorted(self.data['Article Subcategory'].dropna().unique().tolist())
+            filtered_data = self.data[self.data['Category'] == category]
+            return sorted(filtered_data['Subcategory'].dropna().unique().tolist())
+        return sorted(self.data['Subcategory'].dropna().unique().tolist())
     
-    def get_unique_sublevels(self, category=None, subcategory=None):
-        """Get unique sublevels from data."""
+    def get_unique_sub_subcategories(self, category=None, subcategory=None):
+        """Get unique sub_subcategories from data or loaded categories structure."""
+        if self.categories:
+            sub_subcategories = []
+            for cat in self.categories:
+                if not category or cat.get('category') == category:
+                    for sub in cat.get('subcategories', []):
+                        if not subcategory or sub.get('name') == subcategory:
+                            for subsub in sub.get('sub_subcategories', []):
+                                name = subsub.get('name')
+                                if name:
+                                    sub_subcategories.append(name)
+            return sorted(list(set(sub_subcategories)))
+            
         if self.data is None or self.data.empty:
             return []
         filtered_data = self.data
         if category:
-            filtered_data = filtered_data[filtered_data['Article Category'] == category]
+            filtered_data = filtered_data[filtered_data['Category'] == category]
         if subcategory:
-            filtered_data = filtered_data[filtered_data['Article Subcategory'] == subcategory]
+            filtered_data = filtered_data[filtered_data['Subcategory'] == subcategory]
         
-        # Use the Article Sublevelcolumn with trailing space
-        sublevel_col = 'Article Sublevel'
-        return sorted(filtered_data[sublevel_col].dropna().unique().tolist())
-    
-    def clear_user_erp_names_for_selected(self):
-        """Clear User ERP Name for all selected items."""
-        if not self.selected_items:
-            return 0
-            
-        cleared_count = 0
-        for item_data, row_id in self.selected_items:
-            if row_id in self.user_modifications:
-                if 'user_erp_name' in self.user_modifications[row_id]:
-                    del self.user_modifications[row_id]['user_erp_name']
-                    cleared_count += 1
-            else:
-                # Add empty user_erp_name to track that it was explicitly cleared
-                self.user_modifications[row_id] = {'user_erp_name': ''}
-                cleared_count += 1
-        
-        # Refresh the tree view to show changes
-        if cleared_count > 0:
-            self.refresh_view()
-        
-        return cleared_count
+        # Use the Sub-subcategorycolumn with trailing space
+        sub_subcategory_col = 'Sub-subcategory'
+        return sorted(filtered_data[sub_subcategory_col].dropna().unique().tolist())
     
     def on_mouse_motion(self, event):
         """Handle mouse motion for hover effects."""
@@ -816,14 +879,23 @@ class TreeViewWidget(ctk.CTkFrame):
             delimiter = "◆◆◆"
             parts = row_id.split(delimiter)
             if len(parts) >= 4:
-                erp_name, category, subcategory, sublevel = parts[0], parts[1], parts[2], parts[3]
+                erp_name, category, subcategory, sub_subcategory = parts[0], parts[1], parts[2], parts[3]
                 
-                # Create mask to find the row to delete
+                # Create mask to find the row to delete - extract full_name from ERP name object
+                def get_erp_full_name(erp_obj):
+                    if isinstance(erp_obj, dict):
+                        return erp_obj.get('full_name', '')
+                    elif pd.isna(erp_obj):
+                        return ''
+                    else:
+                        return str(erp_obj)
+                
+                erp_name_series = self.data['ERP Name'].apply(get_erp_full_name)
                 mask = (
-                    (self.data['ERP name'] == erp_name) &
-                    (self.data['Article Category'] == category) &
-                    (self.data['Article Subcategory'] == subcategory) &
-                    (self.data['Article Sublevel'] == sublevel)
+                    (erp_name_series == erp_name) &
+                    (self.data['Category'] == category) &
+                    (self.data['Subcategory'] == subcategory) &
+                    (self.data['Sub-subcategory'] == sub_subcategory)
                 )
                 
                 # Remove the row

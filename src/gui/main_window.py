@@ -13,7 +13,7 @@ import sys
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
 
-from src.backend.excel_handler import ExcelHandler
+from src.backend.json_handler import JsonHandler
 from src.backend.config_manager import ConfigManager
 from src.gui.tree_view import TreeViewWidget
 from src.gui.column_visibility import ColumnVisibilityDialog
@@ -34,17 +34,20 @@ class MainWindow:
         self.configure_fonts()
         
         # Initialize backend components
-        self.excel_handler = ExcelHandler()
+        self.json_handler = JsonHandler()
         self.config_manager = ConfigManager()
         
         # Current file path
-        self.current_file_path = None
+        self.current_file_path = self.json_handler.file_path
         
         # Track view changes
         self.view_has_changes = False
         
         # Setup the GUI
         self.setup_gui()
+        
+        # Load database on startup
+        self.load_database()
     
     def configure_fonts(self):
         """Configure fonts for consistent rendering across platforms."""
@@ -88,31 +91,23 @@ class MainWindow:
         self.toolbar_frame.pack(fill="x", pady=(0, 10))
         
         # File operations
-        self.open_button = ctk.CTkButton(
-            self.toolbar_frame,
-            text="Open Excel",
-            command=self.open_file,
-            width=100
-        )
-        self.open_button.pack(side="left", padx=5, pady=5)
-        
         self.save_button = ctk.CTkButton(
             self.toolbar_frame,
             text="Save",
-            command=self.save_file,
+            command=self.save_database,
             width=100,
             state="disabled"
         )
         self.save_button.pack(side="left", padx=5, pady=5)
         
-        self.save_as_button = ctk.CTkButton(
+        self.export_button = ctk.CTkButton(
             self.toolbar_frame,
-            text="Save As",
-            command=self.save_as_file,
+            text="Export",
+            command=self.export_to_excel,
             width=100,
             state="disabled"
         )
-        self.save_as_button.pack(side="left", padx=5, pady=5)
+        self.export_button.pack(side="left", padx=5, pady=5)
         
         # Separator
         separator = ctk.CTkFrame(self.toolbar_frame, width=2, height=30)
@@ -164,29 +159,6 @@ class MainWindow:
         separator3 = ctk.CTkFrame(self.toolbar_frame, width=2, height=30)
         separator3.pack(side="left", padx=10, pady=5)
         
-        # Multi-selection control section
-        self.clear_user_erp_button = ctk.CTkButton(
-            self.toolbar_frame,
-            text="Clear User ERP Name",
-            command=self.clear_user_erp_names,
-            width=140,
-            state="disabled"
-        )
-        self.clear_user_erp_button.pack(side="left", padx=5, pady=5)
-        
-        self.apply_user_erp_button = ctk.CTkButton(
-            self.toolbar_frame,
-            text="Apply User ERP Names",
-            command=self.apply_user_erp_names,
-            width=150,
-            state="disabled"
-        )
-        self.apply_user_erp_button.pack(side="left", padx=5, pady=5)
-        
-        # Separator after Apply User ERP Names
-        separator4 = ctk.CTkFrame(self.toolbar_frame, width=2, height=30)
-        separator4.pack(side="left", padx=10, pady=5)
-        
         
     def create_content_area(self):
         """Create the main content area with tree view and edit panel."""
@@ -204,7 +176,7 @@ class MainWindow:
         self.left_panel.pack(side="left", fill="both", expand=True, padx=(10, 5), pady=10)
 
         # Create tree view widget
-        self.tree_view = TreeViewWidget(self.left_panel)
+        self.tree_view = TreeViewWidget(self.left_panel, self.config_manager)
         self.tree_view.pack(fill="both", expand=True)
 
         # Bind tree view selection event
@@ -258,91 +230,114 @@ class MainWindow:
         else:
             self.file_info_label.configure(text="No file loaded")
         
-    def open_file(self):
-        """Open an Excel file."""
-        file_path = filedialog.askopenfilename(
-            title="Open Excel File",
-            filetypes=[("Excel files", "*.xlsx *.xls"), ("All files", "*.*")]
-        )
-        
-        if file_path:
-            try:
-                self.update_status("Loading file...")
-                
-                # Load the Excel file
-                self.excel_handler.load_file(file_path)
-                self.current_file_path = file_path
-                
-                # Update tree view with data
-                self.tree_view.load_data(self.excel_handler.get_data())
-                
-                # Load saved filters after data is loaded
-                saved_filters = self.config_manager.get_filters()
-                if saved_filters:
-                    self.tree_view.load_filters(saved_filters)
-                
-                # Update Save View button state after loading data and filters
-                self.update_save_view_button_state()
-                
-                # Enable buttons
-                self.save_button.configure(state="normal")
-                self.save_as_button.configure(state="normal")
-                self.column_visibility_button.configure(state="normal")
-                self.save_view_button.configure(state="normal")
-                self.filter_button.configure(state="normal")
-                self.clear_filters_button.configure(state="normal")
-                self.apply_user_erp_button.configure(state="normal")
-                
-                # Update status and file info
-                self.update_status("File loaded successfully")
-                self.update_file_info(file_path)
-                
-            except Exception as e:
-                self.update_status("Error loading file")
-                messagebox.showerror("Error", f"Failed to load file: {str(e)}")
-                
-    def save_file(self):
-        """Save the current file."""
-        if self.current_file_path:
-            try:
-                self.update_status("Saving file...")
-                
-                # Get data with user modifications applied
-                data = self.get_data_with_modifications()
-                self.excel_handler.save_file(self.current_file_path, data)
-                
-                self.update_status("File saved successfully")
-            except Exception as e:
-                self.update_status("Error saving file")
-                messagebox.showerror("Error", f"Failed to save file: {str(e)}")
-        else:
-            messagebox.showwarning("Warning", "No file is currently open")
+    def load_database(self):
+        """Load the component database from JSON."""
+        try:
+            self.update_status("Loading database...")
             
-    def save_as_file(self):
-        """Save the current file with a new name."""
-        if self.current_file_path:
+            # Load the JSON file
+            self.json_handler.load_file()
+            
+            # Load categories
+            self.json_handler.load_categories()
+            
+            # Enrich data with category properties
+            self.json_handler.enrich_data()
+            
+            # Update tree view with data and categories
+            self.tree_view.load_data(self.json_handler.get_data(), self.json_handler.get_categories())
+            
+            # Load saved filters after data is loaded
+            saved_filters = self.config_manager.get_filters()
+            if saved_filters:
+                self.tree_view.load_filters(saved_filters)
+            
+            # Update Save View button state after loading data and filters
+            self.update_save_view_button_state()
+            
+            # Enable buttons
+            self.save_button.configure(state="normal")
+            self.export_button.configure(state="normal")
+            self.column_visibility_button.configure(state="normal")
+            self.save_view_button.configure(state="normal")
+            self.filter_button.configure(state="normal")
+            self.clear_filters_button.configure(state="normal")
+            
+            # Update status and file info
+            self.update_status("Database loaded successfully")
+            self.update_file_info(self.json_handler.file_path)
+            
+        except Exception as e:
+            self.update_status("Error loading database")
+            messagebox.showerror("Error", f"Failed to load database: {str(e)}")
+            
+    def save_database(self):
+        """Save the database to JSON."""
+        try:
+            self.update_status("Saving database...")
+            
+            # Get data with user modifications applied
+            data = self.get_data_with_modifications()
+            self.json_handler.save_file(data=data)
+            
+            self.update_status("Database saved successfully")
+        except Exception as e:
+            self.update_status("Error saving database")
+            messagebox.showerror("Error", f"Failed to save database: {str(e)}")
+    
+    def export_to_excel(self):
+        """Export all data (filtered and unfiltered) to Excel file."""
+        try:
+            # Get file path from user
             file_path = filedialog.asksaveasfilename(
-                title="Save As",
                 defaultextension=".xlsx",
-                filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")]
+                filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
+                title="Export to Excel"
             )
             
-            if file_path:
-                try:
-                    self.update_status("Saving file...")
-                    
-                    # Get data with user modifications applied
-                    data = self.get_data_with_modifications()
-                    self.excel_handler.save_file(file_path, data)
-                    self.current_file_path = file_path
-                    
-                    self.update_status("File saved successfully")
-                    self.update_file_info(file_path)
-                except Exception as e:
-                    self.update_status("Error saving file")
-                    messagebox.showerror("Error", f"Failed to save file: {str(e)}")
-        else:
-            messagebox.showwarning("Warning", "No file is currently open")
+            if not file_path:
+                self.update_status("Export cancelled")
+                return
+            
+            self.update_status("Exporting to Excel...")
+            
+            # Get all data with user modifications applied
+            data = self.get_data_with_modifications()
+            
+            # Create a copy for export (we'll modify ERP Name for Excel)
+            export_data = data.copy()
+            
+            # Convert ERP Name objects to full_name strings for Excel
+            if 'ERP Name' in export_data.columns:
+                import pandas as pd
+                def get_erp_full_name(erp_obj):
+                    if isinstance(erp_obj, dict):
+                        return erp_obj.get('full_name', '')
+                    elif pd.isna(erp_obj):
+                        return ''
+                    else:
+                        return str(erp_obj)
+                
+                export_data['ERP Name'] = export_data['ERP Name'].apply(get_erp_full_name)
+            
+            # Export to Excel using openpyxl
+            try:
+                import openpyxl
+                from openpyxl import Workbook
+            except ImportError:
+                messagebox.showerror("Error", "openpyxl is required for Excel export. Please install it: pip install openpyxl")
+                self.update_status("Export failed: openpyxl not installed")
+                return
+            
+            # Use pandas to_excel method
+            export_data.to_excel(file_path, index=False, engine='openpyxl')
+            
+            self.update_status(f"Data exported successfully to {os.path.basename(file_path)}")
+            messagebox.showinfo("Export Successful", f"Data exported successfully to:\n{file_path}")
+            
+        except Exception as e:
+            self.update_status("Error exporting to Excel")
+            messagebox.showerror("Error", f"Failed to export to Excel: {str(e)}")
             
     def open_column_visibility(self):
         """Open the column visibility dialog."""
@@ -472,17 +467,6 @@ class MainWindow:
         else:
             messagebox.showwarning("Warning", "Please open a file first")
     
-    def clear_user_erp_names(self):
-        """Clear User ERP Name for all selected items."""
-        if hasattr(self.tree_view, 'selected_items') and self.tree_view.selected_items:
-            cleared_count = self.tree_view.clear_user_erp_names_for_selected()
-            if cleared_count > 0:
-                self.update_status(f"Cleared User ERP Name for {cleared_count} items")
-            else:
-                self.update_status("No User ERP Name values to clear")
-        else:
-            self.update_status("Please select items first")
-    
     def on_tree_select(self, event):
         """Handle tree view selection events."""
         selection = self.tree_view.tree.selection()
@@ -502,7 +486,8 @@ class MainWindow:
                 if len(erp_items) == 1:
                     original_data, row_id = erp_items[0]
                     self.edit_panel.manual_editor.set_selected_item(original_data, row_id)
-                    erp_name = original_data.get('ERP name', 'Unknown')
+                    erp_name_obj = original_data.get('ERP Name', {})
+                    erp_name = erp_name_obj.get('full_name', 'Unknown') if isinstance(erp_name_obj, dict) else str(erp_name_obj) if erp_name_obj else 'Unknown'
                     self.update_status(f"Selected: {erp_name}")
                 else:
                     # Multiple ERP items selected
@@ -512,9 +497,6 @@ class MainWindow:
                 # Store selected items for multi-selection operations
                 self.tree_view.selected_items = erp_items
                 
-                # Enable clear button if we have ERP items selected
-                self.clear_user_erp_button.configure(state="normal")
-                
                 # Update apply to selected button state
                 if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
                     self.edit_panel.ai_editor.update_apply_to_selected_button_state()
@@ -522,14 +504,12 @@ class MainWindow:
                 # No ERP items selected
                 self.edit_panel.manual_editor.set_selected_item(None, None)
                 self.tree_view.selected_items = []
-                self.clear_user_erp_button.configure(state="disabled")
                 if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
                     self.edit_panel.ai_editor.update_apply_to_selected_button_state()
                 self.update_status("Ready")
         else:
             self.manual_edit_panel.set_selected_item(None, None)
             self.tree_view.selected_items = []
-            self.clear_user_erp_button.configure(state="disabled")
             if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
                 self.edit_panel.ai_editor.update_apply_to_selected_button_state()
     
@@ -538,14 +518,28 @@ class MainWindow:
         # This is a simplified approach - in a real implementation,
         # you might want to store row IDs in tree items
         if not self.tree_view.data.empty:
+            # Extract full_name from ERP name object for comparison
+            import pandas as pd
+            def get_erp_full_name(erp_obj):
+                if isinstance(erp_obj, dict):
+                    return erp_obj.get('full_name', '')
+                elif pd.isna(erp_obj):
+                    return ''
+                else:
+                    return str(erp_obj)
+            
+            erp_name_series = self.tree_view.data['ERP Name'].apply(get_erp_full_name)
             # Find matching row in data
             matching_rows = self.tree_view.data[
-                (self.tree_view.data['ERP name'] == item_text)
+                (erp_name_series == item_text)
             ]
             if not matching_rows.empty:
                 row = matching_rows.iloc[0]
                 delimiter = "◆◆◆"
-                return f"{row.get('ERP name', '')}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel', '')}"
+                # Extract full_name for row_id
+                erp_name_obj = row.get('ERP Name', {})
+                erp_name_full = get_erp_full_name(erp_name_obj)
+                return f"{erp_name_full}{delimiter}{row.get('Category', '')}{delimiter}{row.get('Subcategory', '')}{delimiter}{row.get('Sub-subcategory', '')}"
         return None
     
     def get_original_row_data(self, row_id):
@@ -557,15 +551,26 @@ class MainWindow:
                 erp_name = parts[0]
                 category = parts[1]
                 subcategory = parts[2]
-                sublevel = parts[3]
+                sub_subcategory = parts[3]
                 
                 # Use the clean column name (without duplicates)
-                sublevel_col = 'Article Sublevel'
+                sub_subcategory_col = 'Sub-subcategory'
+                # Extract full_name from ERP name object for comparison
+                import pandas as pd
+                def get_erp_full_name(erp_obj):
+                    if isinstance(erp_obj, dict):
+                        return erp_obj.get('full_name', '')
+                    elif pd.isna(erp_obj):
+                        return ''
+                    else:
+                        return str(erp_obj)
+                
+                erp_name_series = self.tree_view.data['ERP Name'].apply(get_erp_full_name)
                 matching_rows = self.tree_view.data[
-                    (self.tree_view.data['ERP name'] == erp_name) &
-                    (self.tree_view.data['Article Category'] == category) &
-                    (self.tree_view.data['Article Subcategory'] == subcategory) &
-                    (self.tree_view.data[sublevel_col] == sublevel)
+                    (erp_name_series == erp_name) &
+                    (self.tree_view.data['Category'] == category) &
+                    (self.tree_view.data['Subcategory'] == subcategory) &
+                    (self.tree_view.data[sub_subcategory_col] == sub_subcategory)
                 ]
                 if not matching_rows.empty:
                     row_data = matching_rows.iloc[0].to_dict()
@@ -575,11 +580,11 @@ class MainWindow:
                         mods = self.tree_view.user_modifications[row_id]
                         # Apply reassignment modifications
                         if 'new_category' in mods:
-                            row_data['Article Category'] = mods['new_category']
+                            row_data['Category'] = mods['new_category']
                         if 'new_subcategory' in mods:
-                            row_data['Article Subcategory'] = mods['new_subcategory']
-                        if 'new_sublevel' in mods:
-                            row_data['Article Sublevel'] = mods['new_sublevel']
+                            row_data['Subcategory'] = mods['new_subcategory']
+                        if 'new_sub_subcategory' in mods:
+                            row_data['Sub-subcategory'] = mods['new_sub_subcategory']
                     
                     return row_data
         return None
@@ -605,26 +610,6 @@ class MainWindow:
         # Filter data to keep only unique columns
         data = data[columns_to_keep]
         
-        # Ensure User ERP Name column exists and is positioned correctly
-        if 'User ERP Name' in data.columns:
-            # If column exists but is in wrong position, move it
-            current_pos = data.columns.get_loc('User ERP Name')
-            erp_name_pos = data.columns.get_loc('ERP name')
-            
-            # If User ERP Name is not right after ERP name, move it
-            if current_pos != erp_name_pos + 1:
-                # Remove the column from its current position
-                user_erp_values = data['User ERP Name'].copy()
-                data = data.drop('User ERP Name', axis=1)
-                
-                # Insert it right after ERP name
-                erp_name_pos = data.columns.get_loc('ERP name') + 1
-                data.insert(erp_name_pos, 'User ERP Name', user_erp_values)
-        else:
-            # If column doesn't exist, add it after ERP name
-            erp_name_pos = data.columns.get_loc('ERP name') + 1
-            data.insert(erp_name_pos, 'User ERP Name', '')
-        
         # Apply user modifications
         modifications = self.tree_view.get_user_modifications()
         
@@ -635,47 +620,76 @@ class MainWindow:
                 erp_name = parts[0]
                 category = parts[1]
                 subcategory = parts[2]
-                sublevel = parts[3]
+                sub_subcategory = parts[3]
                 
                 # Use the clean column name (without duplicates)
-                sublevel_col = 'Article Sublevel'
-                # Find matching row
+                sub_subcategory_col = 'Sub-subcategory'
+                # Find matching row - extract full_name from ERP name object for comparison
+                def get_erp_full_name(erp_obj):
+                    if isinstance(erp_obj, dict):
+                        return erp_obj.get('full_name', '')
+                    elif pd.isna(erp_obj):
+                        return ''
+                    else:
+                        return str(erp_obj)
+                
+                erp_name_series = data['ERP Name'].apply(get_erp_full_name)
                 mask = (
-                    (data['ERP name'] == erp_name) &
-                    (data['Article Category'] == category) &
-                    (data['Article Subcategory'] == subcategory) &
-                    (data[sublevel_col] == sublevel)
+                    (erp_name_series == erp_name) &
+                    (data['Category'] == category) &
+                    (data['Subcategory'] == subcategory) &
+                    (data[sub_subcategory_col] == sub_subcategory)
                 )
                 
                 if mask.any():
-                    # Apply User ERP Name modification
-                    if 'user_erp_name' in mods:
-                        data.loc[mask, 'User ERP Name'] = mods['user_erp_name']
+                    # Apply ERP name modification
+                    if 'erp_name' in mods and mods['erp_name']:
+                        # Ensure ERP name column is object dtype to handle dict values
+                        if data['ERP Name'].dtype != 'object':
+                            data['ERP Name'] = data['ERP Name'].astype('object')
+                        # Create a copy of the dict to avoid reference issues
+                        import copy
+                        erp_name_obj = mods['erp_name']
+                        # Validate that it's a dict with required keys
+                        if isinstance(erp_name_obj, dict):
+                            erp_name_obj = copy.deepcopy(erp_name_obj)
+                            # Ensure all required keys exist
+                            if 'full_name' not in erp_name_obj:
+                                erp_name_obj['full_name'] = ''
+                            if 'type' not in erp_name_obj:
+                                erp_name_obj['type'] = ''
+                            if 'part_number' not in erp_name_obj:
+                                erp_name_obj['part_number'] = ''
+                            if 'additional_parameters' not in erp_name_obj:
+                                erp_name_obj['additional_parameters'] = ''
+                        # Assign the dict object directly - iterate to ensure proper assignment
+                        for idx in data[mask].index:
+                            data.at[idx, 'ERP Name'] = erp_name_obj
                     
                     # Apply Manufacturer modification
                     if 'manufacturer' in mods:
                         data.loc[mask, 'Manufacturer'] = mods['manufacturer']
                     
-                    # Apply REMARK modification
+                    # Apply Remark modification
                     if 'remark' in mods:
-                        data.loc[mask, 'REMARK'] = mods['remark']
+                        data.loc[mask, 'Remark'] = mods['remark']
                     
                     # Apply Image modification
                     if 'image' in mods:
                         data.loc[mask, 'Image'] = mods['image']
                     
                     # Apply reassignment modifications
-                    if 'new_category' in mods and 'new_subcategory' in mods and 'new_sublevel' in mods:
-                        data.loc[mask, 'Article Category'] = mods['new_category']
-                        data.loc[mask, 'Article Subcategory'] = mods['new_subcategory']
-                        data.loc[mask, sublevel_col] = mods['new_sublevel']
+                    if 'new_category' in mods and 'new_subcategory' in mods and 'new_sub_subcategory' in mods:
+                        data.loc[mask, 'Category'] = mods['new_category']
+                        data.loc[mask, 'Subcategory'] = mods['new_subcategory']
+                        data.loc[mask, sub_subcategory_col] = mods['new_sub_subcategory']
         
         return data
     
     def convert_multiline_cells(self):
         """Convert multiline cells to single line entries."""
-        if not hasattr(self, 'excel_handler') or self.excel_handler is None:
-            messagebox.showwarning("Warning", "No data loaded. Please open an Excel file first.")
+        if not hasattr(self, 'json_handler') or self.json_handler is None:
+            messagebox.showwarning("Warning", "No data loaded.")
             return
         
         # Show confirmation dialog
@@ -696,10 +710,10 @@ class MainWindow:
         
         # Perform the conversion
         try:
-            result = self.excel_handler.convert_multiline_to_single_line()
+            result = self.json_handler.convert_multiline_to_single_line()
             
-            # Reload the tree view with the updated data from Excel handler
-            self.tree_view.load_data(self.excel_handler.get_data())
+            # Reload the tree view with the updated data from JSON handler
+            self.tree_view.load_data(self.json_handler.get_data())
             
             # Update status with results
             if result["converted"] > 0:
@@ -724,8 +738,8 @@ class MainWindow:
     
     def remove_nen_prefix(self):
         """Remove 'NEN' prefix and subsequent spaces from all cells."""
-        if not hasattr(self, 'excel_handler') or self.excel_handler is None:
-            messagebox.showwarning("Warning", "No data loaded. Please open an Excel file first.")
+        if not hasattr(self, 'json_handler') or self.json_handler is None:
+            messagebox.showwarning("Warning", "No data loaded.")
             return
         
         # Show confirmation dialog
@@ -745,10 +759,10 @@ class MainWindow:
         
         # Perform the removal
         try:
-            result = self.excel_handler.remove_nen_prefix()
+            result = self.json_handler.remove_nen_prefix()
             
-            # Reload the tree view with the updated data from Excel handler
-            self.tree_view.load_data(self.excel_handler.get_data())
+            # Reload the tree view with the updated data from JSON handler
+            self.tree_view.load_data(self.json_handler.get_data())
             
             # Update status with results
             if result["converted"] > 0:
@@ -771,136 +785,6 @@ class MainWindow:
             self.update_status(error_msg)
             messagebox.showerror("NEN Removal Error", error_msg)
     
-    def apply_user_erp_names(self):
-        """Apply User ERP Name values to ERP name column (move operation)."""
-        if not hasattr(self, 'excel_handler') or self.excel_handler is None:
-            messagebox.showwarning("Warning", "No data loaded. Please open an Excel file first.")
-            return
-        
-        # Get current data with modifications
-        data = self.get_data_with_modifications()
-        if data is None:
-            messagebox.showerror("Error", "No data available to process.")
-            return
-        
-        # Check for User ERP Names in both user modifications and original data
-        user_modifications = self.tree_view.get_user_modifications()
-        
-        # Create a set to track rows that have User ERP Names (avoid double counting)
-        rows_with_user_erp_names = set()
-        
-        # Count User ERP Names from user modifications
-        for row_id, mods in user_modifications.items():
-            if 'user_erp_name' in mods and mods['user_erp_name'].strip():
-                rows_with_user_erp_names.add(row_id)
-        
-        # Count User ERP Names from original data (excluding rows already counted in modifications)
-        if 'User ERP Name' in data.columns:
-            for index, row in data.iterrows():
-                user_erp_name = row.get('User ERP Name', '').strip()
-                if user_erp_name:
-                    # Create row_id for this row to check if it's already in user modifications
-                    erp_name = row.get('ERP name', '')
-                    category = row.get('Article Category', '')
-                    subcategory = row.get('Article Subcategory', '')
-                    sublevel = row.get('Article Sublevel', '')
-                    
-                    if erp_name and category and subcategory:
-                        row_id = f"{erp_name}◆◆◆{category}◆◆◆{subcategory}◆◆◆{sublevel}"
-                        if row_id not in rows_with_user_erp_names:
-                            rows_with_user_erp_names.add(row_id)
-        
-        user_erp_names_count = len(rows_with_user_erp_names)
-        
-        if user_erp_names_count == 0:
-            messagebox.showinfo("Info", "No User ERP Names found to apply.")
-            self.update_status("No User ERP Names to apply")
-            return
-        
-        # Show confirmation dialog
-        response = messagebox.askyesno(
-            "Apply User ERP Names", 
-            f"This will permanently move {user_erp_names_count} User ERP Name values to the ERP name column.\n\n"
-            "This operation will:\n"
-            "• Replace existing ERP name values with User ERP Name values\n"
-            "• Clear the User ERP Name column\n"
-            "• Cannot be undone without reloading the file\n\n"
-            "Do you want to continue?"
-        )
-        
-        if not response:
-            self.update_status("Apply User ERP Names cancelled")
-            return
-        
-        try:
-            self.update_status("Applying User ERP Names...")
-            
-            # Get current data with modifications
-            data = self.get_data_with_modifications()
-            if data is None:
-                messagebox.showerror("Error", "No data available to process.")
-                return
-            
-            # Apply the move operation
-            moved_count = 0
-            
-            # First, handle User ERP Names from user modifications
-            for row_id, mods in user_modifications.items():
-                if 'user_erp_name' in mods and mods['user_erp_name'].strip():
-                    # Parse row_id to find the original row
-                    parts = row_id.split('◆◆◆')
-                    if len(parts) >= 4:
-                        erp_name = parts[0]
-                        category = parts[1]
-                        subcategory = parts[2]
-                        sublevel = parts[3]
-                        
-                        # Find matching row
-                        mask = (
-                            (data['ERP name'] == erp_name) &
-                            (data['Article Category'] == category) &
-                            (data['Article Subcategory'] == subcategory) &
-                            (data['Article Sublevel'] == sublevel)
-                        )
-                        
-                        if mask.any():
-                            # Move User ERP Name to ERP name
-                            data.loc[mask, 'ERP name'] = mods['user_erp_name']
-                            # Clear User ERP Name
-                            data.loc[mask, 'User ERP Name'] = ''
-                            moved_count += 1
-            
-            # Then, handle User ERP Names from original data
-            if 'User ERP Name' in data.columns:
-                # Find rows with non-empty User ERP Name values
-                user_erp_mask = data['User ERP Name'].fillna('').str.strip().ne('')
-                
-                if user_erp_mask.any():
-                    # Move User ERP Name values to ERP name for these rows
-                    data.loc[user_erp_mask, 'ERP name'] = data.loc[user_erp_mask, 'User ERP Name']
-                    # Clear User ERP Name column
-                    data.loc[user_erp_mask, 'User ERP Name'] = ''
-                    moved_count += user_erp_mask.sum()
-            
-            # Clear user modifications for user_erp_name
-            for row_id in user_modifications:
-                if 'user_erp_name' in user_modifications[row_id]:
-                    del user_modifications[row_id]['user_erp_name']
-            
-            # Update the Excel handler with the new data
-            self.excel_handler.data = data
-            
-            # Reload the tree view with updated data
-            self.tree_view.load_data(data)
-            
-            # Update status
-            self.update_status(f"Successfully applied {moved_count} User ERP Names to ERP name column")
-            messagebox.showinfo("Success", f"Successfully applied {moved_count} User ERP Names to the ERP name column.\n\nThe User ERP Name column has been cleared.")
-            
-        except Exception as e:
-            self.update_status("Error applying User ERP Names")
-            messagebox.showerror("Error", f"Failed to apply User ERP Names: {str(e)}")
-            
     def run(self):
         """Run the main application loop."""
         self.root.mainloop()

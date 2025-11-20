@@ -17,13 +17,13 @@ from urllib.parse import urlparse, quote, unquote
 class ImageHandler:
     """Handles image operations for the ERP Database Editor."""
     
-    def __init__(self, excel_file_path: Optional[str] = None):
+    def __init__(self, db_file_path: Optional[str] = None):
         """Initialize the Image handler.
         
         Args:
-            excel_file_path: Path to the Excel file to determine image storage location
+            db_file_path: Path to the database file to determine image storage location
         """
-        self.excel_file_path = excel_file_path
+        self.db_file_path = db_file_path
         self.settings = self.load_settings()
         self.images_folder = self.get_images_folder()
         
@@ -66,16 +66,16 @@ class ImageHandler:
             return default_settings
     
     def get_images_folder(self) -> str:
-        """Get the path to the Images folder based on Excel file location.
+        """Get the path to the Images folder based on database file location.
         
         Returns:
             Path to the Images folder
         """
-        if self.excel_file_path:
-            excel_dir = os.path.dirname(os.path.abspath(self.excel_file_path))
-            images_folder = os.path.join(excel_dir, self.settings["images_folder_name"])
+        if self.db_file_path:
+            db_dir = os.path.dirname(os.path.abspath(self.db_file_path))
+            images_folder = os.path.join(db_dir, self.settings["images_folder_name"])
         else:
-            # Default to data folder if no Excel file path provided
+            # Default to data folder if no database file path provided
             images_folder = os.path.join(
                 os.path.dirname(__file__), "..", "..", "data", self.settings["images_folder_name"]
             )
@@ -431,23 +431,23 @@ class ImageHandler:
         
         return None
     
-    def set_excel_file_path(self, excel_file_path: str):
-        """Update the Excel file path and Images folder location.
+    def set_db_file_path(self, db_file_path: str):
+        """Update the database file path and Images folder location.
         
         Args:
-            excel_file_path: New path to the Excel file
+            db_file_path: New path to the database file
         """
-        self.excel_file_path = excel_file_path
+        self.db_file_path = db_file_path
         self.images_folder = self.get_images_folder()
     
     def get_relative_path(self, absolute_path: str) -> str:
-        """Convert absolute image path to relative path from Excel file.
+        """Convert absolute image path to relative path from database file.
         
         Args:
             absolute_path: Absolute path to image file
             
         Returns:
-            Relative path suitable for storing in Excel
+            Relative path suitable for storing in database
         """
         try:
             # Get relative path from Images folder

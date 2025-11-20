@@ -1,30 +1,13 @@
 {
-    "rows": [
-        "SN",
-        "SKU NR",
-        "KEN NAME",
-        "ERP name",
-        "CAD name",
-        "Electronics",
-        "Article Category",
-        "Article Subcategory",
-        "Article Sublevel",
-        "Product Value",
-        "Manufacturer",
-        "SKU",
-        "EAN 13",
-        "Unit",
-        "Supplier",
-        "Expiry Date (Y/N)",
-        "Tracking Method",
-        "Procurement Method (Buy/Make)",
-        "REMARK"
-    ],
     "column_visibility": {
         "visible_columns": [
-            "User ERP Name",
-            "SKU NR",
-            "KEN NAME"
+            "SN",
+            "Manufacturer",
+            "Remark",
+            "Stage",
+            "Origin",
+            "Serialized",
+            "Usage"
         ]
     },
     "view_settings": {

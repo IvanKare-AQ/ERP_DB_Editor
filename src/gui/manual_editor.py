@@ -14,9 +14,9 @@ class ManualEditor(ctk.CTkFrame):
     """Manual editor panel for editing selected ERP items."""
 
     # Width constants for consistent UI sizing
-    INPUT_FIELD_WIDTH = 400      # Width for input fields (User ERP Name, Manufacturer, REMARK)
-    FIELD_LABEL_WIDTH = 120      # Width for field labels (User ERP Name, Manufacturer, REMARK)
-    DROPDOWN_LABEL_WIDTH = 100   # Width for dropdown labels (Category, Subcategory, Sublevel)
+    INPUT_FIELD_WIDTH = 400      # Width for input fields (ERP Name, Manufacturer, Remark)
+    FIELD_LABEL_WIDTH = 120      # Width for field labels (ERP Name, Manufacturer, Remark)
+    DROPDOWN_LABEL_WIDTH = 110   # Width for dropdown labels (Category, Subcategory, Sub-subcategory)
     DROPDOWN_WIDTH = 300         # Width for dropdown menus
     RESET_BUTTON_WIDTH = 60      # Width for reset buttons
     UPDATE_BUTTON_WIDTH = 120    # Width for update button
@@ -85,24 +85,24 @@ class ManualEditor(ctk.CTkFrame):
         self.setup_data_cleaning_section(self)
 
     def setup_user_erp_name_section(self, parent):
-        """Setup the User ERP Name editing section."""
-        # User ERP Name input field and buttons frame
+        """Setup the ERP Name editing section."""
+        # ERP Name input field and buttons frame
         user_erp_frame = ctk.CTkFrame(parent)
         user_erp_frame.pack(anchor="w", pady=(0, 5))
 
-        # User ERP Name label
+        # ERP Name label
         user_erp_label = ctk.CTkLabel(
             user_erp_frame,
-            text="User ERP Name:",
+            text="ERP Name:",
             font=ctk.CTkFont(size=12, weight="bold"),
             width=self.FIELD_LABEL_WIDTH
         )
         user_erp_label.pack(side="left", padx=(10, 5))
 
-        # User ERP Name input field
+        # ERP Name input field
         self.user_erp_name_entry = ctk.CTkEntry(
             user_erp_frame,
-            placeholder_text="Enter User ERP Name...",
+            placeholder_text="Enter ERP Name...",
             width=self.INPUT_FIELD_WIDTH,
             height=self.INPUT_FIELD_HEIGHT
         )
@@ -110,7 +110,7 @@ class ManualEditor(ctk.CTkFrame):
         # Bind to re-parse into Type, PN, Details when edited
         self.user_erp_name_entry.bind('<KeyRelease>', self.on_user_erp_name_change)
 
-        # Reset button for User ERP Name
+        # Reset button for ERP Name
         self.reset_name_button = ctk.CTkButton(
             user_erp_frame,
             text="Reset",
@@ -154,29 +154,29 @@ class ManualEditor(ctk.CTkFrame):
         )
         self.reset_manufacturer_button.pack(side="left")
 
-        # REMARK input field and buttons frame
+        # Remark input field and buttons frame
         remark_frame = ctk.CTkFrame(parent)
         remark_frame.pack(anchor="w", pady=(0, 5))
 
-        # REMARK label
+        # Remark label
         remark_label = ctk.CTkLabel(
             remark_frame,
-            text="REMARK:",
+            text="Remark:",
             font=ctk.CTkFont(size=12, weight="bold"),
             width=self.FIELD_LABEL_WIDTH
         )
         remark_label.pack(side="left", padx=(10, 5))
 
-        # REMARK input field
+        # Remark input field
         self.remark_entry = ctk.CTkEntry(
             remark_frame,
-            placeholder_text="Enter REMARK...",
+            placeholder_text="Enter Remark...",
             width=self.INPUT_FIELD_WIDTH,
             height=self.INPUT_FIELD_HEIGHT
         )
         self.remark_entry.pack(side="left", padx=(0, 10))
 
-        # Reset button for REMARK
+        # Reset button for Remark
         self.reset_remark_button = ctk.CTkButton(
             remark_frame,
             text="Reset",
@@ -187,7 +187,7 @@ class ManualEditor(ctk.CTkFrame):
         )
         self.reset_remark_button.pack(side="left")
 
-        # Separator after REMARK
+        # Separator after Remark
         separator_parsed = ctk.CTkFrame(parent, height=self.SEPARATOR_HEIGHT)
         separator_parsed.pack(fill="x", padx=10, pady=10)
 
@@ -392,19 +392,19 @@ class ManualEditor(ctk.CTkFrame):
         )
         self.subcategory_dropdown.pack(side="left", padx=5, pady=5)
 
-        # Sublevel dropdown
-        sublevel_frame = ctk.CTkFrame(left_column)
-        sublevel_frame.pack(fill="x", pady=2)
+        # Sub-subcategory dropdown
+        sub_subcategory_frame = ctk.CTkFrame(left_column)
+        sub_subcategory_frame.pack(fill="x", pady=2)
 
-        sublevel_label = ctk.CTkLabel(sublevel_frame, text="Sublevel:", width=self.DROPDOWN_LABEL_WIDTH)
-        sublevel_label.pack(side="left", padx=(10, 5), pady=5)
+        sub_subcategory_label = ctk.CTkLabel(sub_subcategory_frame, text="Sub-subcategory:", width=self.DROPDOWN_LABEL_WIDTH)
+        sub_subcategory_label.pack(side="left", padx=(10, 5), pady=5)
 
-        self.sublevel_dropdown = ctk.CTkOptionMenu(
-            sublevel_frame,
-            values=["Select Sublevel..."],
+        self.sub_subcategory_dropdown = ctk.CTkOptionMenu(
+            sub_subcategory_frame,
+            values=["Select Sub-subcategory..."],
             width=self.DROPDOWN_WIDTH
         )
-        self.sublevel_dropdown.pack(side="left", padx=5, pady=5)
+        self.sub_subcategory_dropdown.pack(side="left", padx=5, pady=5)
 
         # Right column for Reassign button
         right_column = ctk.CTkFrame(main_frame)
@@ -463,43 +463,43 @@ class ManualEditor(ctk.CTkFrame):
         """Load categories into the dropdown."""
         categories = self.tree_view.get_unique_categories()
         if categories:
-            self.category_dropdown.configure(values=["Select Category..."] + categories)
+            self.category_dropdown.configure(values=categories)
         else:
             self.category_dropdown.configure(values=["Select Category..."])
 
     def on_category_change(self, category):
         """Handle category selection change."""
-        if category == "Select Category...":
+        if not category or category == "Select Category...":
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
-            self.sublevel_dropdown.configure(values=["Select Sublevel..."])
+            self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
             return
 
         # Load subcategories for selected category
         subcategories = self.tree_view.get_unique_subcategories(category)
         if subcategories:
-            self.subcategory_dropdown.configure(values=["Select Subcategory..."] + subcategories)
+            self.subcategory_dropdown.configure(values=subcategories)
         else:
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
 
-        # Reset sublevel dropdown
-        self.sublevel_dropdown.configure(values=["Select Sublevel..."])
+        # Reset sub_subcategory dropdown
+        self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
 
     def on_subcategory_change(self, subcategory):
         """Handle subcategory selection change."""
-        if subcategory == "Select Subcategory...":
-            self.sublevel_dropdown.configure(values=["Select Sublevel..."])
+        if not subcategory or subcategory == "Select Subcategory...":
+            self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
             return
 
         category = self.category_dropdown.get()
-        if category == "Select Category...":
+        if not category or category == "Select Category...":
             return
 
-        # Load sublevels for selected category and subcategory
-        sublevels = self.tree_view.get_unique_sublevels(category, subcategory)
-        if sublevels:
-            self.sublevel_dropdown.configure(values=["Select Sublevel..."] + sublevels)
+        # Load sub_subcategories for selected category and subcategory
+        sub_subcategories = self.tree_view.get_unique_sub_subcategories(category, subcategory)
+        if sub_subcategories:
+            self.sub_subcategory_dropdown.configure(values=sub_subcategories)
         else:
-            self.sublevel_dropdown.configure(values=["Select Sublevel..."])
+            self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
 
     def set_selected_item(self, item_data, row_id):
         """Set the selected item and populate the edit fields."""
@@ -507,25 +507,38 @@ class ManualEditor(ctk.CTkFrame):
         self.selected_row_id = row_id
 
         if item_data:
-            # Populate User ERP Name field - priority: user modifications > original User ERP Name > ERP name
-            erp_name = item_data.get('ERP name', '')
-
+            # Get ERP name object
+            erp_name_obj = item_data.get('ERP Name', {})
+            if not isinstance(erp_name_obj, dict):
+                erp_name_obj = {}
+            
             # First check if user has made modifications
-            current_user_name = self.tree_view.user_modifications.get(row_id, {}).get('user_erp_name', '')
-
-            # If no user modifications, check if User ERP Name exists in original data
-            if not current_user_name:
-                current_user_name = item_data.get('User ERP Name', '')
-
-            # If still no value, fall back to ERP name
-            if not current_user_name:
-                current_user_name = erp_name
-
+            user_mods = self.tree_view.user_modifications.get(row_id, {})
+            erp_name_mod = user_mods.get('erp_name', {})
+            
+            # Use modifications if available, otherwise use original object
+            if erp_name_mod and isinstance(erp_name_mod, dict):
+                current_erp_obj = erp_name_mod
+            else:
+                current_erp_obj = erp_name_obj
+            
+            # Extract full_name for display
+            current_full_name = current_erp_obj.get('full_name', '') if isinstance(current_erp_obj, dict) else ''
+            
             self.user_erp_name_entry.delete(0, tk.END)
-            self.user_erp_name_entry.insert(0, current_user_name)
+            self.user_erp_name_entry.insert(0, current_full_name)
 
-            # Parse User ERP Name into Type, PN, and Details
-            self.parse_user_erp_name(current_user_name)
+            # Populate Type, PN, Details directly from object structure
+            type_value = current_erp_obj.get('type', '') if isinstance(current_erp_obj, dict) else ''
+            pn_value = current_erp_obj.get('part_number', '') if isinstance(current_erp_obj, dict) else ''
+            details_value = current_erp_obj.get('additional_parameters', '') if isinstance(current_erp_obj, dict) else ''
+            
+            self.type_entry.delete(0, tk.END)
+            self.type_entry.insert(0, type_value)
+            self.pn_entry.delete(0, tk.END)
+            self.pn_entry.insert(0, pn_value)
+            self.details_entry.delete(0, tk.END)
+            self.details_entry.insert(0, details_value)
 
             # Populate Manufacturer field - priority: user modifications > original Manufacturer
             current_manufacturer = self.tree_view.user_modifications.get(row_id, {}).get('manufacturer', '')
@@ -535,10 +548,10 @@ class ManualEditor(ctk.CTkFrame):
             self.manufacturer_entry.delete(0, tk.END)
             self.manufacturer_entry.insert(0, current_manufacturer)
 
-            # Populate REMARK field - priority: user modifications > original REMARK
+            # Populate Remark field - priority: user modifications > original Remark
             current_remark = self.tree_view.user_modifications.get(row_id, {}).get('remark', '')
             if not current_remark:
-                current_remark = item_data.get('REMARK', '')
+                current_remark = item_data.get('Remark', '')
 
             self.remark_entry.delete(0, tk.END)
             self.remark_entry.insert(0, current_remark)
@@ -551,10 +564,10 @@ class ManualEditor(ctk.CTkFrame):
             self.delete_button.configure(state="normal")
             self.add_image_button.configure(state="normal")
 
-            # Set the dropdowns to current item's category/subcategory/sublevel
-            current_category = item_data.get('Article Category', '')
-            current_subcategory = item_data.get('Article Subcategory', '')
-            current_sublevel = item_data.get('Article Sublevel', '')
+            # Set the dropdowns to current item's category/subcategory/sub_subcategory
+            current_category = item_data.get('Category', '')
+            current_subcategory = item_data.get('Subcategory', '')
+            current_sub_subcategory = item_data.get('Sub-subcategory', '')
 
             # Load categories first
             self.load_categories()
@@ -565,15 +578,15 @@ class ManualEditor(ctk.CTkFrame):
                 # Load subcategories for this category
                 subcategories = self.tree_view.get_unique_subcategories(current_category)
                 if subcategories:
-                    self.subcategory_dropdown.configure(values=["Select Subcategory..."] + subcategories)
+                    self.subcategory_dropdown.configure(values=subcategories)
                     if current_subcategory:
                         self.subcategory_dropdown.set(current_subcategory)
-                        # Load sublevels for this category and subcategory
-                        sublevels = self.tree_view.get_unique_sublevels(current_category, current_subcategory)
-                        if sublevels:
-                            self.sublevel_dropdown.configure(values=["Select Sublevel..."] + sublevels)
-                            if current_sublevel:
-                                self.sublevel_dropdown.set(current_sublevel)
+                        # Load sub-subcategories for this category and subcategory
+                        sub_subcategories = self.tree_view.get_unique_sub_subcategories(current_category, current_subcategory)
+                        if sub_subcategories:
+                            self.sub_subcategory_dropdown.configure(values=sub_subcategories)
+                            if current_sub_subcategory:
+                                self.sub_subcategory_dropdown.set(current_sub_subcategory)
 
             # Enable buttons
             self.reassign_button.configure(state="normal")
@@ -606,7 +619,7 @@ class ManualEditor(ctk.CTkFrame):
             # Reset dropdowns
             self.category_dropdown.configure(values=["Select Category..."])
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
-            self.sublevel_dropdown.configure(values=["Select Sublevel..."])
+            self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
             
             # Clear image preview
             self.update_image_preview()
@@ -686,7 +699,14 @@ class ManualEditor(ctk.CTkFrame):
         
         # Get PN for initial search
         pn_value = self.pn_entry.get().strip()
-        initial_search = pn_value if pn_value else self.selected_item.get('ERP name', '')
+        if pn_value:
+            initial_search = pn_value
+        else:
+            erp_name_obj = self.selected_item.get('ERP Name', {})
+            if isinstance(erp_name_obj, dict):
+                initial_search = erp_name_obj.get('full_name', '')
+            else:
+                initial_search = str(erp_name_obj) if erp_name_obj else ''
         
         # Open image dialog
         from src.gui.image_dialog import ImageSelectionDialog
@@ -734,8 +754,8 @@ class ManualEditor(ctk.CTkFrame):
             # Initialize image handler if needed
             if not self.image_handler and self.main_window:
                 from src.backend.image_handler import ImageHandler
-                excel_path = self.main_window.current_file_path
-                self.image_handler = ImageHandler(excel_path)
+                db_path = self.main_window.current_file_path
+                self.image_handler = ImageHandler(db_path)
             
             # Load image
             if self.image_handler:
@@ -851,13 +871,15 @@ class ManualEditor(ctk.CTkFrame):
             return
 
         # Show confirmation dialog
+        erp_name_obj = self.selected_item.get('ERP Name', {})
+        erp_name_display = erp_name_obj.get('full_name', 'Unknown') if isinstance(erp_name_obj, dict) else str(erp_name_obj) if erp_name_obj else 'Unknown'
         result = messagebox.askyesno(
             "Delete Item",
             f"Are you sure you want to delete this item?\n\n"
-            f"ERP Name: {self.selected_item.get('ERP name', 'Unknown')}\n"
-            f"Category: {self.selected_item.get('Article Category', 'Unknown')}\n"
-            f"Subcategory: {self.selected_item.get('Article Subcategory', 'Unknown')}\n"
-            f"Sublevel: {self.selected_item.get('Article Sublevel', 'Unknown')}\n\n"
+            f"ERP Name: {erp_name_display}\n"
+            f"Category: {self.selected_item.get('Category', 'Unknown')}\n"
+            f"Subcategory: {self.selected_item.get('Subcategory', 'Unknown')}\n"
+            f"Sub-subcategory: {self.selected_item.get('Sub-subcategory', 'Unknown')}\n\n"
             f"This action cannot be undone.",
             icon="warning"
         )
@@ -874,29 +896,40 @@ class ManualEditor(ctk.CTkFrame):
                 self.main_window.update_status("Item deleted successfully")
 
     def update_all_fields(self):
-        """Update all fields (User ERP Name, Manufacturer, REMARK) for the selected item."""
+        """Update all fields (ERP Name object, Manufacturer, Remark) for the selected item."""
         if not self.selected_row_id:
             return
 
         # Get values from all input fields
-        user_erp_name = self.user_erp_name_entry.get().strip()
+        full_name = self.user_erp_name_entry.get().strip()
+        type_value = self.type_entry.get().strip()
+        pn_value = self.pn_entry.get().strip()
+        details_value = self.details_entry.get().strip()
         manufacturer = self.manufacturer_entry.get().strip()
         remark = self.remark_entry.get().strip()
 
+        # Reconstruct ERP Name object from parsed fields
+        erp_name_obj = {
+            "full_name": full_name,
+            "type": type_value,
+            "part_number": pn_value,
+            "additional_parameters": details_value
+        }
+
         # Update all fields in tree view
-        self.tree_view.update_user_erp_name(self.selected_row_id, user_erp_name)
+        self.tree_view.update_user_erp_name(self.selected_row_id, erp_name_obj)
         self.tree_view.update_manufacturer(self.selected_row_id, manufacturer)
         self.tree_view.update_remark(self.selected_row_id, remark)
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
             updated_fields = []
-            if user_erp_name:
-                updated_fields.append(f"ERP name: {user_erp_name}")
+            if full_name:
+                updated_fields.append(f"ERP Name: {full_name}")
             if manufacturer:
                 updated_fields.append(f"Manufacturer: {manufacturer}")
             if remark:
-                updated_fields.append(f"REMARK: {remark}")
+                updated_fields.append(f"Remark: {remark}")
 
             if updated_fields:
                 self.main_window.update_status(f"Updated: {', '.join(updated_fields)}")
@@ -904,23 +937,39 @@ class ManualEditor(ctk.CTkFrame):
                 self.main_window.update_status("Cleared all field values")
 
     def reset_user_erp_name(self):
-        """Reset the user ERP name for the selected item to original ERP name."""
+        """Reset the ERP name for the selected item to original ERP name object."""
         if not self.selected_row_id or not self.selected_item:
             return
 
-        # Get the original ERP name
-        original_erp_name = self.selected_item.get('ERP name', '')
+        # Get the original ERP name object
+        original_erp_obj = self.selected_item.get('ERP Name', {})
+        if not isinstance(original_erp_obj, dict):
+            original_erp_obj = {}
 
-        # Clear the user ERP name (set to empty string to reset to original)
-        self.tree_view.update_user_erp_name(self.selected_row_id, '')
+        # Remove the modification to reset to original
+        if self.selected_row_id in self.tree_view.user_modifications:
+            if 'erp_name' in self.tree_view.user_modifications[self.selected_row_id]:
+                del self.tree_view.user_modifications[self.selected_row_id]['erp_name']
+        
+        # Refresh the view to show original value
+        self.tree_view.refresh_view()
 
-        # Update the input field to show the original ERP name
+        # Update all fields from original object
+        original_full_name = original_erp_obj.get('full_name', '')
         self.user_erp_name_entry.delete(0, tk.END)
-        self.user_erp_name_entry.insert(0, original_erp_name)
+        self.user_erp_name_entry.insert(0, original_full_name)
+        
+        # Update parsed fields
+        self.type_entry.delete(0, tk.END)
+        self.type_entry.insert(0, original_erp_obj.get('type', ''))
+        self.pn_entry.delete(0, tk.END)
+        self.pn_entry.insert(0, original_erp_obj.get('part_number', ''))
+        self.details_entry.delete(0, tk.END)
+        self.details_entry.insert(0, original_erp_obj.get('additional_parameters', ''))
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
-            self.main_window.update_status(f"Reset ERP name to original: {original_erp_name}")
+            self.main_window.update_status(f"Reset ERP Name to original: {original_erp_name}")
 
     def reset_manufacturer(self):
         """Reset the manufacturer for the selected item to original value."""
@@ -947,7 +996,7 @@ class ManualEditor(ctk.CTkFrame):
             return
 
         # Get original remark
-        original_remark = self.selected_item.get('REMARK', '')
+        original_remark = self.selected_item.get('Remark', '')
 
         # Clear the entry and insert original remark
         self.remark_entry.delete(0, tk.END)
@@ -958,27 +1007,27 @@ class ManualEditor(ctk.CTkFrame):
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
-            self.main_window.update_status(f"Reset REMARK to: {original_remark}")
+            self.main_window.update_status(f"Reset Remark to: {original_remark}")
 
     def reassign_item(self):
-        """Reassign the selected item to new category, subcategory, and sublevel."""
+        """Reassign the selected item to new Category, Subcategory, and Sub-subcategory."""
         if not self.selected_row_id:
             return
 
         category = self.category_dropdown.get()
         subcategory = self.subcategory_dropdown.get()
-        sublevel = self.sublevel_dropdown.get()
+        sub_subcategory = self.sub_subcategory_dropdown.get()
 
-        if (category == "Select Category..." or
-            subcategory == "Select Subcategory..." or
-            sublevel == "Select Sublevel..."):
+        if (not category or category == "Select Category..." or
+            not subcategory or subcategory == "Select Subcategory..." or
+            not sub_subcategory or sub_subcategory == "Select Sub-subcategory..."):
             return
 
-        self.tree_view.reassign_item(self.selected_row_id, category, subcategory, sublevel)
+        self.tree_view.reassign_item(self.selected_row_id, category, subcategory, sub_subcategory)
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
-            self.main_window.update_status(f"Reassigned item to: {category} > {subcategory} > {sublevel}")
+            self.main_window.update_status(f"Reassigned item to: {category} > {subcategory} > {sub_subcategory}")
 
     def convert_multiline_cells(self):
         """Convert multiline cells to single line entries."""
