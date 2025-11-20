@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 
+from src.gui.add_editor import AddEditor
 from src.gui.manual_editor import ManualEditor
 from src.gui.ai_editor import AIEditor
 from src.gui.ml_editor import MLEditor
@@ -37,12 +38,16 @@ class EditPanel(ctk.CTkFrame):
         self.tabview = ctk.CTkTabview(self, width=self.PANEL_WIDTH)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Add tabs with icons (using Unicode characters for icons)
+        # Add tabs (ordering: Add, Manual, AI, ML)
+        self.add_tab = self.tabview.add("Add")  # Add tab for database insertions
         self.manual_tab = self.tabview.add("Manual ✏️")  # Manual tab with pencil icon
         self.ai_tab = self.tabview.add("AI 🤖")  # AI tab with robot icon
         self.ml_tab = self.tabview.add("ML 🧠")  # ML tab with brain icon
 
         # Create editors for each tab (without setting width since tabview controls it)
+        self.add_editor = AddEditor(self.add_tab, self.tree_view, self.main_window)
+        self.add_editor.pack(fill="both", expand=True)
+
         self.manual_editor = ManualEditor(self.manual_tab, self.tree_view, self.main_window)
         self.manual_editor.pack(fill="both", expand=True)
 
@@ -54,6 +59,7 @@ class EditPanel(ctk.CTkFrame):
             
     def set_selected_item(self, item_data, row_id):
         """Set the selected item for all editors."""
+        self.add_editor.set_selected_item(item_data, row_id)
         self.manual_editor.set_selected_item(item_data, row_id)
         self.ai_editor.set_selected_item(item_data, row_id)
         self.ml_editor.set_selected_item(item_data, row_id)
