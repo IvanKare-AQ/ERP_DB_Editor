@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- _No unreleased changes._
+
+## [1.4.0] - 2025-11-20
+
 ### Changed
 - **Database Storage**: Switched from Excel to JSON (`data/component_database.json`) for database storage
 - **File Operations**: Removed "Open Excel" and "Save As" buttons; application now loads database on startup
@@ -18,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dropdown Placeholders**: Removed "Select Category..." placeholders when actual items are available
 - **ERP Name Structure**: ERP Name is now stored as an object with `full_name`, `type`, `part_number`, and `additional_parameters` properties
 - **Git Tracking**: JSON database files (`component_database.json`, `airq_categories.json`) are now tracked in git; Images folder remains ignored
+- **Terminology Alignment**: All internal references now use the JSON schema (`Category` / `Subcategory` / `Sub-subcategory` / `ERP Name`); the legacy “Article …” columns and `sublevel` terminology were removed
+- **Export Workflow**: Added Export button next to Save and ensured Excel exports flatten only the `ERP Name.full_name` field without renaming columns
 
 ### Removed
 - **User ERP Name Column**: Removed separate "User ERP Name" column - users now edit "ERP name" directly
@@ -36,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed pandas assignment issues by using `.at` instead of `.loc` for dict objects
   - Ensured object dtype is maintained throughout data operations
 - **Dropdown Population**: Dropdowns now only show placeholders when no items are available
-- **Data Source**: All column lists and dropdowns now use actual data as source of truth
+- **Data Source**: All column lists and dropdowns now use actual data as source of truth (no column mapping layer)
 
 ## [1.3.1] - 2025-01-XX
 

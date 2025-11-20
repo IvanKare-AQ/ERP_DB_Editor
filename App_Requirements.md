@@ -22,32 +22,31 @@
 - No Excel file support - all data stored in JSON format
 
 ### Data Display and Navigation
-- Table will be represented in tree format with hierarchy:
-  - "Article Category" as top level
-  - "Article Subcategory" as second level
-  - "Article Sublevel" as third level
-  - All items from "ERP Names" column will be under relevant "Article Sublevel"
-- This setting will be reflected in the existing default_settings.json file
+- Table hierarchy is driven directly from the JSON schema:
+  - `"Category"` (top level)
+  - `"Subcategory"` (second level)
+  - `"Sub-subcategory"` (third level)
+  - Each `"ERP Name"` object is rendered under its corresponding Sub-subcategory node with no intermediate “Article …” mappings.
+- Default column visibility definitions in `default_settings.json` must reference these exact JSON field names.
 
 ### Column Management
 - Columns are dynamically determined from `data/component_database.json` (source of truth)
 - User will be able to set visible and non-visible columns
 - "Save View" button that will store column visibility settings to `config/default_settings.json`
 - Column visibility settings automatically saved when changed via Column Visibility dialog
-- All available columns derived from actual data structure, not hardcoded lists
+- All available columns derived from the actual JSON schema (no renaming to internal “Article …” aliases)
 
 ### Data Editing and Modification
 - Right panel edit section for modifying selected ERP items
-- Direct editing of "ERP name" field (no separate staging column)
-- Input field populates with priority: user modifications > original "ERP name"
-- User can modify ERP names directly and save changes
-- Category, subcategory, and sublevel dropdowns for item reassignment
-  - Dropdowns populated from `data/airq_categories.json` structure
-  - Placeholder options ("Select Category...") only shown when no items available
-- "Update All Fields" button to save all field modifications (ERP name, Manufacturer, REMARK)
-- "Reassign Item" button to move items to different categories
-- All user modifications tracked in memory until saved
-- Save functionality applies all modifications to `data/component_database.json`
+- Direct editing of the `"ERP Name"` object (`full_name`, `type`, `part_number`, `additional_parameters`)—no staging column
+- Input fields populate with priority: user modifications > original JSON values
+- User can modify ERP names directly and persist them to JSON
+- Category, subcategory, and sub-subcategory dropdowns for item reassignment
+  - Dropdowns sourced from the `data/airq_categories.json` hierarchy
+  - Placeholder options ("Select Category...", etc.) only appear when a level has no available values
+- "Update All Fields" button saves all field modifications (ERP Name, Manufacturer, Remark)
+- "Reassign Item" button moves items to new Category/Subcategory/Sub-subcategory combinations
+- All user modifications tracked in memory until saved; column names must match the JSON schema when persisting to `data/component_database.json`
 
 ## Technical Requirements
 - Python GUI application using CustomTkinter as GUI framework
@@ -94,9 +93,9 @@
 
 ## Data Export and Save Requirements
 - Save functionality writes all modifications to `data/component_database.json`
-- Column order preserved from original JSON structure
-- Column renaming handled during save (display names → JSON column names)
-- All user modifications (ERP name, Manufacturer, REMARK, category reassignments) persisted to JSON
+- Column order is preserved from the original JSON structure
+- No column renaming occurs during export or save; the exact JSON field names remain intact (only the `"ERP Name"` object is flattened when generating Excel files)
+- All user modifications (ERP Name object, Manufacturer, Remark, Category/Subcategory/Sub-subcategory reassignments) are persisted to JSON
 - Data enrichment: Level 3 parameters (Stage, Origin, Serialized, Usage) automatically enriched from `data/airq_categories.json`
 
 ## User Interface Requirements

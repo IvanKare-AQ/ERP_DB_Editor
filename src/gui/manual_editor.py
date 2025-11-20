@@ -16,7 +16,7 @@ class ManualEditor(ctk.CTkFrame):
     # Width constants for consistent UI sizing
     INPUT_FIELD_WIDTH = 400      # Width for input fields (ERP Name, Manufacturer, Remark)
     FIELD_LABEL_WIDTH = 120      # Width for field labels (ERP Name, Manufacturer, Remark)
-    DROPDOWN_LABEL_WIDTH = 100   # Width for dropdown labels (Category, Subcategory, Sub-subcategory)
+    DROPDOWN_LABEL_WIDTH = 110   # Width for dropdown labels (Category, Subcategory, Sub-subcategory)
     DROPDOWN_WIDTH = 300         # Width for dropdown menus
     RESET_BUTTON_WIDTH = 60      # Width for reset buttons
     UPDATE_BUTTON_WIDTH = 120    # Width for update button
