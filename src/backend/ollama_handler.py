@@ -169,7 +169,7 @@ class OllamaHandler:
         }
         
         try:
-            # Parse context string like: "Current ERP name: Screw M3x20, Category: Hardware, Subcategory: Fasteners, Sublevel: Screws"
+            # Parse context string like: "Current ERP name: Screw M3x20, Category: Hardware, Subcategory: Fasteners, Sub-subcategory: Screws"
             # or: "ERP: Screw M3x20, Cat: Hardware, Sub: Fasteners, Level: Screws"
             import re
             
@@ -209,8 +209,9 @@ class OllamaHandler:
                     erp_data['subcategory'] = match.group(1).strip()
                     break
             
-            # Extract sublevel
+            # Extract sub-subcategory / level
             sublevel_patterns = [
+                r"Sub-subcategory:\s*([^,]+)",
                 r"Sublevel:\s*([^,]+)",
                 r"Level:\s*([^,]+)"
             ]

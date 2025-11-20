@@ -87,65 +87,34 @@ class JsonHandler:
             # Filter data to keep only unique columns
             self.data = self.data[columns_to_keep]
             
-            # Ensure required columns exist
-            required_columns = [
-                'Article Category', 'Article Subcategory', 'Article Sublevel', 'ERP name'
-            ]
-            
-            # Map JSON fields to DataFrame columns if necessary
-            # The current JSON seems to have 'Category', 'Subcategory', 'Sub-subcategory', 'ERP Name' (with spaces or underscores?)
-            # Let's check the actual JSON structure from previous context.
-            # Previous context showed: "ERP Name", "Category", "Subcategory", "Sub-subcategory"
-            # The code expects 'Article Category', 'Article Subcategory', 'Article Sublevel', 'ERP name'
-            # We might need to rename columns to match what the GUI expects, or update the GUI to match JSON.
-            # Given the instruction "Implement all necessary changes to existing functions", adhering to the existing GUI expectations (DataFrame columns) is probably safer for now,
-            # OR we update the DataFrame column names to match the JSON and update the GUI constants.
-            
             # Normalize column names to remove leading/trailing spaces
             self.data.columns = self.data.columns.str.strip()
             
-            # Keep "ERP Name" as object - don't extract full_name (preserve structure)
-            # The object structure will be preserved and accessed via tree view and manual editor
+            # Ensure ERP Name column exists and is object dtype
+            if 'ERP Name' in self.data.columns:
+                if self.data['ERP Name'].dtype != 'object':
+                    self.data['ERP Name'] = self.data['ERP Name'].astype('object')
+            else:
+                import copy
+                empty_dict = {'full_name': '', 'type': '', 'part_number': '', 'additional_parameters': ''}
+                self.data['ERP Name'] = pd.Series([copy.deepcopy(empty_dict) for _ in range(len(self.data))], dtype='object')
             
-            # Rename map for standardization
-            rename_map = {
-                "Category": "Article Category",
-                "Subcategory": "Article Subcategory",
-                "Sub-subcategory": "Article Sublevel",
-                "ERP Name": "ERP name",
-                "Remark": "REMARK",
-                "Tracking Method": "Tracking Method"  # Ensure it's preserved/standardized if needed
-            }
-            
-            self.data = self.data.rename(columns=rename_map)
-            
-            # Ensure ERP name column is object dtype to preserve dict structure
-            if 'ERP name' in self.data.columns:
-                if self.data['ERP name'].dtype != 'object':
-                    self.data['ERP name'] = self.data['ERP name'].astype('object')
-            
-            # Ensure required columns exist
+            # Ensure core category hierarchy columns exist
             required_columns = [
-                'Article Category', 'Article Subcategory', 'Article Sublevel', 'ERP name'
+                'Category', 'Subcategory', 'Sub-subcategory'
             ]
             
             for col in required_columns:
                 # Check if column exists (with or without trailing spaces)
                 col_exists = any(existing_col.strip() == col.strip() for existing_col in self.data.columns)
                 if not col_exists:
-                    if col == 'ERP name':
-                        # Initialize ERP name as empty dict structure - create separate dict for each row
-                        import copy
-                        empty_dict = {'full_name': '', 'type': '', 'part_number': '', 'additional_parameters': ''}
-                        self.data[col] = pd.Series([copy.deepcopy(empty_dict) for _ in range(len(self.data))], dtype='object')
-                    else:
-                        self.data[col] = ''
+                    self.data[col] = ''
             
             # Ensure Image column exists
             image_col_exists = any(existing_col.strip() == 'Image' for existing_col in self.data.columns)
             if not image_col_exists:
-                if 'ERP name' in self.data.columns:
-                    erp_name_pos = self.data.columns.get_loc('ERP name') + 1
+                if 'ERP Name' in self.data.columns:
+                    erp_name_pos = self.data.columns.get_loc('ERP Name') + 1
                     self.data.insert(erp_name_pos, 'Image', '')
                 else:
                     self.data['Image'] = ''
@@ -161,23 +130,10 @@ class JsonHandler:
                 raise Exception("No data to save")
                 
             # Reverse column renaming for saving to JSON if we want to maintain the JSON schema
-            # "Article Category" -> "Category"
-            # "Article Subcategory" -> "Subcategory"
-            # "Article Sublevel" -> "Sub-subcategory"
             # "ERP name" -> "ERP Name"
             
-            reverse_rename_map = {
-                "Article Category": "Category",
-                "Article Subcategory": "Subcategory",
-                "Article Sublevel": "Sub-subcategory",
-                "ERP name": "ERP Name",
-                "REMARK": "Remark"
-            }
-            
-            data_to_export = save_data.rename(columns=reverse_rename_map)
-            
             # Convert DataFrame to list of dicts
-            json_data = data_to_export.to_dict(orient='records')
+            json_data = save_data.to_dict(orient='records')
             
             # Save to JSON file
             with open(path_to_save, 'w', encoding='utf-8') as f:
@@ -216,7 +172,7 @@ class JsonHandler:
             return
             
         # Create mappings for enrichment
-        # (Category, Subcategory, Sublevel) -> {property: value}
+        # (Category, Subcategory, Sub-subcategory) -> {property: value}
         enrichment_map = {}
         
         for category in self.categories:
@@ -258,9 +214,9 @@ class JsonHandler:
         
         for (cat, sub, subsub), props in enrichment_map.items():
             mask = (
-                (self.data['Article Category'] == cat) & 
-                (self.data['Article Subcategory'] == sub) & 
-                (self.data['Article Sublevel'] == subsub)
+                (self.data['Category'] == cat) & 
+                (self.data['Subcategory'] == sub) & 
+                (self.data['Sub-subcategory'] == subsub)
             )
             
             if mask.any():

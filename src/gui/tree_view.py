@@ -1,6 +1,6 @@
 """
 Tree View Widget for ERP Database Editor
-Displays data in hierarchical tree format with Article Category, Subcategory, and Sublevel.
+Displays data in hierarchical tree format with Category, Subcategory, and Sub-subcategory.
 """
 
 import customtkinter as ctk
@@ -238,8 +238,8 @@ class TreeViewWidget(ctk.CTkFrame):
             
     def _populate_tree_from_data(self, data):
         """Populate the tree by grouping data columns."""
-        # Group by Article Category
-        categories = data.groupby('Article Category')
+        # Group by Category
+        categories = data.groupby('Category')
         
         for category_name, category_data in categories:
             # Create category node with color tag
@@ -247,8 +247,8 @@ class TreeViewWidget(ctk.CTkFrame):
                                            values=self._get_empty_values(),
                                            tags=("category",))
             
-            # Group by Article Subcategory within category
-            subcategories = category_data.groupby('Article Subcategory')
+            # Group by Subcategory within category
+            subcategories = category_data.groupby('Subcategory')
             
             for subcategory_name, subcategory_data in subcategories:
                 # Create subcategory node with color tag
@@ -257,8 +257,8 @@ class TreeViewWidget(ctk.CTkFrame):
                                                   values=self._get_empty_values(),
                                                   tags=("subcategory",))
                 
-                # Group by Article Sublevelwithin subcategory
-                sublevels = subcategory_data.groupby('Article Sublevel')
+                # Group by Sub-subcategorywithin subcategory
+                sublevels = subcategory_data.groupby('Sub-subcategory')
                 
                 for sublevel_name, sublevel_data in sublevels:
                     # Create sublevel node with color tag
@@ -285,7 +285,7 @@ class TreeViewWidget(ctk.CTkFrame):
                                            tags=("category",))
             
             # Filter data for this category
-            category_data = data[data['Article Category'] == category_name]
+            category_data = data[data['Category'] == category_name]
             
             subcategories = category.get('subcategories', [])
             for sub in subcategories:
@@ -300,7 +300,7 @@ class TreeViewWidget(ctk.CTkFrame):
                                                   tags=("subcategory",))
                 
                 # Filter data for this subcategory
-                subcategory_data = category_data[category_data['Article Subcategory'] == subcategory_name]
+                subcategory_data = category_data[category_data['Subcategory'] == subcategory_name]
                 
                 sub_subcategories = sub.get('sub_subcategories', [])
                 for subsub in sub_subcategories:
@@ -315,9 +315,9 @@ class TreeViewWidget(ctk.CTkFrame):
                                                    tags=("sublevel",))
                     
                     # Filter data for this sublevel
-                    # Note: JSON uses 'name' which maps to 'Article Sublevel' in DataFrame
-                    # Assuming 'sub_subcategories' names match 'Article Sublevel' values
-                    sublevel_data = subcategory_data[subcategory_data['Article Sublevel'] == sublevel_name]
+                    # Note: JSON uses 'name' which maps to 'Sub-subcategory' in DataFrame
+                    # Assuming 'sub_subcategories' names match 'Sub-subcategory' values
+                    sublevel_data = subcategory_data[subcategory_data['Sub-subcategory'] == sublevel_name]
                     
                     # Add ERP Name items under sublevel
                     erp_items = list(sublevel_data.iterrows())
@@ -326,7 +326,7 @@ class TreeViewWidget(ctk.CTkFrame):
 
     def _get_erp_name_full(self, row):
         """Extract full_name from ERP name object or return string value."""
-        erp_name = row.get('ERP name', '')
+        erp_name = row.get('ERP Name', '')
         if isinstance(erp_name, dict):
             return erp_name.get('full_name', '')
         elif pd.isna(erp_name):
@@ -336,12 +336,12 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def _insert_erp_item(self, parent_node, row, index, visible_columns=None):
         """Helper to insert an ERP item into the tree."""
-        # Create row ID for this item (use the Article Sublevelcolumn with trailing space)
-        sublevel = row.get('Article Sublevel', '')
+        # Create row ID for this item using the Sub-subcategory column
+        sublevel = row.get('Sub-subcategory', '')
         # Use a unique delimiter that's unlikely to appear in the data
         delimiter = "◆◆◆"  # Using a unique Unicode character sequence
         erp_name_full = self._get_erp_name_full(row)
-        row_id = f"{erp_name_full}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{sublevel}"
+        row_id = f"{erp_name_full}{delimiter}{row.get('Category', '')}{delimiter}{row.get('Subcategory', '')}{delimiter}{sublevel}"
         
         if visible_columns:
             # Use provided visible columns
@@ -406,18 +406,7 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def get_display_column_name(self, data_column):
         """Map data column name to display column name."""
-        # Reverse mapping of get_data_column_name
-        display_mapping = {
-            "ERP name": "ERP Name",
-            "CAD name": "CAD Name",
-            "REMARK": "Remark",
-            "Expiry Date (Y/N)": "Expiry Date",
-            "Procurement Method (Buy/Make)": "Procurement Method",
-            # All other columns use the same name
-        }
-        
-        # If there's a mapping, use it; otherwise use the column name as-is
-        return display_mapping.get(data_column, data_column)
+        return data_column
     
     def get_visible_columns(self):
         """Get the currently visible columns."""
@@ -485,8 +474,8 @@ class TreeViewWidget(ctk.CTkFrame):
 
     def _populate_tree_from_data_with_visibility(self, data, columns_to_use):
         """Populate the tree by grouping data columns with visible columns."""
-        # Group by Article Category
-        categories = data.groupby('Article Category')
+        # Group by Category
+        categories = data.groupby('Category')
         
         for category_name, category_data in categories:
             # Create category node with color tag
@@ -494,8 +483,8 @@ class TreeViewWidget(ctk.CTkFrame):
                                            values=("",) * len(columns_to_use),
                                            tags=("category",))
             
-            # Group by Article Subcategory within category
-            subcategories = category_data.groupby('Article Subcategory')
+            # Group by Subcategory within category
+            subcategories = category_data.groupby('Subcategory')
             
             for subcategory_name, subcategory_data in subcategories:
                 # Create subcategory node with color tag
@@ -504,8 +493,8 @@ class TreeViewWidget(ctk.CTkFrame):
                                                   values=("",) * len(columns_to_use),
                                                   tags=("subcategory",))
                 
-                # Group by Article Sublevelwithin subcategory
-                sublevels = subcategory_data.groupby('Article Sublevel')
+                # Group by Sub-subcategorywithin subcategory
+                sublevels = subcategory_data.groupby('Sub-subcategory')
                 
                 for sublevel_name, sublevel_data in sublevels:
                     # Create sublevel node with color tag
@@ -532,7 +521,7 @@ class TreeViewWidget(ctk.CTkFrame):
                                            tags=("category",))
             
             # Filter data for this category
-            category_data = data[data['Article Category'] == category_name]
+            category_data = data[data['Category'] == category_name]
             
             subcategories = category.get('subcategories', [])
             for sub in subcategories:
@@ -547,7 +536,7 @@ class TreeViewWidget(ctk.CTkFrame):
                                                   tags=("subcategory",))
                 
                 # Filter data for this subcategory
-                subcategory_data = category_data[category_data['Article Subcategory'] == subcategory_name]
+                subcategory_data = category_data[category_data['Subcategory'] == subcategory_name]
                 
                 sub_subcategories = sub.get('sub_subcategories', [])
                 for subsub in sub_subcategories:
@@ -562,7 +551,7 @@ class TreeViewWidget(ctk.CTkFrame):
                                                    tags=("sublevel",))
                     
                     # Filter data for this sublevel
-                    sublevel_data = subcategory_data[subcategory_data['Article Sublevel'] == sublevel_name]
+                    sublevel_data = subcategory_data[subcategory_data['Sub-subcategory'] == sublevel_name]
                     
                     # Add ERP Name items under sublevel
                     erp_items = list(sublevel_data.iterrows())
@@ -651,54 +640,26 @@ class TreeViewWidget(ctk.CTkFrame):
                     else:
                         return str(erp_obj)
                 
-                erp_name_series = data['ERP name'].apply(get_erp_full_name)
+                erp_name_series = data['ERP Name'].apply(get_erp_full_name)
                 mask = (
                     (erp_name_series == erp_name) &
-                    (data['Article Category'] == category) &
-                    (data['Article Subcategory'] == subcategory) &
-                    (data['Article Sublevel'] == sublevel)
+                    (data['Category'] == category) &
+                    (data['Subcategory'] == subcategory) &
+                    (data['Sub-subcategory'] == sublevel)
                 )
                 
                 if mask.any():
                     # Apply reassignment modifications
                     if 'new_category' in mods and 'new_subcategory' in mods and 'new_sublevel' in mods:
-                        data.loc[mask, 'Article Category'] = mods['new_category']
-                        data.loc[mask, 'Article Subcategory'] = mods['new_subcategory']
-                        data.loc[mask, 'Article Sublevel'] = mods['new_sublevel']
+                        data.loc[mask, 'Category'] = mods['new_category']
+                        data.loc[mask, 'Subcategory'] = mods['new_subcategory']
+                        data.loc[mask, 'Sub-subcategory'] = mods['new_sublevel']
         
         return data
     
     def get_data_column_name(self, display_column):
         """Map display column names to data column names."""
-        column_mapping = {
-            "Image": "Image",
-            "SKU NR": "SKU NR",
-            "ERP Name": "ERP name",
-            "CAD Name": "CAD name",
-            "Electronics": "Electronics",
-            "Product Value": "Product Value",
-            "Manufacturer": "Manufacturer",
-            "SKU": "SKU",
-            "EAN 13": "EAN 13",
-            "Unit": "Unit",
-            "Supplier": "Supplier",
-            "Expiry Date": "Expiry Date (Y/N)",
-            "Tracking Method": "Tracking Method",
-            "Procurement Method": "Procurement Method (Buy/Make)",
-            "Remark": "REMARK",
-            "SN": "SN",
-            "Manually processed": "Manually processed",
-            "Stage": "Stage",
-            "Origin": "Origin",
-            "Serialized": "Serialized",
-            "Usage": "Usage",
-            "SUGGESTED_CAT": "SUGGESTED_CAT",
-            "SUGGESTED_SUBCAT": "SUGGESTED_SUBCAT",
-            "SUGGESTED_SUBLEVEL": "SUGGESTED_SUBLEVEL",
-            "AI_STATUS": "AI_STATUS",
-            "USE_FOR_ML": "USE_FOR_ML"
-        }
-        return column_mapping.get(display_column, display_column)
+        return display_column
     
     def refresh_view(self):
         """Refresh the tree view with current filters and visibility settings."""
@@ -821,7 +782,7 @@ class TreeViewWidget(ctk.CTkFrame):
             
         if self.data is None or self.data.empty:
             return []
-        return sorted(self.data['Article Category'].dropna().unique().tolist())
+        return sorted(self.data['Category'].dropna().unique().tolist())
     
     def get_unique_subcategories(self, category=None):
         """Get unique subcategories from data or loaded categories structure."""
@@ -838,9 +799,9 @@ class TreeViewWidget(ctk.CTkFrame):
         if self.data is None or self.data.empty:
             return []
         if category:
-            filtered_data = self.data[self.data['Article Category'] == category]
-            return sorted(filtered_data['Article Subcategory'].dropna().unique().tolist())
-        return sorted(self.data['Article Subcategory'].dropna().unique().tolist())
+            filtered_data = self.data[self.data['Category'] == category]
+            return sorted(filtered_data['Subcategory'].dropna().unique().tolist())
+        return sorted(self.data['Subcategory'].dropna().unique().tolist())
     
     def get_unique_sublevels(self, category=None, subcategory=None):
         """Get unique sublevels from data or loaded categories structure."""
@@ -860,12 +821,12 @@ class TreeViewWidget(ctk.CTkFrame):
             return []
         filtered_data = self.data
         if category:
-            filtered_data = filtered_data[filtered_data['Article Category'] == category]
+            filtered_data = filtered_data[filtered_data['Category'] == category]
         if subcategory:
-            filtered_data = filtered_data[filtered_data['Article Subcategory'] == subcategory]
+            filtered_data = filtered_data[filtered_data['Subcategory'] == subcategory]
         
-        # Use the Article Sublevelcolumn with trailing space
-        sublevel_col = 'Article Sublevel'
+        # Use the Sub-subcategorycolumn with trailing space
+        sublevel_col = 'Sub-subcategory'
         return sorted(filtered_data[sublevel_col].dropna().unique().tolist())
     
     def on_mouse_motion(self, event):
@@ -930,12 +891,12 @@ class TreeViewWidget(ctk.CTkFrame):
                     else:
                         return str(erp_obj)
                 
-                erp_name_series = self.data['ERP name'].apply(get_erp_full_name)
+                erp_name_series = self.data['ERP Name'].apply(get_erp_full_name)
                 mask = (
                     (erp_name_series == erp_name) &
-                    (self.data['Article Category'] == category) &
-                    (self.data['Article Subcategory'] == subcategory) &
-                    (self.data['Article Sublevel'] == sublevel)
+                    (self.data['Category'] == category) &
+                    (self.data['Subcategory'] == subcategory) &
+                    (self.data['Sub-subcategory'] == sublevel)
                 )
                 
                 # Remove the row

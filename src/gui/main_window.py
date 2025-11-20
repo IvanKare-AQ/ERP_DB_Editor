@@ -308,7 +308,7 @@ class MainWindow:
             export_data = data.copy()
             
             # Convert ERP Name objects to full_name strings for Excel
-            if 'ERP name' in export_data.columns:
+            if 'ERP Name' in export_data.columns:
                 import pandas as pd
                 def get_erp_full_name(erp_obj):
                     if isinstance(erp_obj, dict):
@@ -318,20 +318,7 @@ class MainWindow:
                     else:
                         return str(erp_obj)
                 
-                export_data['ERP name'] = export_data['ERP name'].apply(get_erp_full_name)
-            
-            # Reverse column renaming for Excel export (match JSON structure)
-            reverse_rename_map = {
-                "Article Category": "Category",
-                "Article Subcategory": "Subcategory",
-                "Article Sublevel": "Sub-subcategory",
-                "ERP name": "ERP Name",
-                "REMARK": "Remark"
-            }
-            
-            # Only rename columns that exist
-            rename_map = {k: v for k, v in reverse_rename_map.items() if k in export_data.columns}
-            export_data = export_data.rename(columns=rename_map)
+                export_data['ERP Name'] = export_data['ERP Name'].apply(get_erp_full_name)
             
             # Export to Excel using openpyxl
             try:
@@ -499,7 +486,7 @@ class MainWindow:
                 if len(erp_items) == 1:
                     original_data, row_id = erp_items[0]
                     self.edit_panel.manual_editor.set_selected_item(original_data, row_id)
-                    erp_name_obj = original_data.get('ERP name', {})
+                    erp_name_obj = original_data.get('ERP Name', {})
                     erp_name = erp_name_obj.get('full_name', 'Unknown') if isinstance(erp_name_obj, dict) else str(erp_name_obj) if erp_name_obj else 'Unknown'
                     self.update_status(f"Selected: {erp_name}")
                 else:
@@ -541,7 +528,7 @@ class MainWindow:
                 else:
                     return str(erp_obj)
             
-            erp_name_series = self.tree_view.data['ERP name'].apply(get_erp_full_name)
+            erp_name_series = self.tree_view.data['ERP Name'].apply(get_erp_full_name)
             # Find matching row in data
             matching_rows = self.tree_view.data[
                 (erp_name_series == item_text)
@@ -550,9 +537,9 @@ class MainWindow:
                 row = matching_rows.iloc[0]
                 delimiter = "◆◆◆"
                 # Extract full_name for row_id
-                erp_name_obj = row.get('ERP name', {})
+                erp_name_obj = row.get('ERP Name', {})
                 erp_name_full = get_erp_full_name(erp_name_obj)
-                return f"{erp_name_full}{delimiter}{row.get('Article Category', '')}{delimiter}{row.get('Article Subcategory', '')}{delimiter}{row.get('Article Sublevel', '')}"
+                return f"{erp_name_full}{delimiter}{row.get('Category', '')}{delimiter}{row.get('Subcategory', '')}{delimiter}{row.get('Sub-subcategory', '')}"
         return None
     
     def get_original_row_data(self, row_id):
@@ -567,7 +554,7 @@ class MainWindow:
                 sublevel = parts[3]
                 
                 # Use the clean column name (without duplicates)
-                sublevel_col = 'Article Sublevel'
+                sublevel_col = 'Sub-subcategory'
                 # Extract full_name from ERP name object for comparison
                 import pandas as pd
                 def get_erp_full_name(erp_obj):
@@ -578,11 +565,11 @@ class MainWindow:
                     else:
                         return str(erp_obj)
                 
-                erp_name_series = self.tree_view.data['ERP name'].apply(get_erp_full_name)
+                erp_name_series = self.tree_view.data['ERP Name'].apply(get_erp_full_name)
                 matching_rows = self.tree_view.data[
                     (erp_name_series == erp_name) &
-                    (self.tree_view.data['Article Category'] == category) &
-                    (self.tree_view.data['Article Subcategory'] == subcategory) &
+                    (self.tree_view.data['Category'] == category) &
+                    (self.tree_view.data['Subcategory'] == subcategory) &
                     (self.tree_view.data[sublevel_col] == sublevel)
                 ]
                 if not matching_rows.empty:
@@ -593,11 +580,11 @@ class MainWindow:
                         mods = self.tree_view.user_modifications[row_id]
                         # Apply reassignment modifications
                         if 'new_category' in mods:
-                            row_data['Article Category'] = mods['new_category']
+                            row_data['Category'] = mods['new_category']
                         if 'new_subcategory' in mods:
-                            row_data['Article Subcategory'] = mods['new_subcategory']
+                            row_data['Subcategory'] = mods['new_subcategory']
                         if 'new_sublevel' in mods:
-                            row_data['Article Sublevel'] = mods['new_sublevel']
+                            row_data['Sub-subcategory'] = mods['new_sublevel']
                     
                     return row_data
         return None
@@ -636,7 +623,7 @@ class MainWindow:
                 sublevel = parts[3]
                 
                 # Use the clean column name (without duplicates)
-                sublevel_col = 'Article Sublevel'
+                sublevel_col = 'Sub-subcategory'
                 # Find matching row - extract full_name from ERP name object for comparison
                 def get_erp_full_name(erp_obj):
                     if isinstance(erp_obj, dict):
@@ -646,11 +633,11 @@ class MainWindow:
                     else:
                         return str(erp_obj)
                 
-                erp_name_series = data['ERP name'].apply(get_erp_full_name)
+                erp_name_series = data['ERP Name'].apply(get_erp_full_name)
                 mask = (
                     (erp_name_series == erp_name) &
-                    (data['Article Category'] == category) &
-                    (data['Article Subcategory'] == subcategory) &
+                    (data['Category'] == category) &
+                    (data['Subcategory'] == subcategory) &
                     (data[sublevel_col] == sublevel)
                 )
                 
@@ -658,8 +645,8 @@ class MainWindow:
                     # Apply ERP name modification
                     if 'erp_name' in mods and mods['erp_name']:
                         # Ensure ERP name column is object dtype to handle dict values
-                        if data['ERP name'].dtype != 'object':
-                            data['ERP name'] = data['ERP name'].astype('object')
+                        if data['ERP Name'].dtype != 'object':
+                            data['ERP Name'] = data['ERP Name'].astype('object')
                         # Create a copy of the dict to avoid reference issues
                         import copy
                         erp_name_obj = mods['erp_name']
@@ -677,15 +664,15 @@ class MainWindow:
                                 erp_name_obj['additional_parameters'] = ''
                         # Assign the dict object directly - iterate to ensure proper assignment
                         for idx in data[mask].index:
-                            data.at[idx, 'ERP name'] = erp_name_obj
+                            data.at[idx, 'ERP Name'] = erp_name_obj
                     
                     # Apply Manufacturer modification
                     if 'manufacturer' in mods:
                         data.loc[mask, 'Manufacturer'] = mods['manufacturer']
                     
-                    # Apply REMARK modification
+                    # Apply Remark modification
                     if 'remark' in mods:
-                        data.loc[mask, 'REMARK'] = mods['remark']
+                        data.loc[mask, 'Remark'] = mods['remark']
                     
                     # Apply Image modification
                     if 'image' in mods:
@@ -693,8 +680,8 @@ class MainWindow:
                     
                     # Apply reassignment modifications
                     if 'new_category' in mods and 'new_subcategory' in mods and 'new_sublevel' in mods:
-                        data.loc[mask, 'Article Category'] = mods['new_category']
-                        data.loc[mask, 'Article Subcategory'] = mods['new_subcategory']
+                        data.loc[mask, 'Category'] = mods['new_category']
+                        data.loc[mask, 'Subcategory'] = mods['new_subcategory']
                         data.loc[mask, sublevel_col] = mods['new_sublevel']
         
         return data
