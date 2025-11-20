@@ -7,7 +7,7 @@ Replaces the ExcelHandler.
 import pandas as pd
 import json
 import os
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 
 class JsonHandler:
@@ -22,6 +22,9 @@ class JsonHandler:
         project_root = os.path.dirname(os.path.dirname(current_dir))
         self.file_path = os.path.join(project_root, "data", "component_database.json")
         self.categories_file_path = os.path.join(project_root, "data", "airq_categories.json")
+        self.added_file_path = os.path.join(project_root, "data", "new_items.json")
+        self.added_data = pd.DataFrame()
+        self.schema_columns: List[str] = []
         
     def load_categories(self) -> None:
         """Load the categories JSON file into memory."""
@@ -61,6 +64,7 @@ class JsonHandler:
             # Convert to Pandas DataFrame
             self.data = pd.DataFrame(data_list)
             self.file_path = path_to_load
+            self.schema_columns = list(self.data.columns)
             
             # Clean the data
             self.clean_data()
@@ -158,7 +162,7 @@ class JsonHandler:
         """Get the column names from the current data."""
         if self.data is not None:
             return list(self.data.columns)
-        return []
+        return self.schema_columns if self.schema_columns else []
         
     def get_unique_values(self, column: str) -> list:
         """Get unique values from a specific column."""
@@ -296,4 +300,102 @@ class JsonHandler:
             "total_cells": total_cells,
             "percentage": (converted_count / total_cells * 100) if total_cells > 0 else 0
         }
+
+    # ------------------------------------------------------------------
+    # Added items management
+    # ------------------------------------------------------------------
+    def load_added_items(self) -> None:
+        """Load the temporary file that stores draft items created in the Add tab."""
+        try:
+            if not os.path.exists(self.added_file_path):
+                with open(self.added_file_path, 'w', encoding='utf-8') as f:
+                    json.dump([], f, indent=4)
+                self.added_data = pd.DataFrame(columns=self.get_column_names())
+                return
+
+            with open(self.added_file_path, 'r', encoding='utf-8') as f:
+                draft_list = json.load(f)
+
+            self.added_data = pd.DataFrame(draft_list)
+            if not self.added_data.empty:
+                self.added_data = self.added_data.fillna('')
+            self._ensure_added_schema()
+
+        except Exception as e:
+            print(f"Failed to load added items file: {e}")
+            self.added_data = pd.DataFrame(columns=self.get_column_names())
+
+    def save_added_items(self) -> None:
+        """Persist the current draft items to disk."""
+        try:
+            data_to_save = self.added_data if self.added_data is not None else pd.DataFrame()
+            json_data = data_to_save.to_dict(orient='records')
+            with open(self.added_file_path, 'w', encoding='utf-8') as f:
+                json.dump(json_data, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"Failed to save added items: {e}")
+
+    def get_added_data(self) -> pd.DataFrame:
+        """Return a copy of the draft items DataFrame."""
+        if self.added_data is not None and not self.added_data.empty:
+            return self.added_data.copy()
+        return pd.DataFrame(columns=self.get_column_names())
+
+    def add_added_item(self, item: Dict[str, Any]) -> None:
+        """Append a new draft item to the temporary DataFrame."""
+        if self.added_data is None or self.added_data.empty:
+            self.added_data = pd.DataFrame(columns=self.get_column_names())
+
+        self._ensure_added_schema()
+        self.added_data = pd.concat([self.added_data, pd.DataFrame([item])], ignore_index=True)
+
+    def get_next_available_pn(self) -> int:
+        """Return the next unique PN value across both primary and draft data."""
+        pn_values = []
+
+        def collect_pn(series: pd.Series):
+            if series is None:
+                return
+            numeric = pd.to_numeric(series, errors='coerce').dropna()
+            pn_values.extend(numeric.astype(int).tolist())
+
+        if self.data is not None and 'PN' in self.data.columns:
+            collect_pn(self.data['PN'])
+
+        if self.added_data is not None and 'PN' in self.added_data.columns:
+            collect_pn(self.added_data['PN'])
+
+        return max(pn_values) + 1 if pn_values else 1
+
+    def get_category_properties(self, category: str, subcategory: str, sub_subcategory: str) -> Dict[str, Any]:
+        """Fetch enrichment values for a specific category path."""
+        if not self.categories:
+            return {}
+
+        for cat in self.categories:
+            if cat.get('category') != category:
+                continue
+            for sub in cat.get('subcategories', []):
+                if sub.get('name') != subcategory:
+                    continue
+                for subsub in sub.get('sub_subcategories', []):
+                    if subsub.get('name') != sub_subcategory:
+                        continue
+                    return {
+                        'stage': subsub.get('stage', ''),
+                        'origin': subsub.get('origin', ''),
+                        'serialized': subsub.get('serialized', ''),
+                        'usage': subsub.get('usage', '')
+                    }
+        return {}
+
+    def _ensure_added_schema(self) -> None:
+        """Ensure the draft DataFrame contains the same columns as the main dataset."""
+        base_columns = self.get_column_names()
+        if not base_columns:
+            return
+
+        for column in base_columns:
+            if column not in self.added_data.columns:
+                self.added_data[column] = ''
 

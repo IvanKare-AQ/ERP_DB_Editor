@@ -546,7 +546,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Manual Editor Layout**: Moved the “Add Image” action directly under the preview frame and removed the legacy data-cleaning section (Convert Multiline / Remove NEN) that relied on the deprecated Excel flow. The Manual tab now focuses solely on editing, reassignment, and image management.
 - **Column Naming Consistency**: Renamed the `SN` column/value references to `PN` across `component_database.json`, default column-visibility settings, and the documentation to keep the UI and data model terminology aligned.
-- **Add Tab Visibility**: Replaced the emoji placeholder with a programmatically rendered green plus icon inside the Add tab’s button so it remains readable on dark backgrounds.
+- **Add Tab Visibility & Functionality**: Replaced the emoji placeholder with a programmatically rendered green plus icon and rebuilt the Add tab UI so it mirrors the Manual tab (image row with Import/Add Item/Add Image, Update/Delete buttons) while buffering new entries in `data/new_items.json`.
+- **Buffered Editing Workflow**: Tree view, manual editor, and main window now keep all edits (reassignments, ERP fields, manufacturer/remark/image changes) in memory. The UI reflects those changes immediately while the primary JSON isn’t touched until Save, preventing accidental persistence.
 
 ### Added
 - **Item Deletion Functionality**: Complete item removal system

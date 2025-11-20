@@ -38,6 +38,7 @@ class EditPanel(ctk.CTkFrame):
         # Create tabview with fixed width
         self.tabview = ctk.CTkTabview(self, width=self.PANEL_WIDTH)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
+        self.tabview.configure(command=self._on_tab_changed)
 
         # Add tabs (ordering: Add, Manual, AI, ML)
         self.add_tab = self.tabview.add("Add")  # Add tab for database insertions with custom icon
@@ -58,6 +59,7 @@ class EditPanel(ctk.CTkFrame):
         self.ml_editor = MLEditor(self.ml_tab, self.tree_view, self.main_window)
         self.ml_editor.pack(fill="both", expand=True)
         self._apply_add_tab_icon()
+        self._on_tab_changed()
             
     def set_selected_item(self, item_data, row_id):
         """Set the selected item for all editors."""
@@ -70,6 +72,18 @@ class EditPanel(ctk.CTkFrame):
     def get_panel_width(cls):
         """Get the panel width - useful for external layout calculations."""
         return cls.PANEL_WIDTH
+    
+    def is_add_tab_active(self) -> bool:
+        """Check if the Add tab is currently selected."""
+        return self.tabview.get() == "Add"
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+    def _on_tab_changed(self):
+        """Notify the main window when the user switches tabs."""
+        if self.main_window and hasattr(self.main_window, "on_tab_changed"):
+            self.main_window.on_tab_changed(self.tabview.get())
 
     def _create_add_tab_icon(self, size=16, line_width=2):
         """Create a green plus icon for the Add tab."""

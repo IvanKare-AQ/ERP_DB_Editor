@@ -218,6 +218,7 @@
   - **AI Tab (🤖)**: AI-powered editing with model management and prompt tools
   - **ML Tab (🧠)**: Placeholder for future machine learning features
 - **Accessible Add Tab Iconography**: The Add tab must include a high-contrast green "+" icon rendered via `CTkImage` so it remains visible regardless of theme background colors.
+- **Add Tab Editing Parity**: The Add tab reuses the manual editor layout, including the image preview row with `Import`, `Add Item`, and `Add Image` buttons directly beneath the placeholder. It must expose the same controls (Update All Fields, Delete Selected Item) and apply buffered changes without touching the primary JSON until Save.
 - **Fixed Width Layout**: Right panel now uses consistent 1000px width across all tabs
 - **Component Separation**: Each tab is a self-contained module with dedicated file
   - `manual_editor.py`: Manual editing functionality (ERP Name, Manufacturer, REMARK)
@@ -302,12 +303,12 @@
   - Integration with existing Save View functionality
 
 ## Column Management and Data Integrity Requirements
-- **Dynamic Column Source**: Columns are dynamically determined from `data/component_database.json` (source of truth)
+- **Dynamic Column Source**: Columns are dynamically determined from `data/component_database.json` (source of truth), with filtered views always reflecting staged modifications (reassignments, field edits) even before Save.
 - **Complete Column Mapping**: Proper mapping between display names and JSON column names
 - **Data Population Integrity**: All columns must display actual data from JSON database
 - **Missing Column Detection**: Automatic detection and handling of columns missing from tree view
 - **Column Order Consistency**: Tree view column order matches JSON file structure
-- **Extended Column Support**: Support for all data columns including:
+- **Extended Column Support & Buffering**: Support for all data columns, with staged edits (reassignments, ERP field changes, manufacturer/remark/image updates) applied immediately in-memory while the persisted JSON remains untouched until Save. This includes:
   - Standard ERP columns (Image, SKU NR, ERP Name, KEN NAME, CAD Name, EAN13, etc.)
   - Processing status columns (PN, Manually processed)
   - Level 3 parameters (Stage, Origin, Serialized, Usage) enriched from categories

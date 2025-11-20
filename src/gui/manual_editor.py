@@ -30,12 +30,13 @@ class ManualEditor(ctk.CTkFrame):
     SEPARATOR_HEIGHT = 2         # Height for separator lines
     IMAGE_PREVIEW_SIZE = 150     # Size for image preview (width and height in pixels)
 
-    def __init__(self, parent, tree_view, main_window=None):
+    def __init__(self, parent, tree_view, main_window=None, mode="manual"):
         """Initialize the manual editor."""
         super().__init__(parent)
 
         self.tree_view = tree_view
         self.main_window = main_window
+        self.mode = mode
         self.selected_item = None
         self.selected_row_id = None
         
@@ -51,13 +52,14 @@ class ManualEditor(ctk.CTkFrame):
     def setup_manual_editor(self):
         """Setup the manual editor components."""
         # Title
-        title_label = ctk.CTkLabel(self, text="Manual Editing", font=ctk.CTkFont(size=16, weight="bold"))
-        title_label.pack(pady=(10, 5))
+        self.title_label = ctk.CTkLabel(self, text="Manual Editing", font=ctk.CTkFont(size=16, weight="bold"))
+        self.title_label.pack(pady=(10, 5))
         
         # Small image preview centered
         image_container = ctk.CTkFrame(self, width=self.IMAGE_PREVIEW_SIZE, height=self.IMAGE_PREVIEW_SIZE)
         image_container.pack(pady=(0, 10))
         image_container.pack_propagate(False)  # Prevent resizing
+        self.image_container = image_container
         
         # Use tk.Label for image support
         self.image_preview_label = tk.Label(
@@ -97,6 +99,7 @@ class ManualEditor(ctk.CTkFrame):
         # ERP Name input field and buttons frame
         user_erp_frame = ctk.CTkFrame(parent)
         user_erp_frame.pack(anchor="w", pady=(0, 5))
+        self.user_erp_frame = user_erp_frame
 
         # ERP Name label
         user_erp_label = ctk.CTkLabel(
@@ -324,6 +327,7 @@ class ManualEditor(ctk.CTkFrame):
         # Update button frame (moved to bottom)
         update_frame = ctk.CTkFrame(parent)
         update_frame.pack(anchor="w", pady=(5, 10))
+        self.update_frame = update_frame
 
         # Update button
         self.update_name_button = ctk.CTkButton(
@@ -406,6 +410,7 @@ class ManualEditor(ctk.CTkFrame):
         # Right column for Reassign button
         right_column = ctk.CTkFrame(main_frame)
         right_column.pack(side="right", padx=(5, 10), pady=5)
+        self.reassign_button_container = right_column
 
         # Reassign button
         self.reassign_button = ctk.CTkButton(
@@ -466,6 +471,17 @@ class ManualEditor(ctk.CTkFrame):
         self.selected_row_id = row_id
 
         if item_data:
+            # Apply buffered modifications before populating UI
+            user_mods = self.tree_view.user_modifications.get(row_id, {})
+            if user_mods:
+                item_data = item_data.copy()
+                if 'new_category' in user_mods:
+                    item_data['Category'] = user_mods['new_category']
+                if 'new_subcategory' in user_mods:
+                    item_data['Subcategory'] = user_mods['new_subcategory']
+                if 'new_sub_subcategory' in user_mods:
+                    item_data['Sub-subcategory'] = user_mods['new_sub_subcategory']
+
             # Get ERP name object
             erp_name_obj = item_data.get('ERP Name', {})
             if not isinstance(erp_name_obj, dict):
@@ -982,7 +998,13 @@ class ManualEditor(ctk.CTkFrame):
             not sub_subcategory or sub_subcategory == "Select Sub-subcategory..."):
             return
 
-        self.tree_view.reassign_item(self.selected_row_id, category, subcategory, sub_subcategory)
+        new_row_id = self.tree_view.reassign_item(self.selected_row_id, category, subcategory, sub_subcategory)
+        if new_row_id:
+            self.selected_row_id = new_row_id
+            if self.main_window:
+                updated_data = self.main_window.get_original_row_data(new_row_id)
+                if updated_data:
+                    self.set_selected_item(updated_data, new_row_id)
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):

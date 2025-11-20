@@ -6511,10 +6511,10 @@
     {
         "PN": 285,
         "ERP Name": {
-            "full_name": "Blade-Refill_BCR930_9mm-30\u00b0",
+            "full_name": "Blade-Refill_BCR930_9mm-30°",
             "type": "Blade-Refill",
             "part_number": "BCR930",
-            "additional_parameters": "9mm-30\u00b0"
+            "additional_parameters": "9mm-30°"
         },
         "Image": "",
         "Manufacturer": "",
@@ -6580,10 +6580,10 @@
     {
         "PN": 288,
         "ERP Name": {
-            "full_name": "Cutter_OLFA-9mm_Metal-Small-30\u00b0",
+            "full_name": "Cutter_OLFA-9mm_Metal-Small-30°",
             "type": "Cutter",
             "part_number": "OLFA-9mm",
-            "additional_parameters": "Metal-Small-30\u00b0"
+            "additional_parameters": "Metal-Small-30°"
         },
         "Image": "",
         "Manufacturer": "",
@@ -13181,10 +13181,10 @@
     {
         "PN": 575,
         "ERP Name": {
-            "full_name": "Carbon-Fabric_NO-PN_Plain-80g/m\u00b2-HT",
+            "full_name": "Carbon-Fabric_NO-PN_Plain-80g/m²-HT",
             "type": "Carbon-Fabric",
             "part_number": "NO-PN",
-            "additional_parameters": "Plain-80g/m\u00b2-HT"
+            "additional_parameters": "Plain-80g/m²-HT"
         },
         "Image": "",
         "Manufacturer": "TeXtreme",
@@ -16861,10 +16861,10 @@
     {
         "PN": 852,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_22x28x1200mm-Twill-Weave-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_22x28x1200mm-Twill-Weave-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "22x28x1200mm-Twill-Weave-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "22x28x1200mm-Twill-Weave-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -16884,10 +16884,10 @@
     {
         "PN": 853,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_28x30x1200mm-Twill-Weave-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_28x30x1200mm-Twill-Weave-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "28x30x1200mm-Twill-Weave-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "28x30x1200mm-Twill-Weave-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -16907,10 +16907,10 @@
     {
         "PN": 854,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_24x26x1000mm-Twill-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_24x26x1000mm-Twill-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "24x26x1000mm-Twill-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "24x26x1000mm-Twill-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -16953,10 +16953,10 @@
     {
         "PN": 856,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_18x20x1000mm-Twill-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_18x20x1000mm-Twill-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "18x20x1000mm-Twill-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "18x20x1000mm-Twill-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -16976,10 +16976,10 @@
     {
         "PN": 857,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_Twill-14x18x1000mm-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_Twill-14x18x1000mm-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "Twill-14x18x1000mm-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "Twill-14x18x1000mm-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -17068,10 +17068,10 @@
     {
         "PN": 861,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_4x6x1000mm-Twill-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_4x6x1000mm-Twill-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "4x6x1000mm-Twill-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "4x6x1000mm-Twill-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -17091,10 +17091,10 @@
     {
         "PN": 862,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_2x3x1000mm-Twill-Weave-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_2x3x1000mm-Twill-Weave-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "2x3x1000mm-Twill-Weave-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "2x3x1000mm-Twill-Weave-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -17114,10 +17114,10 @@
     {
         "PN": 863,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_8x10x1000mm-Twill-Weave-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_8x10x1000mm-Twill-Weave-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "8x10x1000mm-Twill-Weave-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "8x10x1000mm-Twill-Weave-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -17137,10 +17137,10 @@
     {
         "PN": 864,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_6x8x1000mm-Twill-Weave-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_6x8x1000mm-Twill-Weave-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "6x8x1000mm-Twill-Weave-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "6x8x1000mm-Twill-Weave-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -17160,10 +17160,10 @@
     {
         "PN": 865,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_3x6x1000mm-Twill-Weave-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_3x6x1000mm-Twill-Weave-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "3x6x1000mm-Twill-Weave-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "3x6x1000mm-Twill-Weave-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -17183,10 +17183,10 @@
     {
         "PN": 866,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_17x18x1000mm-Twill-Weave-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_17x18x1000mm-Twill-Weave-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "17x18x1000mm-Twill-Weave-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "17x18x1000mm-Twill-Weave-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -17206,10 +17206,10 @@
     {
         "PN": 867,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_Twill-10x14x1000mm-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_Twill-10x14x1000mm-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "Twill-10x14x1000mm-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "Twill-10x14x1000mm-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -17275,10 +17275,10 @@
     {
         "PN": 870,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_Twill-14x16x1000mm-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_Twill-14x16x1000mm-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "Twill-14x16x1000mm-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "Twill-14x16x1000mm-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -17298,10 +17298,10 @@
     {
         "PN": 871,
         "ERP Name": {
-            "full_name": "Carbon-Tube_NO-PN_12x14x1000mm-Twill-Matt-ODT=\u00b10.3mm",
+            "full_name": "Carbon-Tube_NO-PN_12x14x1000mm-Twill-Matt-ODT=±0.3mm",
             "type": "Carbon-Tube",
             "part_number": "NO-PN",
-            "additional_parameters": "12x14x1000mm-Twill-Matt-ODT=\u00b10.3mm"
+            "additional_parameters": "12x14x1000mm-Twill-Matt-ODT=±0.3mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -23163,10 +23163,10 @@
     {
         "PN": 1126,
         "ERP Name": {
-            "full_name": "Servo_A20-3813-V8_43kg,0.12s/60deg@8.4V-\u00b150deg-Brushless-Digital",
+            "full_name": "Servo_A20-3813-V8_43kg,0.12s/60deg@8.4V-±50deg-Brushless-Digital",
             "type": "Servo",
             "part_number": "A20-3813-V8",
-            "additional_parameters": "43kg,0.12s/60deg@8.4V-\u00b150deg-Brushless-Digital"
+            "additional_parameters": "43kg,0.12s/60deg@8.4V-±50deg-Brushless-Digital"
         },
         "Image": "Images/A20-3813-V8.png",
         "Manufacturer": "KST",
@@ -28936,10 +28936,10 @@
     {
         "PN": 1377,
         "ERP Name": {
-            "full_name": "Servo_CE985B_7.65kg/cm,660deg/s@12V-\u00b190deg-CAN-CBS-15",
+            "full_name": "Servo_CE985B_7.65kg/cm,660deg/s@12V-±90deg-CAN-CBS-15",
             "type": "Servo",
             "part_number": "CE985B",
-            "additional_parameters": "7.65kg/cm,660deg/s@12V-\u00b190deg-CAN-CBS-15"
+            "additional_parameters": "7.65kg/cm,660deg/s@12V-±90deg-CAN-CBS-15"
         },
         "Image": "Images/CE985B.png",
         "Manufacturer": "Currawong",
@@ -33306,10 +33306,10 @@
     {
         "PN": 1567,
         "ERP Name": {
-            "full_name": "Switch_R13-28D-01-HPH_Toggle-SP3T-12V-20A-0~55\u00b0C",
+            "full_name": "Switch_R13-28D-01-HPH_Toggle-SP3T-12V-20A-0~55°C",
             "type": "Switch",
             "part_number": "R13-28D-01-HPH",
-            "additional_parameters": "Toggle-SP3T-12V-20A-0~55\u00b0C"
+            "additional_parameters": "Toggle-SP3T-12V-20A-0~55°C"
         },
         "Image": "",
         "Manufacturer": "",
@@ -37860,10 +37860,10 @@
     {
         "PN": 1765,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_270k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_270kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "270k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "270kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -37883,10 +37883,10 @@
     {
         "PN": 1766,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_100k\u03a9-0.4W-1%-Metal-Film-THT-28mm-3.7mm",
+            "full_name": "Resistor_NO-PN_100kΩ-0.4W-1%-Metal-Film-THT-28mm-3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "100k\u03a9-0.4W-1%-Metal-Film-THT-28mm-3.7mm"
+            "additional_parameters": "100kΩ-0.4W-1%-Metal-Film-THT-28mm-3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -37906,10 +37906,10 @@
     {
         "PN": 1767,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_180k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_180kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "180k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "180kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -37929,10 +37929,10 @@
     {
         "PN": 1768,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_220k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_220kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "220k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "220kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -37952,10 +37952,10 @@
     {
         "PN": 1769,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_330k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_330kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "330k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "330kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -37975,10 +37975,10 @@
     {
         "PN": 1770,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_470k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_470kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "470k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "470kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -37998,10 +37998,10 @@
     {
         "PN": 1771,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_680k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_680kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "680k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "680kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38021,10 +38021,10 @@
     {
         "PN": 1772,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_1M\u03a9-0.4W-1%-Metal-Film-THT-28x1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_1MΩ-0.4W-1%-Metal-Film-THT-28x1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "1M\u03a9-0.4W-1%-Metal-Film-THT-28x1.9x3.7mm"
+            "additional_parameters": "1MΩ-0.4W-1%-Metal-Film-THT-28x1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38044,10 +38044,10 @@
     {
         "PN": 1773,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_3.3k\u03a9-0.4W-1%-Metal-Film-THT-28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_3.3kΩ-0.4W-1%-Metal-Film-THT-28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "3.3k\u03a9-0.4W-1%-Metal-Film-THT-28mm-1.9x3.7mm"
+            "additional_parameters": "3.3kΩ-0.4W-1%-Metal-Film-THT-28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38067,10 +38067,10 @@
     {
         "PN": 1774,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_1k\u03a9-0.4W-1%-Metal-Film-THT-28x1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_1kΩ-0.4W-1%-Metal-Film-THT-28x1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "1k\u03a9-0.4W-1%-Metal-Film-THT-28x1.9x3.7mm"
+            "additional_parameters": "1kΩ-0.4W-1%-Metal-Film-THT-28x1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38090,10 +38090,10 @@
     {
         "PN": 1775,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_27k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_27kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "27k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "27kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38113,10 +38113,10 @@
     {
         "PN": 1776,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_33k\u03a9-0.4W-1%-Metal-Film-THT-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_33kΩ-0.4W-1%-Metal-Film-THT-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "33k\u03a9-0.4W-1%-Metal-Film-THT-1.9x3.7mm"
+            "additional_parameters": "33kΩ-0.4W-1%-Metal-Film-THT-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38136,10 +38136,10 @@
     {
         "PN": 1777,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_82k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_82kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "82k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "82kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38159,10 +38159,10 @@
     {
         "PN": 1778,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_4.7k\u03a9-0.4W-1%-Metal-Film-THT-28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_4.7kΩ-0.4W-1%-Metal-Film-THT-28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "4.7k\u03a9-0.4W-1%-Metal-Film-THT-28mm-1.9x3.7mm"
+            "additional_parameters": "4.7kΩ-0.4W-1%-Metal-Film-THT-28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38182,10 +38182,10 @@
     {
         "PN": 1779,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_6.8k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_6.8kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "6.8k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "6.8kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38205,10 +38205,10 @@
     {
         "PN": 1780,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_12k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_12kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "12k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "12kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38228,10 +38228,10 @@
     {
         "PN": 1781,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_22k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_22kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "22k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "22kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38251,10 +38251,10 @@
     {
         "PN": 1782,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_18k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_18kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "18k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "18kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38274,10 +38274,10 @@
     {
         "PN": 1783,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_47k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_47kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "47k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "47kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38297,10 +38297,10 @@
     {
         "PN": 1784,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_8.2k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_8.2kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "8.2k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "8.2kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38320,10 +38320,10 @@
     {
         "PN": 1785,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_68k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_68kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "68k\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "68kΩ-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38343,10 +38343,10 @@
     {
         "PN": 1786,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_2.2k\u03a9-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_2.2kΩ-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "2.2k\u03a9-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "2.2kΩ-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38366,10 +38366,10 @@
     {
         "PN": 1787,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_10k\u03a9-0.4W-1%-THT-\u00d80.45x28mm-\u00d81.9x3.7mm",
+            "full_name": "Resistor_NO-PN_10kΩ-0.4W-1%-THT-Ø0.45x28mm-Ø1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "10k\u03a9-0.4W-1%-THT-\u00d80.45x28mm-\u00d81.9x3.7mm"
+            "additional_parameters": "10kΩ-0.4W-1%-THT-Ø0.45x28mm-Ø1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38389,10 +38389,10 @@
     {
         "PN": 1788,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_820\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_820Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "820\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "820Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38412,10 +38412,10 @@
     {
         "PN": 1789,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_33\u03a9-0.4W-1%-Metal-Film-THT-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_33Ω-0.4W-1%-Metal-Film-THT-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "33\u03a9-0.4W-1%-Metal-Film-THT-1.9x3.7mm"
+            "additional_parameters": "33Ω-0.4W-1%-Metal-Film-THT-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38504,10 +38504,10 @@
     {
         "PN": 1793,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_270\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_270Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "270\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "270Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38527,10 +38527,10 @@
     {
         "PN": 1794,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_180\u03a9-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_180Ω-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "180\u03a9-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "180Ω-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38550,10 +38550,10 @@
     {
         "PN": 1795,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_22\u03a9-0.4W-1%-Metal-Film-THT-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_22Ω-0.4W-1%-Metal-Film-THT-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "22\u03a9-0.4W-1%-Metal-Film-THT-1.9x3.7mm"
+            "additional_parameters": "22Ω-0.4W-1%-Metal-Film-THT-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38573,10 +38573,10 @@
     {
         "PN": 1796,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_27\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_27Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "27\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "27Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38596,10 +38596,10 @@
     {
         "PN": 1797,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_680\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_680Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "680\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "680Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38619,10 +38619,10 @@
     {
         "PN": 1798,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_330\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_330Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "330\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "330Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38642,10 +38642,10 @@
     {
         "PN": 1799,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_MFR-470\u03a9-0.4W-1%-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_MFR-470Ω-0.4W-1%-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "MFR-470\u03a9-0.4W-1%-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "MFR-470Ω-0.4W-1%-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38665,10 +38665,10 @@
     {
         "PN": 1800,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_10\u03a9-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_10Ω-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "10\u03a9-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "10Ω-0.4W-1%-Metal-Film-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38688,10 +38688,10 @@
     {
         "PN": 1801,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_Metal-Film-12\u03a9-0.4W-1%-28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_Metal-Film-12Ω-0.4W-1%-28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "Metal-Film-12\u03a9-0.4W-1%-28mm-1.9x3.7mm"
+            "additional_parameters": "Metal-Film-12Ω-0.4W-1%-28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38734,10 +38734,10 @@
     {
         "PN": 1803,
         "ERP Name": {
-            "full_name": "Resistor_NO-PN_220\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
+            "full_name": "Resistor_NO-PN_220Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm",
             "type": "Resistor",
             "part_number": "NO-PN",
-            "additional_parameters": "220\u03a9-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
+            "additional_parameters": "220Ω-0.4W-1%-THT-0.45x28mm-1.9x3.7mm"
         },
         "Image": "",
         "Manufacturer": "",
@@ -38895,10 +38895,10 @@
     {
         "PN": 1810,
         "ERP Name": {
-            "full_name": "Servo_X20-4208_46Kgf.cm,0.07sec/60deg@8.4V-\u00b1100deg-Brushless-Digital",
+            "full_name": "Servo_X20-4208_46Kgf.cm,0.07sec/60deg@8.4V-±100deg-Brushless-Digital",
             "type": "Servo",
             "part_number": "X20-4208",
-            "additional_parameters": "46Kgf.cm,0.07sec/60deg@8.4V-\u00b1100deg-Brushless-Digital"
+            "additional_parameters": "46Kgf.cm,0.07sec/60deg@8.4V-±100deg-Brushless-Digital"
         },
         "Image": "Images/X20-4208.png",
         "Manufacturer": "KST",
@@ -38918,10 +38918,10 @@
     {
         "PN": 1811,
         "ERP Name": {
-            "full_name": "Servo_SB-2290SG_972oz,0.11s/deg@8.4v-\u00b150deg-Brushless-Digital",
+            "full_name": "Servo_SB-2290SG_972oz,0.11s/deg@8.4v-±50deg-Brushless-Digital",
             "type": "Servo",
             "part_number": "SB-2290SG",
-            "additional_parameters": "972oz,0.11s/deg@8.4v-\u00b150deg-Brushless-Digital"
+            "additional_parameters": "972oz,0.11s/deg@8.4v-±50deg-Brushless-Digital"
         },
         "Image": "Images/SB-2290SG.png",
         "Manufacturer": "SAVOX",
@@ -41310,10 +41310,10 @@
     {
         "PN": 1915,
         "ERP Name": {
-            "full_name": "Lamp_44870_OSRAM-GU5.3-12V-36\u00b0-50W-Halogen",
+            "full_name": "Lamp_44870_OSRAM-GU5.3-12V-36°-50W-Halogen",
             "type": "Lamp",
             "part_number": "44870",
-            "additional_parameters": "OSRAM-GU5.3-12V-36\u00b0-50W-Halogen"
+            "additional_parameters": "OSRAM-GU5.3-12V-36°-50W-Halogen"
         },
         "Image": "",
         "Manufacturer": "",
@@ -41724,8 +41724,8 @@
     {
         "PN": 1933,
         "ERP Name": {
-            "full_name": "Tube-813600-Round-Sst\u00f810X1-1M-Composite-Pipe",
-            "type": "Tube-813600-Round-Sst\u00f810X1-1M-Composite-Pipe",
+            "full_name": "Tube-813600-Round-Sstø10X1-1M-Composite-Pipe",
+            "type": "Tube-813600-Round-Sstø10X1-1M-Composite-Pipe",
             "part_number": "",
             "additional_parameters": ""
         },
@@ -42805,9 +42805,9 @@
     {
         "PN": 1980,
         "ERP Name": {
-            "full_name": "Recovery-Parachute_7m\u00b2-Hemispherical",
+            "full_name": "Recovery-Parachute_7m²-Hemispherical",
             "type": "Recovery-Parachute",
-            "part_number": "7m\u00b2-Hemispherical",
+            "part_number": "7m²-Hemispherical",
             "additional_parameters": ""
         },
         "Image": "",

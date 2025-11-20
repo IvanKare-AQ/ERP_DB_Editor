@@ -12,15 +12,22 @@ import pandas as pd
 class TreeViewWidget(ctk.CTkFrame):
     """Tree view widget for displaying hierarchical ERP data."""
     
+    ROW_ID_DELIMITER = "◆◆◆"
+    
     def __init__(self, parent, config_manager=None):
         """Initialize the tree view widget."""
         super().__init__(parent)
         
         # Data storage
         self.data = None
+        self.primary_data = None
+        self.categories = None
         self.visible_columns = None
         self.filtered_data = None
         self.active_filters = {}
+        self.primary_columns = []
+        self.added_data = pd.DataFrame()
+        self.current_view = "primary"
         
         # User modifications tracking
         self.user_modifications = {}
@@ -35,6 +42,33 @@ class TreeViewWidget(ctk.CTkFrame):
         
         # Create the tree view
         self.create_tree_view()
+
+    # ------------------------------------------------------------------
+    # Helpers for user modifications and row IDs
+    # ------------------------------------------------------------------
+    def _ensure_mod_entry(self, row_id):
+        """Ensure a modification entry exists for the given row ID."""
+        entry = self.user_modifications.setdefault(row_id, {})
+        entry.setdefault('_base_row_id', row_id)
+        return entry
+
+    def _get_mod_entry(self, row_id):
+        return self.user_modifications.get(row_id)
+
+    def _get_base_row_id(self, row_id):
+        entry = self.user_modifications.get(row_id)
+        if entry and '_base_row_id' in entry:
+            return entry['_base_row_id']
+        return row_id
+
+    def _parse_row_id(self, row_id):
+        parts = row_id.split(self.ROW_ID_DELIMITER)
+        while len(parts) < 4:
+            parts.append('')
+        return parts[0], parts[1], parts[2], parts[3]
+
+    def _build_row_id(self, erp_name, category, subcategory, sub_subcategory):
+        return f"{erp_name}{self.ROW_ID_DELIMITER}{category}{self.ROW_ID_DELIMITER}{subcategory}{self.ROW_ID_DELIMITER}{sub_subcategory}"
         
     def create_tree_view(self):
         """Create the tree view component."""
@@ -188,15 +222,20 @@ class TreeViewWidget(ctk.CTkFrame):
         for col in columns:
             self.tree.column(col, width=100, minwidth=80)
             
-    def load_data(self, data, categories=None):
+    def load_data(self, data, categories=None, set_primary=True):
         """Load data into the tree view."""
-        self.data = data
-        self.categories = categories
+        data_to_use = pd.DataFrame() if data is None else data.copy(deep=True)
+        self.data = data_to_use
+        if set_primary:
+            self.primary_data = data_to_use.copy(deep=True)
+            self.primary_columns = list(data_to_use.columns)
+            self.current_view = "primary"
+        self.categories = categories if categories is not None else self.categories
         
         # Extract columns from data (source of truth)
-        if data is not None and not data.empty:
+        if self.data is not None and not self.data.empty:
             # Get all columns from the data
-            data_columns = list(data.columns)
+            data_columns = list(self.data.columns)
             
             # Map data column names to display names
             display_columns = []
@@ -209,7 +248,8 @@ class TreeViewWidget(ctk.CTkFrame):
             self._all_columns = tuple(display_columns)
         else:
             # Fallback if no data
-            self._all_columns = tuple()
+            fallback_columns = self.primary_columns if self.primary_columns else []
+            self._all_columns = tuple(fallback_columns)
         
         # Update tree columns to match data
         # If visibility settings exist, use them; otherwise use all columns
@@ -238,6 +278,9 @@ class TreeViewWidget(ctk.CTkFrame):
             
     def _populate_tree_from_data(self, data):
         """Populate the tree by grouping data columns."""
+        if 'Category' not in data.columns:
+            return
+        
         # Group by Category
         categories = data.groupby('Category')
         
@@ -335,12 +378,10 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def _insert_erp_item(self, parent_node, row, index, visible_columns=None):
         """Helper to insert an ERP item into the tree."""
-        # Create row ID for this item using the Sub-subcategory column
+        # Create row ID for this item
         sub_subcategory_value = row.get('Sub-subcategory', '')
-        # Use a unique delimiter that's unlikely to appear in the data
-        delimiter = "◆◆◆"  # Using a unique Unicode character sequence
         erp_name_full = self._get_erp_name_full(row)
-        row_id = f"{erp_name_full}{delimiter}{row.get('Category', '')}{delimiter}{row.get('Subcategory', '')}{delimiter}{sub_subcategory_value}"
+        row_id = self._build_row_id(erp_name_full, row.get('Category', ''), row.get('Subcategory', ''), sub_subcategory_value)
         
         if visible_columns:
             # Use provided visible columns
@@ -473,6 +514,9 @@ class TreeViewWidget(ctk.CTkFrame):
 
     def _populate_tree_from_data_with_visibility(self, data, columns_to_use):
         """Populate the tree by grouping data columns with visible columns."""
+        if 'Category' not in data.columns:
+            return
+        
         # Group by Category
         categories = data.groupby('Category')
         
@@ -492,20 +536,20 @@ class TreeViewWidget(ctk.CTkFrame):
                                                   values=("",) * len(columns_to_use),
                                                   tags=("subcategory",))
                 
-            # Group by Sub-subcategory within subcategory
-            sub_subcategories = subcategory_data.groupby('Sub-subcategory')
-            
-            for sub_subcategory_name, sub_subcategory_data in sub_subcategories:
-                # Create sub-subcategory node with color tag
-                sub_subcategory_node = self.tree.insert(subcategory_node, "end", 
-                                               text=sub_subcategory_name,
-                                               values=("",) * len(columns_to_use),
-                                               tags=("sub_subcategory",))
+                # Group by Sub-subcategory within subcategory
+                sub_subcategories = subcategory_data.groupby('Sub-subcategory')
                 
-                # Add ERP Name items under sub-subcategory with alternating backgrounds
-                erp_items = list(sub_subcategory_data.iterrows())
-                for index, (_, row) in enumerate(erp_items):
-                    self._insert_erp_item(sub_subcategory_node, row, index, columns_to_use)
+                for sub_subcategory_name, sub_subcategory_data in sub_subcategories:
+                    # Create sub-subcategory node with color tag
+                    sub_subcategory_node = self.tree.insert(subcategory_node, "end", 
+                                                   text=sub_subcategory_name,
+                                                   values=("",) * len(columns_to_use),
+                                                   tags=("sub_subcategory",))
+                    
+                    # Add ERP Name items under sub-subcategory with alternating backgrounds
+                    erp_items = list(sub_subcategory_data.iterrows())
+                    for index, (_, row) in enumerate(erp_items):
+                        self._insert_erp_item(sub_subcategory_node, row, index, columns_to_use)
 
     def _populate_tree_from_categories_with_visibility(self, data, categories, columns_to_use):
         """Populate the tree using the categories structure with visible columns."""
@@ -622,13 +666,10 @@ class TreeViewWidget(ctk.CTkFrame):
         
         # Apply user modifications
         for row_id, mods in self.user_modifications.items():
-            # Parse row_id to find the original row
-            parts = row_id.split('◆◆◆')
-            if len(parts) >= 4:
-                erp_name = parts[0]
-                category = parts[1]
-                subcategory = parts[2]
-                sub_subcategory = parts[3]
+            # Use the base row ID (original location) to find the row in the dataset
+            base_row_id = mods.get('_base_row_id', row_id)
+            erp_name, category, subcategory, sub_subcategory = self._parse_row_id(base_row_id)
+            if erp_name:
                 
                 # Find matching row - extract full_name from ERP name object for comparison
                 def get_erp_full_name(erp_obj):
@@ -679,6 +720,46 @@ class TreeViewWidget(ctk.CTkFrame):
             
             # Expand all nodes
             self.expand_all()
+        else:
+            self.clear_tree()
+            if self.visible_columns:
+                self.setup_columns_with_visibility(self.visible_columns)
+                self.populate_tree_with_visibility(pd.DataFrame(columns=self._all_columns), self.visible_columns)
+            else:
+                self.populate_tree(pd.DataFrame(columns=self._all_columns))
+
+    # ------------------------------------------------------------------
+    # Added items support
+    # ------------------------------------------------------------------
+    def set_added_data(self, data: pd.DataFrame) -> None:
+        """Store the draft dataset for quick toggling."""
+        if data is None:
+            self.added_data = pd.DataFrame(columns=self.primary_columns)
+        else:
+            self.added_data = data.copy(deep=True)
+
+    def show_added_items(self) -> None:
+        """Switch the tree view to the draft dataset."""
+        if self.added_data is not None and not self.added_data.empty:
+            dataset = self.added_data
+        else:
+            columns = self.primary_columns if self.primary_columns else self.get_all_columns()
+            dataset = pd.DataFrame(columns=columns)
+        self.load_data(dataset, self.categories, set_primary=False)
+        self.current_view = "added"
+
+    def show_primary_items(self) -> None:
+        """Return the tree view to the main dataset."""
+        if self.primary_data is not None:
+            dataset = self.primary_data
+        else:
+            dataset = pd.DataFrame(columns=self.primary_columns)
+        self.load_data(dataset, self.categories, set_primary=False)
+        self.current_view = "primary"
+
+    def is_showing_added_items(self) -> bool:
+        """Whether the tree view currently displays draft items."""
+        return self.current_view == "added"
     
     def get_unique_values(self, column):
         """Get unique values for a specific column for filter options."""
@@ -712,33 +793,39 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def update_user_erp_name(self, row_id, erp_name):
         """Update ERP name for a specific row."""
-        if row_id not in self.user_modifications:
-            self.user_modifications[row_id] = {}
-        self.user_modifications[row_id]['erp_name'] = erp_name
+        entry = self._ensure_mod_entry(row_id)
+        entry['erp_name'] = erp_name
         self.update_tree_item_erp_name(row_id, erp_name)
     
     def update_manufacturer(self, row_id, manufacturer):
         """Update manufacturer for a specific row."""
-        if row_id not in self.user_modifications:
-            self.user_modifications[row_id] = {}
-        self.user_modifications[row_id]['manufacturer'] = manufacturer
+        entry = self._ensure_mod_entry(row_id)
+        entry['manufacturer'] = manufacturer
         # Note: Manufacturer updates will be reflected in tree view when data is refreshed
     
     def update_remark(self, row_id, remark):
         """Update remark for a specific row."""
-        if row_id not in self.user_modifications:
-            self.user_modifications[row_id] = {}
-        self.user_modifications[row_id]['remark'] = remark
+        entry = self._ensure_mod_entry(row_id)
+        entry['remark'] = remark
         # Note: Remark updates will be reflected in tree view when data is refreshed
     
     def reassign_item(self, row_id, new_category, new_subcategory, new_sub_subcategory):
         """Reassign an item to a new category, subcategory, and sub_subcategory."""
-        if row_id not in self.user_modifications:
-            self.user_modifications[row_id] = {}
-        self.user_modifications[row_id]['new_category'] = new_category
-        self.user_modifications[row_id]['new_subcategory'] = new_subcategory
-        self.user_modifications[row_id]['new_sub_subcategory'] = new_sub_subcategory
+        entry = self._ensure_mod_entry(row_id)
+        entry['new_category'] = new_category
+        entry['new_subcategory'] = new_subcategory
+        entry['new_sub_subcategory'] = new_sub_subcategory
+
+        base_row_id = entry.get('_base_row_id', row_id)
+        base_erp, _, _, _ = self._parse_row_id(base_row_id)
+        new_row_id = self._build_row_id(base_erp, new_category, new_subcategory, new_sub_subcategory)
+
+        if new_row_id != row_id:
+            self.user_modifications[new_row_id] = entry
+            del self.user_modifications[row_id]
+
         self.refresh_view()
+        return new_row_id
     
     def update_tree_item_erp_name(self, row_id, erp_name):
         """Update the ERP name (tree item text) for a specific tree item without refreshing the entire view."""
@@ -876,10 +963,9 @@ class TreeViewWidget(ctk.CTkFrame):
         # Remove from data
         if self.data is not None and not self.data.empty:
             # Find the row index by matching the row_id components
-            delimiter = "◆◆◆"
-            parts = row_id.split(delimiter)
-            if len(parts) >= 4:
-                erp_name, category, subcategory, sub_subcategory = parts[0], parts[1], parts[2], parts[3]
+            base_row_id = self._get_base_row_id(row_id)
+            erp_name, category, subcategory, sub_subcategory = self._parse_row_id(base_row_id)
+            if erp_name:
                 
                 # Create mask to find the row to delete - extract full_name from ERP name object
                 def get_erp_full_name(erp_obj):
@@ -916,7 +1002,7 @@ class TreeViewWidget(ctk.CTkFrame):
                 erp_name = item_values[1] if len(item_values) > 1 else ""  # ERP Name is typically the second column
                 
                 # Check if this matches our row_id
-                delimiter = "◆◆◆"
+                delimiter = self.ROW_ID_DELIMITER
                 if row_id.startswith(erp_name + delimiter):
                     # Found the item, delete it
                     self.tree.delete(item)

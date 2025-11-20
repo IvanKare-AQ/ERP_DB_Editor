@@ -219,8 +219,10 @@ class MainWindow:
     
     def update_status(self, message):
         """Update the status bar message."""
-        self.status_label.configure(text=message)
-        self.root.update_idletasks()  # Force immediate update
+        if hasattr(self, 'status_label'):
+            self.status_label.configure(text=message)
+        if hasattr(self, 'root'):
+            self.root.update_idletasks()  # Force immediate update
     
     def update_file_info(self, file_path=None):
         """Update the file information in the status bar."""
@@ -243,9 +245,11 @@ class MainWindow:
             
             # Enrich data with category properties
             self.json_handler.enrich_data()
+            self.json_handler.load_added_items()
             
             # Update tree view with data and categories
             self.tree_view.load_data(self.json_handler.get_data(), self.json_handler.get_categories())
+            self.tree_view.set_added_data(self.json_handler.get_added_data())
             
             # Load saved filters after data is loaded
             saved_filters = self.config_manager.get_filters()
@@ -263,6 +267,10 @@ class MainWindow:
             self.filter_button.configure(state="normal")
             self.clear_filters_button.configure(state="normal")
             
+            # Respect the currently active tab
+            if hasattr(self, 'edit_panel') and self.edit_panel.is_add_tab_active():
+                self.tree_view.show_added_items()
+            
             # Update status and file info
             self.update_status("Database loaded successfully")
             self.update_file_info(self.json_handler.file_path)
@@ -270,6 +278,26 @@ class MainWindow:
         except Exception as e:
             self.update_status("Error loading database")
             messagebox.showerror("Error", f"Failed to load database: {str(e)}")
+    
+    def refresh_added_items_view(self):
+        """Synchronize the tree view with the latest draft items."""
+        if not hasattr(self, 'tree_view'):
+            return
+        self.tree_view.set_added_data(self.json_handler.get_added_data())
+        if hasattr(self, 'edit_panel') and self.edit_panel.is_add_tab_active():
+            self.tree_view.show_added_items()
+    
+    def on_tab_changed(self, tab_name: str):
+        """React to tab changes so the tree view shows the correct dataset."""
+        if not hasattr(self, 'tree_view'):
+            return
+        
+        if tab_name == "Add":
+            self.tree_view.show_added_items()
+            self.update_status("Viewing draft items")
+        else:
+            self.tree_view.show_primary_items()
+            self.update_status("Viewing loaded database")
             
     def save_database(self):
         """Save the database to JSON."""
@@ -515,38 +543,42 @@ class MainWindow:
     
     def find_row_id_from_tree_item(self, item_text, item_values):
         """Find the row ID for a tree item."""
-        # This is a simplified approach - in a real implementation,
-        # you might want to store row IDs in tree items
-        if not self.tree_view.data.empty:
-            # Extract full_name from ERP name object for comparison
-            import pandas as pd
-            def get_erp_full_name(erp_obj):
-                if isinstance(erp_obj, dict):
-                    return erp_obj.get('full_name', '')
-                elif pd.isna(erp_obj):
-                    return ''
-                else:
-                    return str(erp_obj)
-            
-            erp_name_series = self.tree_view.data['ERP Name'].apply(get_erp_full_name)
-            # Find matching row in data
-            matching_rows = self.tree_view.data[
-                (erp_name_series == item_text)
-            ]
-            if not matching_rows.empty:
-                row = matching_rows.iloc[0]
-                delimiter = "◆◆◆"
-                # Extract full_name for row_id
-                erp_name_obj = row.get('ERP Name', {})
-                erp_name_full = get_erp_full_name(erp_name_obj)
-                return f"{erp_name_full}{delimiter}{row.get('Category', '')}{delimiter}{row.get('Subcategory', '')}{delimiter}{row.get('Sub-subcategory', '')}"
+        dataset = self.tree_view.get_data_with_modifications()
+        if dataset is None or dataset.empty:
+            dataset = self.tree_view.get_data()
+        if dataset is None or dataset.empty:
+            return None
+        
+        import pandas as pd
+        def get_erp_full_name(erp_obj):
+            if isinstance(erp_obj, dict):
+                return erp_obj.get('full_name', '')
+            elif pd.isna(erp_obj):
+                return ''
+            else:
+                return str(erp_obj)
+        
+        erp_name_series = dataset['ERP Name'].apply(get_erp_full_name)
+        matching_rows = dataset[(erp_name_series == item_text)]
+        if not matching_rows.empty:
+            row = matching_rows.iloc[0]
+            delimiter = getattr(self.tree_view, 'ROW_ID_DELIMITER', "◆◆◆")
+            erp_name_obj = row.get('ERP Name', {})
+            erp_name_full = get_erp_full_name(erp_name_obj)
+            return f"{erp_name_full}{delimiter}{row.get('Category', '')}{delimiter}{row.get('Subcategory', '')}{delimiter}{row.get('Sub-subcategory', '')}"
         return None
     
     def get_original_row_data(self, row_id):
         """Get original row data for a row ID, with user modifications applied."""
-        if hasattr(self.tree_view, 'data') and not self.tree_view.data.empty:
-            # Parse row ID to find matching data
-            parts = row_id.split('◆◆◆')
+        dataset = self.tree_view.get_data()
+        if dataset is not None and not dataset.empty:
+            # Parse base row ID (original location) to find matching data
+            delimiter = getattr(self.tree_view, 'ROW_ID_DELIMITER', "◆◆◆")
+            base_row_id = row_id
+            entry = self.tree_view.user_modifications.get(row_id)
+            if entry and '_base_row_id' in entry:
+                base_row_id = entry['_base_row_id']
+            parts = base_row_id.split(delimiter)
             if len(parts) >= 4:
                 erp_name = parts[0]
                 category = parts[1]
@@ -565,20 +597,27 @@ class MainWindow:
                     else:
                         return str(erp_obj)
                 
-                erp_name_series = self.tree_view.data['ERP Name'].apply(get_erp_full_name)
-                matching_rows = self.tree_view.data[
+                erp_name_series = dataset['ERP Name'].apply(get_erp_full_name)
+                matching_rows = dataset[
                     (erp_name_series == erp_name) &
-                    (self.tree_view.data['Category'] == category) &
-                    (self.tree_view.data['Subcategory'] == subcategory) &
-                    (self.tree_view.data[sub_subcategory_col] == sub_subcategory)
+                    (dataset['Category'] == category) &
+                    (dataset['Subcategory'] == subcategory) &
+                    (dataset[sub_subcategory_col] == sub_subcategory)
                 ]
                 if not matching_rows.empty:
                     row_data = matching_rows.iloc[0].to_dict()
                     
-                    # Apply user modifications (reassignment) to the row data
-                    if row_id in self.tree_view.user_modifications:
-                        mods = self.tree_view.user_modifications[row_id]
-                        # Apply reassignment modifications
+                    # Apply buffered modifications to the row data for preview
+                    mods = self.tree_view.user_modifications.get(row_id, {})
+                    if mods:
+                        if 'erp_name' in mods and mods['erp_name']:
+                            row_data['ERP Name'] = mods['erp_name']
+                        if 'manufacturer' in mods:
+                            row_data['Manufacturer'] = mods['manufacturer']
+                        if 'remark' in mods:
+                            row_data['Remark'] = mods['remark']
+                        if 'image' in mods:
+                            row_data['Image'] = mods['image']
                         if 'new_category' in mods:
                             row_data['Category'] = mods['new_category']
                         if 'new_subcategory' in mods:
@@ -593,8 +632,10 @@ class MainWindow:
         """Get data with user modifications applied."""
         import pandas as pd
         
-        # Start with original data
-        data = self.tree_view.get_data().copy()
+        base_data = self.tree_view.get_data()
+        if base_data is None:
+            return pd.DataFrame()
+        data = base_data.copy()
         
         # Clean up duplicate columns - keep only the first occurrence of each column
         columns_to_keep = []
@@ -614,8 +655,10 @@ class MainWindow:
         modifications = self.tree_view.get_user_modifications()
         
         for row_id, mods in modifications.items():
-            # Find the row in data
-            parts = row_id.split('◆◆◆')
+            # Find the row in data using the original row identifier
+            delimiter = getattr(self.tree_view, 'ROW_ID_DELIMITER', "◆◆◆")
+            base_row_id = mods.get('_base_row_id', row_id)
+            parts = base_row_id.split(delimiter)
             if len(parts) >= 4:
                 erp_name = parts[0]
                 category = parts[1]
@@ -714,6 +757,8 @@ class MainWindow:
             
             # Reload the tree view with the updated data from JSON handler
             self.tree_view.load_data(self.json_handler.get_data())
+            if hasattr(self, 'edit_panel') and self.edit_panel.is_add_tab_active():
+                self.tree_view.show_added_items()
             
             # Update status with results
             if result["converted"] > 0:
@@ -763,6 +808,8 @@ class MainWindow:
             
             # Reload the tree view with the updated data from JSON handler
             self.tree_view.load_data(self.json_handler.get_data())
+            if hasattr(self, 'edit_panel') and self.edit_panel.is_add_tab_active():
+                self.tree_view.show_added_items()
             
             # Update status with results
             if result["converted"] > 0:
