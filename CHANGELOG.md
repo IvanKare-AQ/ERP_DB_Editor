@@ -544,7 +544,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Better user feedback and status updates
 
 - **Add Tab Visibility & Functionality**: Replaced the emoji placeholder with a programmatically rendered green plus icon and rebuilt the Add tab UI so it mirrors the Manual tab (image row with `Import`, `Add Image`, and `<- Add Item`, Update/Delete/Reassign buttons) while buffering new entries in `data/new_items.json`.
-- **Buffered Editing Workflow**: Tree view, manual editor, and main window now keep all edits (reassignments, ERP fields, manufacturer/remark/image changes) in memory. The UI reflects those changes immediately while the primary JSON isn’t touched until Save, preventing accidental persistence. This same staged mechanism now powers the Add tab so draft reassignment behaves identically to the manual editor.
+- **Buffered Editing Workflow**: Tree view, manual editor, and main window now keep all edits (reassignments, ERP fields, manufacturer/remark/image changes) in memory. The UI reflects those changes immediately while the primary JSON isn’t touched until Save, preventing accidental persistence. Cached modification/filtered datasets keep the tree responsive even on large databases. This same staged mechanism now powers the Add tab so draft reassignment behaves identically to the manual editor.
 
 ### Added
 - **Item Deletion Functionality**: Complete item removal system

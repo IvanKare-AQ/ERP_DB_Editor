@@ -28,6 +28,10 @@ class TreeViewWidget(ctk.CTkFrame):
         self.primary_columns = []
         self.added_data = pd.DataFrame()
         self.current_view = "primary"
+        self._mod_version = 0
+        self._modified_cache = None
+        self._filtered_cache = None
+        self._base_data_id = None
         
         # User modifications tracking
         self.user_modifications = {}
@@ -69,6 +73,17 @@ class TreeViewWidget(ctk.CTkFrame):
 
     def _build_row_id(self, erp_name, category, subcategory, sub_subcategory):
         return f"{erp_name}{self.ROW_ID_DELIMITER}{category}{self.ROW_ID_DELIMITER}{subcategory}{self.ROW_ID_DELIMITER}{sub_subcategory}"
+
+    def _invalidate_caches(self):
+        self._modified_cache = None
+        self._filtered_cache = None
+
+    def _invalidate_filtered_cache(self):
+        self._filtered_cache = None
+
+    def _mark_data_dirty(self):
+        self._mod_version += 1
+        self._invalidate_caches()
         
     def create_tree_view(self):
         """Create the tree view component."""
@@ -231,6 +246,8 @@ class TreeViewWidget(ctk.CTkFrame):
             self.primary_columns = list(data_to_use.columns)
             self.current_view = "primary"
         self.categories = categories if categories is not None else self.categories
+        self._base_data_id = id(self.data)
+        self._mark_data_dirty()
         
         # Extract columns from data (source of truth)
         if self.data is not None and not self.data.empty:
@@ -613,88 +630,123 @@ class TreeViewWidget(ctk.CTkFrame):
             'value': filter_value,
             'type': filter_type
         }
+        self._invalidate_filtered_cache()
         self.refresh_view()
     
     def remove_filter(self, column):
         """Remove filter from a specific column."""
         if column in self.active_filters:
             del self.active_filters[column]
+            self._invalidate_filtered_cache()
             self.refresh_view()
     
     def clear_all_filters(self):
         """Clear all active filters."""
         self.active_filters.clear()
+        self._invalidate_filtered_cache()
         self.refresh_view()
     
     def get_filtered_data(self):
         """Get data with active filters applied."""
-        if not self.data is not None or self.data.empty:
-            return None
-        
-        # Get data with user modifications applied
+        if self.data is None or self.data.empty:
+            return pd.DataFrame(columns=self._all_columns)
+
+        filters_signature = tuple(sorted((col, info['value'], info['type']) for col, info in self.active_filters.items()))
+        cache = self._filtered_cache
+        if cache and cache['version'] == self._mod_version and cache['filters'] == filters_signature and cache['base_id'] == self._base_data_id:
+            return cache['data']
+
         filtered_data = self.get_data_with_modifications()
         if filtered_data is None:
-            return None
-        
-        for column, filter_info in self.active_filters.items():
-            filter_value = filter_info['value']
-            filter_type = filter_info['type']
-            
-            # Map display column names to data column names
-            data_column = self.get_data_column_name(column)
-            if data_column not in filtered_data.columns:
-                continue
-            
-            if filter_type == "contains":
-                filtered_data = filtered_data[filtered_data[data_column].astype(str).str.contains(str(filter_value), case=False, na=False)]
-            elif filter_type == "equals":
-                filtered_data = filtered_data[filtered_data[data_column].astype(str) == str(filter_value)]
-            elif filter_type == "starts_with":
-                filtered_data = filtered_data[filtered_data[data_column].astype(str).str.startswith(str(filter_value), na=False)]
-            elif filter_type == "ends_with":
-                filtered_data = filtered_data[filtered_data[data_column].astype(str).str.endswith(str(filter_value), na=False)]
-        
+            filtered_data = pd.DataFrame(columns=self._all_columns)
+        else:
+            for column, filter_info in self.active_filters.items():
+                filter_value = filter_info['value']
+                filter_type = filter_info['type']
+                
+                data_column = self.get_data_column_name(column)
+                if data_column not in filtered_data.columns:
+                    continue
+                
+                series = filtered_data[data_column].astype(str)
+                if filter_type == "contains":
+                    mask = series.str.contains(str(filter_value), case=False, na=False)
+                elif filter_type == "equals":
+                    mask = series == str(filter_value)
+                elif filter_type == "starts_with":
+                    mask = series.str.startswith(str(filter_value), na=False)
+                elif filter_type == "ends_with":
+                    mask = series.str.endswith(str(filter_value), na=False)
+                else:
+                    continue
+                filtered_data = filtered_data[mask]
+
+        self._filtered_cache = {
+            'version': self._mod_version,
+            'filters': filters_signature,
+            'base_id': self._base_data_id,
+            'data': filtered_data
+        }
+
         return filtered_data
     
     def get_data_with_modifications(self):
         """Get data with user modifications applied."""
         if self.data is None or self.data.empty:
             return None
-        
-        # Start with original data
+
+        if not self.user_modifications:
+            return self.data
+
+        cache = self._modified_cache
+        if cache and cache['version'] == self._mod_version and cache['base_id'] == self._base_data_id:
+            return cache['data']
+
         data = self.data.copy()
-        
-        # Apply user modifications
+
+        def get_erp_full_name(erp_obj):
+            if isinstance(erp_obj, dict):
+                return erp_obj.get('full_name', '')
+            elif pd.isna(erp_obj):
+                return ''
+            else:
+                return str(erp_obj)
+
+        erp_name_series = data['ERP Name'].apply(get_erp_full_name)
+
         for row_id, mods in self.user_modifications.items():
-            # Use the base row ID (original location) to find the row in the dataset
             base_row_id = mods.get('_base_row_id', row_id)
             erp_name, category, subcategory, sub_subcategory = self._parse_row_id(base_row_id)
-            if erp_name:
-                
-                # Find matching row - extract full_name from ERP name object for comparison
-                def get_erp_full_name(erp_obj):
-                    if isinstance(erp_obj, dict):
-                        return erp_obj.get('full_name', '')
-                    elif pd.isna(erp_obj):
-                        return ''
-                    else:
-                        return str(erp_obj)
-                
-                erp_name_series = data['ERP Name'].apply(get_erp_full_name)
-                mask = (
-                    (erp_name_series == erp_name) &
-                    (data['Category'] == category) &
-                    (data['Subcategory'] == subcategory) &
-                    (data['Sub-subcategory'] == sub_subcategory)
-                )
-                
-                if mask.any():
-                    # Apply reassignment modifications
-                    if 'new_category' in mods and 'new_subcategory' in mods and 'new_sub_subcategory' in mods:
-                        data.loc[mask, 'Category'] = mods['new_category']
-                        data.loc[mask, 'Subcategory'] = mods['new_subcategory']
-                        data.loc[mask, 'Sub-subcategory'] = mods['new_sub_subcategory']
-        
+            if not erp_name:
+                continue
+            mask = (
+                (erp_name_series == erp_name) &
+                (data['Category'] == category) &
+                (data['Subcategory'] == subcategory) &
+                (data['Sub-subcategory'] == sub_subcategory)
+            )
+            if not mask.any():
+                continue
+
+            if 'new_category' in mods and 'new_subcategory' in mods and 'new_sub_subcategory' in mods:
+                data.loc[mask, 'Category'] = mods['new_category']
+                data.loc[mask, 'Subcategory'] = mods['new_subcategory']
+                data.loc[mask, 'Sub-subcategory'] = mods['new_sub_subcategory']
+            if 'erp_name' in mods and mods['erp_name']:
+                data.loc[mask, 'ERP Name'] = mods['erp_name']
+            if 'manufacturer' in mods:
+                data.loc[mask, 'Manufacturer'] = mods['manufacturer']
+            if 'remark' in mods:
+                data.loc[mask, 'Remark'] = mods['remark']
+            if 'image' in mods:
+                data.loc[mask, 'Image'] = mods['image']
+
+        self._modified_cache = {
+            'version': self._mod_version,
+            'base_id': self._base_data_id,
+            'data': data
+        }
+
         return data
     
     def get_data_column_name(self, display_column):
@@ -796,18 +848,21 @@ class TreeViewWidget(ctk.CTkFrame):
         entry = self._ensure_mod_entry(row_id)
         entry['erp_name'] = erp_name
         self.update_tree_item_erp_name(row_id, erp_name)
+        self._mark_data_dirty()
     
     def update_manufacturer(self, row_id, manufacturer):
         """Update manufacturer for a specific row."""
         entry = self._ensure_mod_entry(row_id)
         entry['manufacturer'] = manufacturer
         # Note: Manufacturer updates will be reflected in tree view when data is refreshed
+        self._mark_data_dirty()
     
     def update_remark(self, row_id, remark):
         """Update remark for a specific row."""
         entry = self._ensure_mod_entry(row_id)
         entry['remark'] = remark
         # Note: Remark updates will be reflected in tree view when data is refreshed
+        self._mark_data_dirty()
     
     def reassign_item(self, row_id, new_category, new_subcategory, new_sub_subcategory):
         """Reassign an item to a new category, subcategory, and sub_subcategory."""
@@ -824,6 +879,7 @@ class TreeViewWidget(ctk.CTkFrame):
             self.user_modifications[new_row_id] = entry
             del self.user_modifications[row_id]
 
+        self._mark_data_dirty()
         self.refresh_view()
         return new_row_id
     
@@ -986,6 +1042,8 @@ class TreeViewWidget(ctk.CTkFrame):
                 
                 # Remove the row
                 self.data = self.data[~mask]
+                self._base_data_id = id(self.data)
+                self._mark_data_dirty()
                 
                 # Refresh the view
                 self.refresh_view()
