@@ -218,7 +218,7 @@
   - **AI Tab (🤖)**: AI-powered editing with model management and prompt tools
   - **ML Tab (🧠)**: Placeholder for future machine learning features
 - **Accessible Add Tab Iconography**: The Add tab must include a high-contrast green "+" icon rendered via `CTkImage` so it remains visible regardless of theme background colors.
-- **Add Tab Editing Parity**: The Add tab reuses the manual editor layout, including the image preview row with `Import`, `Add Item`, and `Add Image` buttons directly beneath the placeholder. It must expose the same controls (Update All Fields, Delete Selected Item) and apply buffered changes without touching the primary JSON until Save.
+- **Add Tab Editing Parity**: The Add tab reuses the manual editor layout, including the image preview row with `Import`, `Add Image`, and `<- Add Item` buttons directly beneath the placeholder. It must expose the same controls (Update All Fields, Delete Selected Item, Reassign) and apply buffered changes without touching the primary JSON until Save.
 - **Fixed Width Layout**: Right panel now uses consistent 1000px width across all tabs
 - **Component Separation**: Each tab is a self-contained module with dedicated file
   - `manual_editor.py`: Manual editing functionality (ERP Name, Manufacturer, REMARK)

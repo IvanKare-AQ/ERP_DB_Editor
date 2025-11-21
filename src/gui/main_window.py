@@ -510,16 +510,17 @@ class MainWindow:
                         erp_items.append((original_data, row_id))
             
             if erp_items:
+                target_editor = self.edit_panel.add_editor if self.edit_panel.is_add_tab_active() else self.edit_panel.manual_editor
                 # If only one ERP item selected, populate manual edit panel
                 if len(erp_items) == 1:
                     original_data, row_id = erp_items[0]
-                    self.edit_panel.manual_editor.set_selected_item(original_data, row_id)
+                    target_editor.set_selected_item(original_data, row_id)
                     erp_name_obj = original_data.get('ERP Name', {})
                     erp_name = erp_name_obj.get('full_name', 'Unknown') if isinstance(erp_name_obj, dict) else str(erp_name_obj) if erp_name_obj else 'Unknown'
                     self.update_status(f"Selected: {erp_name}")
                 else:
                     # Multiple ERP items selected
-                    self.edit_panel.manual_editor.set_selected_item(None, None)
+                    target_editor.set_selected_item(None, None)
                     self.update_status(f"Selected {len(erp_items)} items")
                 
                 # Store selected items for multi-selection operations
@@ -530,13 +531,19 @@ class MainWindow:
                     self.edit_panel.ai_editor.update_apply_to_selected_button_state()
             else:
                 # No ERP items selected
-                self.edit_panel.manual_editor.set_selected_item(None, None)
+                if self.edit_panel.is_add_tab_active():
+                    self.edit_panel.add_editor.set_selected_item(None, None)
+                else:
+                    self.edit_panel.manual_editor.set_selected_item(None, None)
                 self.tree_view.selected_items = []
                 if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
                     self.edit_panel.ai_editor.update_apply_to_selected_button_state()
                 self.update_status("Ready")
         else:
-            self.manual_edit_panel.set_selected_item(None, None)
+            if self.edit_panel.is_add_tab_active():
+                self.edit_panel.add_editor.set_selected_item(None, None)
+            else:
+                self.edit_panel.manual_editor.set_selected_item(None, None)
             self.tree_view.selected_items = []
             if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
                 self.edit_panel.ai_editor.update_apply_to_selected_button_state()

@@ -33,7 +33,7 @@ class AddEditor(ManualEditor):
         self._setup_image_action_row()
 
         if hasattr(self, "reassign_button"):
-            self.reassign_button.configure(text="Clear Form", command=self.reset_form_fields)
+            self.reassign_button.configure(text="Reassign", command=self.reassign_item)
 
         if hasattr(self, "reassign_button_container") and hasattr(self, "reassign_button"):
             self.reassign_button.pack_forget()
@@ -59,6 +59,15 @@ class AddEditor(ManualEditor):
             pack_kwargs["before"] = self.user_erp_frame
         self.image_action_frame.pack(**pack_kwargs)
 
+        self.add_item_button = ctk.CTkButton(
+            self.image_action_frame,
+            text="<- Add Item",
+            command=self.add_new_item,
+            width=self.UPDATE_BUTTON_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT
+        )
+        self.add_item_button.pack(side="left", padx=5)
+
         self.import_button = ctk.CTkButton(
             self.image_action_frame,
             text="Import",
@@ -67,15 +76,6 @@ class AddEditor(ManualEditor):
             height=self.INPUT_FIELD_HEIGHT
         )
         self.import_button.pack(side="left", padx=5)
-
-        self.add_item_button = ctk.CTkButton(
-            self.image_action_frame,
-            text="Add Item",
-            command=self.add_new_item,
-            width=self.UPDATE_BUTTON_WIDTH,
-            height=self.INPUT_FIELD_HEIGHT
-        )
-        self.add_item_button.pack(side="left", padx=5)
 
         self.add_image_button = ctk.CTkButton(
             self.image_action_frame,
@@ -90,8 +90,13 @@ class AddEditor(ManualEditor):
     # Overrides
     # ------------------------------------------------------------------
     def set_selected_item(self, item_data, row_id):
-        """Override to ignore tree selections while in add mode."""
-        return
+        """Allow editing of selected draft items just like the manual tab."""
+        super().set_selected_item(item_data, row_id)
+
+        if item_data:
+            self.selected_image_path = item_data.get('Image', '') or ''
+        else:
+            self.selected_image_path = ""
 
     def reset_user_erp_name(self):
         """Clear ERP name instead of restoring from a selected row."""
@@ -144,10 +149,6 @@ class AddEditor(ManualEditor):
     def delete_selected_item(self):
         """Draft deletion is not implemented yet."""
         messagebox.showinfo("Not Available", "Draft deletion will be available in a future update.")
-
-    def reassign_item(self):
-        """Use the inherited Clear Form button to reset fields."""
-        self.reset_form_fields()
 
     # ------------------------------------------------------------------
     # Draft Item Workflow
