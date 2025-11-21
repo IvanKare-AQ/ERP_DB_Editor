@@ -222,12 +222,19 @@
 
 ### Tabbed Interface Redesign (v1.2.0)
 - **Modular Edit Panel Architecture**: Restructured right panel into three specialized tabs
-  - **Manual Tab (✏️)**: Manual editing, reassignment tools, and image management
+  - **Editor Tab (✏️)**: Item editing, reassignment tools, image management, and new item creation (formerly Manual tab)
   - **AI Tab (🤖)**: AI-powered editing with model management and prompt tools
   - **ML Tab (🧠)**: Placeholder for future machine learning features
-- **Accessible Add Tab Iconography**: The Add tab must include a high-contrast green "+" icon rendered via `CTkImage` so it remains visible regardless of theme background colors.
-- **Add Tab Editing Parity**: The Add tab reuses the manual editor layout, including the image preview row with `Import`, `Add Image`, and `<- Add Item` buttons directly beneath the placeholder. It must expose the same controls (Update All Fields, Delete Selected Item, Reassign) and apply buffered changes without touching the primary JSON until Save.
-- **Tab Switching Performance**: Tree view refresh is only triggered when switching between the Add tab and any other tab (Manual, AI, or ML). Switching between Manual, AI, and ML tabs does not trigger tree view refresh, improving performance and user experience.
+- **Editor Tab Functionality**: The Editor tab (formerly Manual) includes all item editing capabilities:
+  - Image action buttons: `<- Add Item` (leftmost), `Import`, and `Add Image` positioned below image preview
+  - `Suggest` button above `Reassign` button for category suggestions
+  - All editing controls (Update All Fields, Delete Selected Item, Reassign) available in single unified interface
+  - New item creation integrated directly into the editor workflow
+- **Tab Switching Performance**: Tree view refresh is only triggered when switching between tabs that require different data views. Switching between Editor, AI, and ML tabs does not trigger tree view refresh, improving performance and user experience.
+- **Save Button State Management**: Save button is disabled by default and only enabled when there are unsaved changes to the database, preventing accidental saves of unchanged data.
+- **Reassign Button State Management**: Reassign button is disabled until category/subcategory/sub-subcategory dropdowns are changed from their original values, providing clear visual feedback on when reassignment is available.
+- **View Toggle Functionality**: Toggle button in toolbar switches between "New Items" and "Current Items" views, with button label dynamically updating to reflect current view state.
+- **PN Display Format**: PN (Part Number) values are displayed as 7-digit numbers with leading zeros (e.g., 0000123) throughout the application for consistent formatting.
 - **Fixed Width Layout**: Right panel now uses consistent 1000px width across all tabs
 - **Component Separation**: Each tab is a self-contained module with dedicated file
   - `manual_editor.py`: Manual editing functionality (ERP Name, Manufacturer, REMARK)

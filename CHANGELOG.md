@@ -9,12 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Tree View Indexing**: Introduced an in-memory `row_id → DataFrame index` dictionary so edits, deletes, and saves locate rows in O(1) time.
+- **View Toggle Button**: Added toggle button in toolbar to switch between "New Items" and "Current Items" views, with button label indicating current view state.
+- **Save Button State Management**: Save button is now disabled by default and only enabled when there are unsaved changes to the database.
+- **Reassign Button State Management**: Reassign button is disabled until category/subcategory/sub-subcategory dropdowns are changed from their original values.
 
 ### Changed
 - **Buffered Editing**: `TreeViewWidget` now reuses cached DataFrames, invalidates them only through `_mark_data_dirty()`, and applies modifications in-place instead of cloning the full dataset on every action.
 - **Reassign UX**: Item reassignments update the existing tree node in place (with automatic fallback to a full refresh) which eliminates multi-second rebuilds in large datasets.
 - **Tab Switching Optimization**: Tree view refresh now only occurs when switching between the Add tab and other tabs (Manual, AI, ML). Switching between Manual, AI, and ML tabs no longer triggers tree view refresh, reducing unnecessary UI updates and improving performance.
 - **Add Tab Loading**: Draft items (`data/new_items.json`) load lazily the first time the Add tab opens, reducing startup time when drafts are unused.
+- **UI Consolidation**: Removed Add tab completely; Add Item, Import, and Suggest functionality moved to Editor tab for improved usability.
+- **Button Layout**: Reordered image action buttons with "<- Add Item" moved to the leftmost position.
+- **Tab Naming**: Renamed "Manual" tab to "Editor" and "Manual Editing" title to "Item editor" for clearer terminology.
+- **PN Display Format**: PN values are now displayed as 7-digit numbers with leading zeros (e.g., 0000123) in tree view and messages.
 
 ### Fixed
 - **Manual Editor**: Resetting an ERP Name now reports the restored value using the correct variable, eliminating the `original_erp_name` reference error.

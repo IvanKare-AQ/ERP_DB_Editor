@@ -43,6 +43,11 @@ class ManualEditor(ctk.CTkFrame):
         # Image handling
         self.current_image_photo = None  # Store PhotoImage reference
         self.image_handler = None  # Will be initialized when Excel file is loaded
+        
+        # Track original dropdown values for Reassign button state
+        self._original_category = None
+        self._original_subcategory = None
+        self._original_sub_subcategory = None
 
         # Panel will be sized by the tabview container
 
@@ -52,7 +57,7 @@ class ManualEditor(ctk.CTkFrame):
     def setup_manual_editor(self):
         """Setup the manual editor components."""
         # Title
-        self.title_label = ctk.CTkLabel(self, text="Manual Editing", font=ctk.CTkFont(size=16, weight="bold"))
+        self.title_label = ctk.CTkLabel(self, text="Item editor", font=ctk.CTkFont(size=16, weight="bold"))
         self.title_label.pack(pady=(10, 5))
         
         # Small image preview centered
@@ -72,16 +77,43 @@ class ManualEditor(ctk.CTkFrame):
         )
         self.image_preview_label.place(x=0, y=0, width=self.IMAGE_PREVIEW_SIZE, height=self.IMAGE_PREVIEW_SIZE)
 
-        # Add Image button below the preview
+        # Image action buttons frame (Add Item, Import, Add Image)
+        self.image_action_frame = ctk.CTkFrame(self)
+        self.image_action_frame.pack(pady=(0, 15))
+        
+        # Add Item button (moved to left)
+        self.add_item_button = ctk.CTkButton(
+            self.image_action_frame,
+            text="<- Add Item",
+            command=self.add_new_item,
+            width=self.UPDATE_BUTTON_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT
+        )
+        self.add_item_button.pack(side="left", padx=5)
+        
+        # Import button
+        self.import_button = ctk.CTkButton(
+            self.image_action_frame,
+            text="Import",
+            command=self.import_item,
+            width=self.UPDATE_BUTTON_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT
+        )
+        self.import_button.pack(side="left", padx=5)
+        
+        # Add Image button (enabled by default for adding new items)
         self.add_image_button = ctk.CTkButton(
-            self,
+            self.image_action_frame,
             text="Add Image",
             command=self.open_image_dialog,
             width=self.UPDATE_BUTTON_WIDTH,
             height=self.INPUT_FIELD_HEIGHT,
-            state="disabled"
+            state="normal"
         )
-        self.add_image_button.pack(pady=(0, 15))
+        self.add_image_button.pack(side="left", padx=5)
+        
+        # Track selected image path for new items
+        self.selected_image_path = ""
 
         # User ERP Name section
         self.setup_user_erp_name_section(self)
@@ -403,14 +435,26 @@ class ManualEditor(ctk.CTkFrame):
         self.sub_subcategory_dropdown = ctk.CTkOptionMenu(
             sub_subcategory_frame,
             values=["Select Sub-subcategory..."],
+            command=self.on_sub_subcategory_change,
             width=self.DROPDOWN_WIDTH
         )
         self.sub_subcategory_dropdown.pack(side="left", padx=5, pady=5)
 
-        # Right column for Reassign button
+        # Right column for Suggest and Reassign buttons
         right_column = ctk.CTkFrame(main_frame)
         right_column.pack(side="right", padx=(5, 10), pady=5)
         self.reassign_button_container = right_column
+
+        # Suggest button
+        self.suggest_button = ctk.CTkButton(
+            right_column,
+            text="Suggest",
+            command=self.suggest_category,
+            width=self.REASSIGN_BUTTON_WIDTH,
+            height=32,
+            state="normal"
+        )
+        self.suggest_button.pack(pady=(0, 5))
 
         # Reassign button
         self.reassign_button = ctk.CTkButton(
@@ -436,6 +480,7 @@ class ManualEditor(ctk.CTkFrame):
         if not category or category == "Select Category...":
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
             self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
+            self._update_reassign_button_state()
             return
 
         # Load subcategories for selected category
@@ -447,11 +492,13 @@ class ManualEditor(ctk.CTkFrame):
 
         # Reset sub_subcategory dropdown
         self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
+        self._update_reassign_button_state()
 
     def on_subcategory_change(self, subcategory):
         """Handle subcategory selection change."""
         if not subcategory or subcategory == "Select Subcategory...":
             self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
+            self._update_reassign_button_state()
             return
 
         category = self.category_dropdown.get()
@@ -464,6 +511,41 @@ class ManualEditor(ctk.CTkFrame):
             self.sub_subcategory_dropdown.configure(values=sub_subcategories)
         else:
             self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
+        self._update_reassign_button_state()
+    
+    def on_sub_subcategory_change(self, sub_subcategory):
+        """Handle sub-subcategory selection change."""
+        self._update_reassign_button_state()
+    
+    def _update_reassign_button_state(self):
+        """Update Reassign button state based on whether dropdowns have changed."""
+        if not self.selected_item or not self.selected_row_id:
+            self.reassign_button.configure(state="disabled")
+            return
+        
+        current_category = self.category_dropdown.get()
+        current_subcategory = self.subcategory_dropdown.get()
+        current_sub_subcategory = self.sub_subcategory_dropdown.get()
+        
+        # Check if any dropdown has changed from original values
+        has_changed = (
+            current_category != self._original_category or
+            current_subcategory != self._original_subcategory or
+            current_sub_subcategory != self._original_sub_subcategory
+        )
+        
+        # Also check that all dropdowns have valid selections
+        placeholder_values = {"Select Category...", "Select Subcategory...", "Select Sub-subcategory..."}
+        has_valid_selections = (
+            current_category and current_category not in placeholder_values and
+            current_subcategory and current_subcategory not in placeholder_values and
+            current_sub_subcategory and current_sub_subcategory not in placeholder_values
+        )
+        
+        if has_changed and has_valid_selections:
+            self.reassign_button.configure(state="normal")
+        else:
+            self.reassign_button.configure(state="disabled")
 
     def set_selected_item(self, item_data, row_id):
         """Set the selected item and populate the edit fields."""
@@ -544,6 +626,11 @@ class ManualEditor(ctk.CTkFrame):
             current_subcategory = item_data.get('Subcategory', '')
             current_sub_subcategory = item_data.get('Sub-subcategory', '')
 
+            # Store original values for Reassign button state tracking
+            self._original_category = current_category
+            self._original_subcategory = current_subcategory
+            self._original_sub_subcategory = current_sub_subcategory
+
             # Load categories first
             self.load_categories()
 
@@ -563,8 +650,8 @@ class ManualEditor(ctk.CTkFrame):
                             if current_sub_subcategory:
                                 self.sub_subcategory_dropdown.set(current_sub_subcategory)
 
-            # Enable buttons
-            self.reassign_button.configure(state="normal")
+            # Update Reassign button state (will be disabled initially since no changes yet)
+            self._update_reassign_button_state()
             
             # Update image preview
             self.update_image_preview()
@@ -662,31 +749,35 @@ class ManualEditor(ctk.CTkFrame):
 
     def open_image_dialog(self):
         """Open the image selection dialog."""
-        if not self.selected_item or not self.selected_row_id:
-            messagebox.showwarning("Warning", "Please select an item first")
+        # Allow image selection even when no item is selected (for adding new items)
+        if not self.main_window:
+            messagebox.showwarning("Warning", "Main window not available.")
             return
         
         # Initialize image handler if needed
-        if not self.image_handler and self.main_window:
+        if not self.image_handler:
             from src.backend.image_handler import ImageHandler
-            excel_path = self.main_window.current_file_path
-            self.image_handler = ImageHandler(excel_path)
+            db_path = self.main_window.current_file_path
+            self.image_handler = ImageHandler(db_path)
         
-        # Get PN for initial search
+        # Get PN for initial search; fall back to ERP name
         pn_value = self.pn_entry.get().strip()
         if pn_value:
             initial_search = pn_value
-        else:
+        elif self.selected_item:
             erp_name_obj = self.selected_item.get('ERP Name', {})
             if isinstance(erp_name_obj, dict):
                 initial_search = erp_name_obj.get('full_name', '')
             else:
                 initial_search = str(erp_name_obj) if erp_name_obj else ''
+        else:
+            # For new items, use ERP name from entry
+            initial_search = self.user_erp_name_entry.get().strip()
         
         # Open image dialog
         from src.gui.image_dialog import ImageSelectionDialog
         ImageSelectionDialog(
-            self.main_window.root if self.main_window else self,
+            self.main_window.root if hasattr(self.main_window, "root") else self,
             self.image_handler,
             initial_search,
             callback=self.on_image_selected
@@ -698,13 +789,15 @@ class ManualEditor(ctk.CTkFrame):
         Args:
             relative_path: Relative path to the saved image
         """
-        if not self.selected_row_id:
-            return
-        
-        # Update the Image column in user modifications
-        if self.selected_row_id not in self.tree_view.user_modifications:
-            self.tree_view.user_modifications[self.selected_row_id] = {}
-        self.tree_view.user_modifications[self.selected_row_id]['image'] = relative_path
+        # Store image path for new items or update existing item
+        if self.selected_row_id:
+            # Update the Image column in user modifications
+            if self.selected_row_id not in self.tree_view.user_modifications:
+                self.tree_view.user_modifications[self.selected_row_id] = {}
+            self.tree_view.user_modifications[self.selected_row_id]['image'] = relative_path
+        else:
+            # For new items, store in selected_image_path
+            self.selected_image_path = relative_path
         
         # Update the image preview
         self.load_and_display_image(relative_path)
@@ -895,6 +988,10 @@ class ManualEditor(ctk.CTkFrame):
         self.tree_view.update_user_erp_name(self.selected_row_id, erp_name_obj)
         self.tree_view.update_manufacturer(self.selected_row_id, manufacturer)
         self.tree_view.update_remark(self.selected_row_id, remark)
+        
+        # Notify main window about changes for Save button state
+        if self.main_window and hasattr(self.main_window, 'mark_data_changed'):
+            self.main_window.mark_data_changed()
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
@@ -1001,11 +1098,132 @@ class ManualEditor(ctk.CTkFrame):
         new_row_id = self.tree_view.reassign_item(self.selected_row_id, category, subcategory, sub_subcategory)
         if new_row_id:
             self.selected_row_id = new_row_id
+            # Update original values to new values after reassignment
+            self._original_category = category
+            self._original_subcategory = subcategory
+            self._original_sub_subcategory = sub_subcategory
+            # Disable Reassign button since values are now in sync
+            self._update_reassign_button_state()
+            
+            # Notify main window about changes for Save button state
+            if self.main_window and hasattr(self.main_window, 'mark_data_changed'):
+                self.main_window.mark_data_changed()
+            
             if self.main_window:
                 updated_data = self.main_window.get_original_row_data(new_row_id)
                 if updated_data:
-                    self.set_selected_item(updated_data, new_row_id)
+                    # Update selected item data but keep original dropdown values
+                    self.selected_item = updated_data
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
             self.main_window.update_status(f"Reassigned item to: {category} > {subcategory} > {sub_subcategory}")
+    
+    def import_item(self):
+        """Placeholder for future import capability."""
+        messagebox.showinfo("Coming Soon", "Importing items will be available in a future update.")
+    
+    def suggest_category(self):
+        """Placeholder for AI suggestion flow."""
+        messagebox.showinfo("Suggestion", "Suggestions will be provided in a future update.")
+    
+    def add_new_item(self):
+        """Validate inputs, build a draft item, and persist it to the temporary JSON."""
+        if not self.main_window or not hasattr(self.main_window, "json_handler"):
+            messagebox.showerror("Error", "JSON handler not available.")
+            return
+
+        full_name = self.user_erp_name_entry.get().strip()
+        category = self.category_dropdown.get().strip()
+        subcategory = self.subcategory_dropdown.get().strip()
+        sub_subcategory = self.sub_subcategory_dropdown.get().strip()
+
+        if not full_name:
+            messagebox.showwarning("Missing Data", "ERP Name is required.")
+            return
+
+        placeholder_values = {"Select Category...", "Select Subcategory...", "Select Sub-subcategory..."}
+        if (
+            not category
+            or not subcategory
+            or not sub_subcategory
+            or category in placeholder_values
+            or subcategory in placeholder_values
+            or sub_subcategory in placeholder_values
+        ):
+            messagebox.showwarning("Missing Data", "Please choose Category, Subcategory, and Sub-subcategory.")
+            return
+
+        json_handler = self.main_window.json_handler
+        pn_value = json_handler.get_next_available_pn()
+        item_payload = self._build_new_item_payload(pn_value, category, subcategory, sub_subcategory)
+
+        json_handler.add_added_item(item_payload)
+        json_handler.save_added_items()
+
+        if hasattr(self.main_window, "refresh_added_items_view"):
+            self.main_window.refresh_added_items_view()
+
+        # Format PN as 7 digits for display
+        pn_formatted = f"{pn_value:07d}"
+        messagebox.showinfo("Draft Saved", f"Draft item PN {pn_formatted} saved to the add queue.")
+        self._reset_form_fields_for_new_item()
+    
+    def _build_new_item_payload(self, pn_value, category, subcategory, sub_subcategory):
+        """Construct the JSON object for the new draft item."""
+        from typing import Any, Dict
+        
+        erp_name_obj = {
+            'full_name': self.user_erp_name_entry.get().strip(),
+            'type': self.type_entry.get().strip(),
+            'part_number': self.pn_entry.get().strip(),
+            'additional_parameters': self.details_entry.get().strip()
+        }
+
+        manufacturer = self.manufacturer_entry.get().strip()
+        remark = self.remark_entry.get().strip()
+
+        props = {}
+        if hasattr(self.main_window, "json_handler"):
+            props = self.main_window.json_handler.get_category_properties(category, subcategory, sub_subcategory) or {}
+
+        new_item = {
+            'PN': pn_value,
+            'ERP Name': erp_name_obj,
+            'Image': self.selected_image_path,
+            'Manufacturer': manufacturer,
+            'Remark': remark,
+            'Tracking Method': '',
+            'Use for ML': False,
+            'Category': category,
+            'Subcategory': subcategory,
+            'Sub-subcategory': sub_subcategory,
+            'Stage': props.get('stage', ''),
+            'Origin': props.get('origin', ''),
+            'Serialized': props.get('serialized', ''),
+            'Usage': props.get('usage', ''),
+            'CAD Name': '',
+            'EAN13': ''
+        }
+
+        return new_item
+    
+    def _reset_form_fields_for_new_item(self):
+        """Reset all fields to empty state after adding a new item."""
+        self.selected_image_path = ""
+        self.user_erp_name_entry.delete(0, tk.END)
+        self.type_entry.delete(0, tk.END)
+        self.pn_entry.delete(0, tk.END)
+        self.details_entry.delete(0, tk.END)
+        self.manufacturer_entry.delete(0, tk.END)
+        self.remark_entry.delete(0, tk.END)
+
+        self.image_preview_label.configure(image='', text="No Image")
+        self.current_image_photo = None
+
+        # Reset dropdowns to placeholders
+        self.category_dropdown.set("Select Category...")
+        self.subcategory_dropdown.set("Select Subcategory...")
+        self.subcategory_dropdown.configure(values=["Select Subcategory..."])
+        self.sub_subcategory_dropdown.set("Select Sub-subcategory...")
+        self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])

@@ -43,6 +43,8 @@ class MainWindow:
         
         # Track view changes
         self.view_has_changes = False
+        # Track data changes for Save button state
+        self.data_has_changes = False
         
         # Setup the GUI
         self.setup_gui()
@@ -160,6 +162,17 @@ class MainWindow:
         separator3 = ctk.CTkFrame(self.toolbar_frame, width=2, height=30)
         separator3.pack(side="left", padx=10, pady=5)
         
+        # View toggle button (New Items / Current Items)
+        self.view_toggle_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Current Items",
+            command=self.toggle_view,
+            width=120,
+            state="disabled"
+        )
+        self.view_toggle_button.pack(side="left", padx=5, pady=5)
+        self._showing_new_items = False
+        
         
     def create_content_area(self):
         """Create the main content area with tree view and edit panel."""
@@ -246,13 +259,13 @@ class MainWindow:
             
             # Enrich data with category properties
             self.json_handler.enrich_data()
-            # Defer loading added items until Add tab is opened (lazy loading)
-            # self.json_handler.load_added_items()  # Moved to on_tab_changed
+            # Load added items (for Add Item functionality in Manual tab)
+            self.json_handler.load_added_items()
             
             # Update tree view with data and categories
             self.tree_view.load_data(self.json_handler.get_data(), self.json_handler.get_categories())
-            # Initialize with empty added data - will load when Add tab opens
-            self.tree_view.set_added_data(pd.DataFrame())
+            # Initialize with added data
+            self.tree_view.set_added_data(self.json_handler.get_added_data())
             
             # Load saved filters after data is loaded
             saved_filters = self.config_manager.get_filters()
@@ -262,17 +275,14 @@ class MainWindow:
             # Update Save View button state after loading data and filters
             self.update_save_view_button_state()
             
-            # Enable buttons
-            self.save_button.configure(state="normal")
+            # Enable buttons (Save button stays disabled until changes are made)
+            self.save_button.configure(state="disabled")
             self.export_button.configure(state="normal")
             self.column_visibility_button.configure(state="normal")
             self.save_view_button.configure(state="normal")
             self.filter_button.configure(state="normal")
             self.clear_filters_button.configure(state="normal")
-            
-            # Respect the currently active tab
-            if hasattr(self, 'edit_panel') and self.edit_panel.is_add_tab_active():
-                self.tree_view.show_added_items()
+            self.view_toggle_button.configure(state="normal")
             
             # Update status and file info
             self.update_status("Database loaded successfully")
@@ -287,30 +297,34 @@ class MainWindow:
         if not hasattr(self, 'tree_view'):
             return
         # Ensure added items are loaded
-        if not hasattr(self.json_handler, '_added_items_loaded') or not self.json_handler._added_items_loaded:
-            self.json_handler.load_added_items()
-            self.json_handler._added_items_loaded = True
+        self.json_handler.load_added_items()
         self.tree_view.set_added_data(self.json_handler.get_added_data())
-        if hasattr(self, 'edit_panel') and self.edit_panel.is_add_tab_active():
+        # Update view if currently showing new items
+        if self._showing_new_items:
             self.tree_view.show_added_items()
     
-    def on_tab_changed(self, tab_name: str):
-        """React to tab changes so the tree view shows the correct dataset."""
+    def toggle_view(self):
+        """Toggle between New Items and Current Items view."""
         if not hasattr(self, 'tree_view'):
             return
         
-        if tab_name == "Add":
-            # Lazy load added items only when Add tab is opened
-            if not hasattr(self.json_handler, '_added_items_loaded') or not self.json_handler._added_items_loaded:
-                self.json_handler.load_added_items()
-                self.json_handler._added_items_loaded = True
-                self.tree_view.set_added_data(self.json_handler.get_added_data())
+        self._showing_new_items = not self._showing_new_items
+        
+        if self._showing_new_items:
             self.tree_view.show_added_items()
-            self.update_status("Viewing draft items")
+            self.view_toggle_button.configure(text="New Items")
+            self.update_status("Viewing new items")
         else:
             self.tree_view.show_primary_items()
-            self.update_status("Viewing loaded database")
+            self.view_toggle_button.configure(text="Current Items")
+            self.update_status("Viewing current items")
             
+    def mark_data_changed(self):
+        """Mark that data has been changed, enabling Save button."""
+        self.data_has_changes = True
+        if hasattr(self, 'save_button'):
+            self.save_button.configure(state="normal")
+    
     def save_database(self):
         """Save the database to JSON."""
         try:
@@ -319,6 +333,10 @@ class MainWindow:
             # Get data with user modifications applied
             data = self.get_data_with_modifications()
             self.json_handler.save_file(data=data)
+            
+            # Reset data changes flag and disable Save button
+            self.data_has_changes = False
+            self.save_button.configure(state="disabled")
             
             self.update_status("Database saved successfully")
         except Exception as e:
@@ -522,17 +540,16 @@ class MainWindow:
                         erp_items.append((original_data, row_id))
             
             if erp_items:
-                target_editor = self.edit_panel.add_editor if self.edit_panel.is_add_tab_active() else self.edit_panel.manual_editor
                 # If only one ERP item selected, populate manual edit panel
                 if len(erp_items) == 1:
                     original_data, row_id = erp_items[0]
-                    target_editor.set_selected_item(original_data, row_id)
+                    self.edit_panel.manual_editor.set_selected_item(original_data, row_id)
                     erp_name_obj = original_data.get('ERP Name', {})
                     erp_name = erp_name_obj.get('full_name', 'Unknown') if isinstance(erp_name_obj, dict) else str(erp_name_obj) if erp_name_obj else 'Unknown'
                     self.update_status(f"Selected: {erp_name}")
                 else:
                     # Multiple ERP items selected
-                    target_editor.set_selected_item(None, None)
+                    self.edit_panel.manual_editor.set_selected_item(None, None)
                     self.update_status(f"Selected {len(erp_items)} items")
                 
                 # Store selected items for multi-selection operations
@@ -543,19 +560,13 @@ class MainWindow:
                     self.edit_panel.ai_editor.update_apply_to_selected_button_state()
             else:
                 # No ERP items selected
-                if self.edit_panel.is_add_tab_active():
-                    self.edit_panel.add_editor.set_selected_item(None, None)
-                else:
-                    self.edit_panel.manual_editor.set_selected_item(None, None)
+                self.edit_panel.manual_editor.set_selected_item(None, None)
                 self.tree_view.selected_items = []
                 if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
                     self.edit_panel.ai_editor.update_apply_to_selected_button_state()
                 self.update_status("Ready")
         else:
-            if self.edit_panel.is_add_tab_active():
-                self.edit_panel.add_editor.set_selected_item(None, None)
-            else:
-                self.edit_panel.manual_editor.set_selected_item(None, None)
+            self.edit_panel.manual_editor.set_selected_item(None, None)
             self.tree_view.selected_items = []
             if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
                 self.edit_panel.ai_editor.update_apply_to_selected_button_state()
@@ -776,8 +787,6 @@ class MainWindow:
             
             # Reload the tree view with the updated data from JSON handler
             self.tree_view.load_data(self.json_handler.get_data())
-            if hasattr(self, 'edit_panel') and self.edit_panel.is_add_tab_active():
-                self.tree_view.show_added_items()
             
             # Update status with results
             if result["converted"] > 0:
@@ -827,8 +836,6 @@ class MainWindow:
             
             # Reload the tree view with the updated data from JSON handler
             self.tree_view.load_data(self.json_handler.get_data())
-            if hasattr(self, 'edit_panel') and self.edit_panel.is_add_tab_active():
-                self.tree_view.show_added_items()
             
             # Update status with results
             if result["converted"] > 0:

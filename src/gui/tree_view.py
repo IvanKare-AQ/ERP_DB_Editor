@@ -451,6 +451,17 @@ class TreeViewWidget(ctk.CTkFrame):
             if col == "ERP Name":
                 # Extract full_name from ERP name object for display
                 values.append(self._get_erp_name_full(row))
+            elif col == "PN":
+                # Format PN as 7 digits with leading zeros
+                pn_value = row.get(data_col, '')
+                if pn_value and pd.notna(pn_value):
+                    try:
+                        pn_int = int(pn_value)
+                        values.append(f"{pn_int:07d}")
+                    except (ValueError, TypeError):
+                        values.append(str(pn_value))
+                else:
+                    values.append('')
             else:
                 values.append(row.get(data_col, ''))
         
