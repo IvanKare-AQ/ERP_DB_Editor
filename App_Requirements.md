@@ -227,6 +227,7 @@
   - **ML Tab (🧠)**: Placeholder for future machine learning features
 - **Accessible Add Tab Iconography**: The Add tab must include a high-contrast green "+" icon rendered via `CTkImage` so it remains visible regardless of theme background colors.
 - **Add Tab Editing Parity**: The Add tab reuses the manual editor layout, including the image preview row with `Import`, `Add Image`, and `<- Add Item` buttons directly beneath the placeholder. It must expose the same controls (Update All Fields, Delete Selected Item, Reassign) and apply buffered changes without touching the primary JSON until Save.
+- **Tab Switching Performance**: Tree view refresh is only triggered when switching between the Add tab and any other tab (Manual, AI, or ML). Switching between Manual, AI, and ML tabs does not trigger tree view refresh, improving performance and user experience.
 - **Fixed Width Layout**: Right panel now uses consistent 1000px width across all tabs
 - **Component Separation**: Each tab is a self-contained module with dedicated file
   - `manual_editor.py`: Manual editing functionality (ERP Name, Manufacturer, REMARK)

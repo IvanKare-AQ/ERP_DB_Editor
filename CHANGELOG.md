@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Buffered Editing**: `TreeViewWidget` now reuses cached DataFrames, invalidates them only through `_mark_data_dirty()`, and applies modifications in-place instead of cloning the full dataset on every action.
 - **Reassign UX**: Item reassignments update the existing tree node in place (with automatic fallback to a full refresh) which eliminates multi-second rebuilds in large datasets.
+- **Tab Switching Optimization**: Tree view refresh now only occurs when switching between the Add tab and other tabs (Manual, AI, ML). Switching between Manual, AI, and ML tabs no longer triggers tree view refresh, reducing unnecessary UI updates and improving performance.
 - **Add Tab Loading**: Draft items (`data/new_items.json`) load lazily the first time the Add tab opens, reducing startup time when drafts are unused.
 
 ### Fixed

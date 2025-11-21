@@ -39,6 +39,7 @@ class EditPanel(ctk.CTkFrame):
         self.tabview = ctk.CTkTabview(self, width=self.PANEL_WIDTH)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
         self.tabview.configure(command=self._on_tab_changed)
+        self._last_add_state = None
 
         # Add tabs (ordering: Add, Manual, AI, ML)
         self.add_tab = self.tabview.add("Add")  # Add tab for database insertions with custom icon
@@ -81,9 +82,22 @@ class EditPanel(ctk.CTkFrame):
     # Internal helpers
     # ------------------------------------------------------------------
     def _on_tab_changed(self):
-        """Notify the main window when the user switches tabs."""
-        if self.main_window and hasattr(self.main_window, "on_tab_changed"):
-            self.main_window.on_tab_changed(self.tabview.get())
+        """Notify the main window when switching into or out of the Add tab."""
+        if not (self.main_window and hasattr(self.main_window, "on_tab_changed")):
+            return
+
+        is_add = self.is_add_tab_active()
+        if self._last_add_state is None:
+            self._last_add_state = is_add
+            if is_add:
+                self.main_window.on_tab_changed("Add")
+            return
+
+        if is_add == self._last_add_state:
+            return
+
+        self._last_add_state = is_add
+        self.main_window.on_tab_changed(self.tabview.get())
 
     def _create_add_tab_icon(self, size=16, line_width=2):
         """Create a green plus icon for the Add tab."""
