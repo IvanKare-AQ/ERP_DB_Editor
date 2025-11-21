@@ -60,6 +60,14 @@
 - Hierarchical dropdown population and filtering
 - Use virtual environment (venv) for this application
 
+## Performance and Caching Requirements
+- Initial JSON load may be slow, but all subsequent operations must work exclusively from cached pandas DataFrames (no additional disk reads until Save/Export).
+- Tree view must maintain an in-memory `row_id → DataFrame index` dictionary so edit paths (reassign, update fields, delete) can locate rows in O(1) time.
+- Reassigning an item should update only the impacted tree node (incremental move) and fall back to a full rebuild only when incremental updates fail.
+- Filtered/modified datasets must be cached and invalidated via `_mark_data_dirty()` so editing no longer clones the full DataFrame on every keystroke.
+- Added-tab drafts load lazily—`new_items.json` is touched only when the Add tab becomes active or when draft data is saved.
+- All buffered edits (field updates, image changes, reassignments) must immediately refresh the UI using cached data without reloading the JSON file.
+
 ## Future Requirements
 - Requirements will be populated as application development progresses
 - Additional features to be added based on development needs

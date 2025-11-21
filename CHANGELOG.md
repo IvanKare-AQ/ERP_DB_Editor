@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Tree View Indexing**: Introduced an in-memory `row_id → DataFrame index` dictionary so edits, deletes, and saves locate rows in O(1) time.
+
+### Changed
+- **Buffered Editing**: `TreeViewWidget` now reuses cached DataFrames, invalidates them only through `_mark_data_dirty()`, and applies modifications in-place instead of cloning the full dataset on every action.
+- **Reassign UX**: Item reassignments update the existing tree node in place (with automatic fallback to a full refresh) which eliminates multi-second rebuilds in large datasets.
+- **Add Tab Loading**: Draft items (`data/new_items.json`) load lazily the first time the Add tab opens, reducing startup time when drafts are unused.
+
 ### Fixed
 - **Manual Editor**: Resetting an ERP Name now reports the restored value using the correct variable, eliminating the `original_erp_name` reference error.
 

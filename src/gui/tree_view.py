@@ -33,6 +33,10 @@ class TreeViewWidget(ctk.CTkFrame):
         self._filtered_cache = None
         self._base_data_id = None
         
+        # Performance optimization: row_id → row index mapping for O(1) lookups
+        self._row_id_index = {}  # Maps row_id to DataFrame index
+        self._row_id_index_version = 0  # Tracks when index needs rebuilding
+        
         # User modifications tracking
         self.user_modifications = {}
         self.selected_item = None
@@ -81,6 +85,33 @@ class TreeViewWidget(ctk.CTkFrame):
     def _invalidate_filtered_cache(self):
         self._filtered_cache = None
 
+    def _rebuild_row_id_index(self):
+        """Build a row_id → DataFrame index mapping for O(1) lookups."""
+        self._row_id_index = {}
+        if self.data is None or self.data.empty:
+            self._row_id_index_version = 0
+            return
+        
+        def get_erp_full_name(erp_obj):
+            if isinstance(erp_obj, dict):
+                return erp_obj.get('full_name', '')
+            elif pd.isna(erp_obj):
+                return ''
+            else:
+                return str(erp_obj)
+        
+        erp_name_series = self.data['ERP Name'].apply(get_erp_full_name)
+        
+        for idx, row in self.data.iterrows():
+            erp_name = erp_name_series.iloc[idx] if idx < len(erp_name_series) else get_erp_full_name(row.get('ERP Name', ''))
+            category = row.get('Category', '')
+            subcategory = row.get('Subcategory', '')
+            sub_subcategory = row.get('Sub-subcategory', '')
+            row_id = self._build_row_id(erp_name, category, subcategory, sub_subcategory)
+            self._row_id_index[row_id] = idx
+        
+        self._row_id_index_version = self._mod_version
+    
     def _mark_data_dirty(self):
         self._mod_version += 1
         self._invalidate_caches()
@@ -239,14 +270,19 @@ class TreeViewWidget(ctk.CTkFrame):
             
     def load_data(self, data, categories=None, set_primary=True):
         """Load data into the tree view."""
-        data_to_use = pd.DataFrame() if data is None else data.copy(deep=True)
+        # Use shallow copy for better performance - only copy if we need to modify
+        data_to_use = pd.DataFrame() if data is None else data.copy(deep=False)
         self.data = data_to_use
         if set_primary:
+            # Only deep copy primary data once on initial load
             self.primary_data = data_to_use.copy(deep=True)
             self.primary_columns = list(data_to_use.columns)
             self.current_view = "primary"
         self.categories = categories if categories is not None else self.categories
         self._base_data_id = id(self.data)
+        # Only rebuild index for primary data (not for added items)
+        if set_primary or self.current_view == "primary":
+            self._rebuild_row_id_index()
         self._mark_data_dirty()
         
         # Extract columns from data (source of truth)
@@ -702,44 +738,38 @@ class TreeViewWidget(ctk.CTkFrame):
         if cache and cache['version'] == self._mod_version and cache['base_id'] == self._base_data_id:
             return cache['data']
 
+        # Rebuild index if data changed
+        if self._row_id_index_version != self._mod_version or not self._row_id_index:
+            self._rebuild_row_id_index()
+
+        # Use shallow copy for better performance - we'll modify in place
         data = self.data.copy()
 
-        def get_erp_full_name(erp_obj):
-            if isinstance(erp_obj, dict):
-                return erp_obj.get('full_name', '')
-            elif pd.isna(erp_obj):
-                return ''
-            else:
-                return str(erp_obj)
-
-        erp_name_series = data['ERP Name'].apply(get_erp_full_name)
-
+        # Use index dictionary for O(1) lookups instead of scanning DataFrame
         for row_id, mods in self.user_modifications.items():
             base_row_id = mods.get('_base_row_id', row_id)
-            erp_name, category, subcategory, sub_subcategory = self._parse_row_id(base_row_id)
-            if not erp_name:
+            
+            # Look up row index directly from dictionary
+            if base_row_id not in self._row_id_index:
                 continue
-            mask = (
-                (erp_name_series == erp_name) &
-                (data['Category'] == category) &
-                (data['Subcategory'] == subcategory) &
-                (data['Sub-subcategory'] == sub_subcategory)
-            )
-            if not mask.any():
+            
+            idx = self._row_id_index[base_row_id]
+            if idx not in data.index:
                 continue
 
+            # Apply modifications directly to the row
             if 'new_category' in mods and 'new_subcategory' in mods and 'new_sub_subcategory' in mods:
-                data.loc[mask, 'Category'] = mods['new_category']
-                data.loc[mask, 'Subcategory'] = mods['new_subcategory']
-                data.loc[mask, 'Sub-subcategory'] = mods['new_sub_subcategory']
+                data.at[idx, 'Category'] = mods['new_category']
+                data.at[idx, 'Subcategory'] = mods['new_subcategory']
+                data.at[idx, 'Sub-subcategory'] = mods['new_sub_subcategory']
             if 'erp_name' in mods and mods['erp_name']:
-                data.loc[mask, 'ERP Name'] = mods['erp_name']
+                data.at[idx, 'ERP Name'] = mods['erp_name']
             if 'manufacturer' in mods:
-                data.loc[mask, 'Manufacturer'] = mods['manufacturer']
+                data.at[idx, 'Manufacturer'] = mods['manufacturer']
             if 'remark' in mods:
-                data.loc[mask, 'Remark'] = mods['remark']
+                data.at[idx, 'Remark'] = mods['remark']
             if 'image' in mods:
-                data.loc[mask, 'Image'] = mods['image']
+                data.at[idx, 'Image'] = mods['image']
 
         self._modified_cache = {
             'version': self._mod_version,
@@ -797,8 +827,12 @@ class TreeViewWidget(ctk.CTkFrame):
         else:
             columns = self.primary_columns if self.primary_columns else self.get_all_columns()
             dataset = pd.DataFrame(columns=columns)
-        self.load_data(dataset, self.categories, set_primary=False)
+        # Don't rebuild index for added items - they're temporary
+        self.data = dataset
+        self._base_data_id = id(self.data)
+        self._mark_data_dirty()
         self.current_view = "added"
+        self.refresh_view()
 
     def show_primary_items(self) -> None:
         """Return the tree view to the main dataset."""
@@ -806,8 +840,13 @@ class TreeViewWidget(ctk.CTkFrame):
             dataset = self.primary_data
         else:
             dataset = pd.DataFrame(columns=self.primary_columns)
-        self.load_data(dataset, self.categories, set_primary=False)
+        # Rebuild index when switching back to primary data
+        self.data = dataset
+        self._base_data_id = id(self.data)
+        self._rebuild_row_id_index()
+        self._mark_data_dirty()
         self.current_view = "primary"
+        self.refresh_view()
 
     def is_showing_added_items(self) -> bool:
         """Whether the tree view currently displays draft items."""
@@ -864,6 +903,68 @@ class TreeViewWidget(ctk.CTkFrame):
         # Note: Remark updates will be reflected in tree view when data is refreshed
         self._mark_data_dirty()
     
+    def _find_tree_item_by_row_id(self, row_id):
+        """Find the tree item (node) that corresponds to a given row_id."""
+        def search_recursive(item):
+            tags = self.tree.item(item, "tags")
+            if tags and len(tags) >= 2:
+                # Check if this is an ERP item with matching row_id
+                if tags[1] == row_id:
+                    return item
+            # Search children
+            for child in self.tree.get_children(item):
+                result = search_recursive(child)
+                if result:
+                    return result
+            return None
+        
+        # Search from root
+        for root_item in self.tree.get_children():
+            result = search_recursive(root_item)
+            if result:
+                return result
+        return None
+    
+    def _find_or_create_category_path(self, category, subcategory, sub_subcategory):
+        """Find or create the tree path for a category/subcategory/sub-subcategory."""
+        # Find category node
+        category_node = None
+        for item in self.tree.get_children():
+            if self.tree.item(item, "text") == category:
+                category_node = item
+                break
+        
+        if not category_node:
+            category_node = self.tree.insert("", "end", text=category,
+                                            values=self._get_empty_values(),
+                                            tags=("category",))
+        
+        # Find subcategory node
+        subcategory_node = None
+        for item in self.tree.get_children(category_node):
+            if self.tree.item(item, "text") == subcategory:
+                subcategory_node = item
+                break
+        
+        if not subcategory_node:
+            subcategory_node = self.tree.insert(category_node, "end", text=subcategory,
+                                                values=self._get_empty_values(),
+                                                tags=("subcategory",))
+        
+        # Find sub-subcategory node
+        sub_subcategory_node = None
+        for item in self.tree.get_children(subcategory_node):
+            if self.tree.item(item, "text") == sub_subcategory:
+                sub_subcategory_node = item
+                break
+        
+        if not sub_subcategory_node:
+            sub_subcategory_node = self.tree.insert(subcategory_node, "end", text=sub_subcategory,
+                                                    values=self._get_empty_values(),
+                                                    tags=("sub_subcategory",))
+        
+        return sub_subcategory_node
+    
     def reassign_item(self, row_id, new_category, new_subcategory, new_sub_subcategory):
         """Reassign an item to a new category, subcategory, and sub_subcategory."""
         entry = self._ensure_mod_entry(row_id)
@@ -880,8 +981,53 @@ class TreeViewWidget(ctk.CTkFrame):
             del self.user_modifications[row_id]
 
         self._mark_data_dirty()
-        self.refresh_view()
+        
+        # Try incremental update first - only rebuild if it fails
+        if self._try_incremental_reassign(row_id, new_row_id, new_category, new_subcategory, new_sub_subcategory):
+            # Successfully updated incrementally
+            pass
+        else:
+            # Fall back to full refresh if incremental update fails
+            self.refresh_view()
+        
         return new_row_id
+    
+    def _try_incremental_reassign(self, old_row_id, new_row_id, new_category, new_subcategory, new_sub_subcategory):
+        """Try to update the tree incrementally instead of rebuilding. Returns True if successful."""
+        try:
+            # Find the tree item to move
+            tree_item = self._find_tree_item_by_row_id(old_row_id)
+            if not tree_item:
+                return False
+            
+            # Get the item's data before moving
+            item_text = self.tree.item(tree_item, "text")
+            item_values = self.tree.item(tree_item, "values")
+            item_tags = list(self.tree.item(tree_item, "tags"))
+            
+            # Update the row_id in tags
+            if len(item_tags) >= 2:
+                item_tags[1] = new_row_id
+            
+            # Find or create the new parent path
+            new_parent = self._find_or_create_category_path(new_category, new_subcategory, new_sub_subcategory)
+            
+            # Move the item to the new location
+            self.tree.move(tree_item, new_parent, "end")
+            
+            # Update the item's tags with new row_id
+            self.tree.item(tree_item, tags=tuple(item_tags))
+            
+            # Update row_id index
+            if old_row_id in self._row_id_index:
+                idx = self._row_id_index.pop(old_row_id)
+                self._row_id_index[new_row_id] = idx
+            
+            return True
+        except Exception as e:
+            # If anything goes wrong, return False to trigger full refresh
+            print(f"Incremental reassign failed: {e}")
+            return False
     
     def update_tree_item_erp_name(self, row_id, erp_name):
         """Update the ERP name (tree item text) for a specific tree item without refreshing the entire view."""
@@ -1016,32 +1162,15 @@ class TreeViewWidget(ctk.CTkFrame):
         if row_id in self.user_modifications:
             del self.user_modifications[row_id]
             
-        # Remove from data
-        if self.data is not None and not self.data.empty:
-            # Find the row index by matching the row_id components
-            base_row_id = self._get_base_row_id(row_id)
-            erp_name, category, subcategory, sub_subcategory = self._parse_row_id(base_row_id)
-            if erp_name:
-                
-                # Create mask to find the row to delete - extract full_name from ERP name object
-                def get_erp_full_name(erp_obj):
-                    if isinstance(erp_obj, dict):
-                        return erp_obj.get('full_name', '')
-                    elif pd.isna(erp_obj):
-                        return ''
-                    else:
-                        return str(erp_obj)
-                
-                erp_name_series = self.data['ERP Name'].apply(get_erp_full_name)
-                mask = (
-                    (erp_name_series == erp_name) &
-                    (self.data['Category'] == category) &
-                    (self.data['Subcategory'] == subcategory) &
-                    (self.data['Sub-subcategory'] == sub_subcategory)
-                )
-                
-                # Remove the row
-                self.data = self.data[~mask]
+        # Remove from data using index for O(1) lookup
+        base_row_id = self._get_base_row_id(row_id)
+        if base_row_id in self._row_id_index:
+            idx = self._row_id_index[base_row_id]
+            if idx in self.data.index:
+                # Remove the row from DataFrame
+                self.data = self.data.drop(idx)
+                # Remove from index dictionary
+                del self._row_id_index[base_row_id]
                 self._base_data_id = id(self.data)
                 self._mark_data_dirty()
                 

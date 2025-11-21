@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import os
 import sys
+import pandas as pd
 
 # Add the project root to the Python path
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -245,11 +246,13 @@ class MainWindow:
             
             # Enrich data with category properties
             self.json_handler.enrich_data()
-            self.json_handler.load_added_items()
+            # Defer loading added items until Add tab is opened (lazy loading)
+            # self.json_handler.load_added_items()  # Moved to on_tab_changed
             
             # Update tree view with data and categories
             self.tree_view.load_data(self.json_handler.get_data(), self.json_handler.get_categories())
-            self.tree_view.set_added_data(self.json_handler.get_added_data())
+            # Initialize with empty added data - will load when Add tab opens
+            self.tree_view.set_added_data(pd.DataFrame())
             
             # Load saved filters after data is loaded
             saved_filters = self.config_manager.get_filters()
@@ -283,6 +286,10 @@ class MainWindow:
         """Synchronize the tree view with the latest draft items."""
         if not hasattr(self, 'tree_view'):
             return
+        # Ensure added items are loaded
+        if not hasattr(self.json_handler, '_added_items_loaded') or not self.json_handler._added_items_loaded:
+            self.json_handler.load_added_items()
+            self.json_handler._added_items_loaded = True
         self.tree_view.set_added_data(self.json_handler.get_added_data())
         if hasattr(self, 'edit_panel') and self.edit_panel.is_add_tab_active():
             self.tree_view.show_added_items()
@@ -293,6 +300,11 @@ class MainWindow:
             return
         
         if tab_name == "Add":
+            # Lazy load added items only when Add tab is opened
+            if not hasattr(self.json_handler, '_added_items_loaded') or not self.json_handler._added_items_loaded:
+                self.json_handler.load_added_items()
+                self.json_handler._added_items_loaded = True
+                self.tree_view.set_added_data(self.json_handler.get_added_data())
             self.tree_view.show_added_items()
             self.update_status("Viewing draft items")
         else:

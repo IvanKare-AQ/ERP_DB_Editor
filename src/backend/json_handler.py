@@ -25,6 +25,7 @@ class JsonHandler:
         self.added_file_path = os.path.join(project_root, "data", "new_items.json")
         self.added_data = pd.DataFrame()
         self.schema_columns: List[str] = []
+        self._added_items_loaded = False  # Track if added items have been loaded (lazy loading)
         
     def load_categories(self) -> None:
         """Load the categories JSON file into memory."""
