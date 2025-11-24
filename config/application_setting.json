@@ -8,7 +8,11 @@
         ]
     },
     "view_settings": {
-        "filters": {}
+        "filters": {},
+        "tree_expansion": {
+            "primary": {},
+            "added": {}
+        }
     },
     "ai_settings": {
         "selected_model": "gemma3:27b-it-qat",

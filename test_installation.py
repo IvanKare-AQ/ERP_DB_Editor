@@ -44,7 +44,7 @@ def test_project_structure():
         'src/gui/column_visibility.py',
         'src/backend/excel_handler.py',
         'src/backend/config_manager.py',
-        'config/default_settings.json'
+        'config/application_setting.json'
     ]
     
     print("\nTesting project structure...")

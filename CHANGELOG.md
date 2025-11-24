@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Validates PN uniqueness, ERP Name completeness, and category paths before promoting items
   - Appends validated drafts to `data/component_database.json`, clears `data/new_items.json`, and refreshes the tree view without discarding in-memory edits
   - Detailed error reporting prevents partial commits while keeping existing data untouched
+- **Tree Expansion Persistence**: Tree view now preserves user expansion state for primary and draft datasets, avoids forced auto-expansion after edits, and saves/restores the expansion map through Save View.
 
 ### Changed
 - **Buffered Editing**: `TreeViewWidget` now reuses cached DataFrames, invalidates them only through `_mark_data_dirty()`, and applies modifications in-place instead of cloning the full dataset on every action.
@@ -43,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Button Layout**: Reordered image action buttons with "<- Add Item" moved to the leftmost position.
 - **Tab Naming**: Renamed "Manual" tab to "Editor" and "Manual Editing" title to "Item editor" for clearer terminology.
 - **PN Display Format**: PN values are now displayed as 7-digit numbers with leading zeros (e.g., 0000123) in tree view and messages.
+- **Settings File Rename**: `config/default_settings.json` has been renamed to `config/application_setting.json` to reflect the broader scope of saved preferences (columns, filters, AI settings, and tree expansion state).
 
 ### Fixed
 - **Manual Editor**: Resetting an ERP Name now reports the restored value using the correct variable, eliminating the `original_erp_name` reference error.
@@ -69,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Apply User ERP Names Button**: Removed button that moved User ERP Name to ERP name (no longer needed)
 - **Clear User ERP Name Button**: Removed button for clearing User ERP Name (no longer needed)
 - **Hardcoded Column Lists**: Removed all hardcoded column lists - columns now come from data structure
-- **Rows Configuration**: Removed "rows" array from `config/default_settings.json` (columns now dynamic)
+- **Rows Configuration**: Removed "rows" array from `config/application_setting.json` (columns now dynamic)
 
 ### Fixed
 - **Column Visibility**: Column visibility now automatically saves to config when changed

@@ -6,6 +6,7 @@ Displays data in hierarchical tree format with Category, Subcategory, and Sub-su
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import ttk
+from typing import Dict
 import pandas as pd
 
 
@@ -13,6 +14,7 @@ class TreeViewWidget(ctk.CTkFrame):
     """Tree view widget for displaying hierarchical ERP data."""
     
     ROW_ID_DELIMITER = "◆◆◆"
+    EXPANSION_PATH_DELIMITER = "|||"
     
     def __init__(self, parent, config_manager=None):
         """Initialize the tree view widget."""
@@ -28,6 +30,11 @@ class TreeViewWidget(ctk.CTkFrame):
         self.primary_columns = []
         self.added_data = pd.DataFrame()
         self.current_view = "primary"
+        self._tree_visual_view = "primary"
+        self._expansion_states = {
+            "primary": {},
+            "added": {}
+        }
         self._mod_version = 0
         self._modified_cache = None
         self._filtered_cache = None
@@ -474,24 +481,99 @@ class TreeViewWidget(ctk.CTkFrame):
                        values=tuple(values),
                        tags=(row_tag, row_id))
         
-        # Expand all nodes by default
-        self.expand_all()
         
-    def expand_all(self):
-        """Expand all tree nodes."""
-        def expand_children(item):
-            for child in self.tree.get_children(item):
-                self.tree.item(child, open=True)
-                expand_children(child)
-        
-        for item in self.tree.get_children():
-            self.tree.item(item, open=True)
-            expand_children(item)
-    
     def _get_empty_values(self):
         """Get empty values tuple matching the number of columns."""
         columns = self.tree["columns"] if self.tree["columns"] else []
         return ("",) * len(columns)
+    
+    # ------------------------------------------------------------------
+    # Expansion state helpers
+    # ------------------------------------------------------------------
+    def _expand_all_nodes(self):
+        """Expand every node in the tree (fallback when no saved state)."""
+        def expand_children(item):
+            self.tree.item(item, open=True)
+            for child in self.tree.get_children(item):
+                expand_children(child)
+        
+        for item in self.tree.get_children():
+            expand_children(item)
+    
+    def _capture_expansion_state(self, view_key: str = None):
+        """Capture which nodes are expanded for the currently rendered view."""
+        if not hasattr(self, "tree"):
+            return
+        
+        children = self.tree.get_children()
+        if view_key is None:
+            view_key = self._tree_visual_view
+        if view_key not in self._expansion_states:
+            self._expansion_states[view_key] = {}
+        
+        state = {}
+        
+        def traverse(item, path):
+            text = self.tree.item(item, "text") or ""
+            node_path = path + (text,)
+            state[node_path] = bool(self.tree.item(item, "open"))
+            for child in self.tree.get_children(item):
+                traverse(child, node_path)
+        
+        if children:
+            for child in children:
+                traverse(child, tuple())
+            self._expansion_states[view_key] = state
+        elif view_key not in self._expansion_states:
+            self._expansion_states[view_key] = {}
+    
+    def _restore_expansion_state(self):
+        """Restore expanded/collapsed nodes for the target view."""
+        state = self._expansion_states.get(self.current_view, {})
+        if not state:
+            self._expand_all_nodes()
+            return
+        
+        def traverse(item, path):
+            text = self.tree.item(item, "text") or ""
+            node_path = path + (text,)
+            if node_path in state:
+                self.tree.item(item, open=state[node_path])
+            for child in self.tree.get_children(item):
+                traverse(child, node_path)
+        
+        for child in self.tree.get_children():
+            traverse(child, tuple())
+    
+    def get_expansion_state_for_config(self) -> Dict[str, Dict[str, bool]]:
+        """Return a serializable representation of expansion state for all views."""
+        self._capture_expansion_state(view_key=self._tree_visual_view)
+        serialized = {}
+        for view, state in self._expansion_states.items():
+            serialized[view] = {
+                self.EXPANSION_PATH_DELIMITER.join(path): bool(is_open)
+                for path, is_open in state.items()
+            }
+        return serialized
+    
+    def load_expansion_state_from_config(self, serialized_state: Dict[str, Dict[str, bool]]) -> None:
+        """Load expansion state persisted in configuration."""
+        if not isinstance(serialized_state, dict):
+            return
+        
+        for view, state in serialized_state.items():
+            parsed = {}
+            if isinstance(state, dict):
+                for key, value in state.items():
+                    if key:
+                        path = tuple(key.split(self.EXPANSION_PATH_DELIMITER))
+                    else:
+                        path = tuple()
+                    parsed[path] = bool(value)
+            self._expansion_states[view] = parsed
+        
+        for view in ("primary", "added"):
+            self._expansion_states.setdefault(view, {})
             
     def get_data(self):
         """Get the current data from the tree view."""
@@ -533,15 +615,18 @@ class TreeViewWidget(ctk.CTkFrame):
             # Store current data
             current_data = self.data
             
+            # Preserve current expansion state before rebuilding
+            self._capture_expansion_state()
+            
             # Clear and recreate tree with new columns
             self.clear_tree()
             self.setup_columns_with_visibility(visible_columns)
             
             # Reload data with new column structure
             self.populate_tree_with_visibility(current_data, visible_columns)
-            
-            # Expand all nodes
-            self.expand_all()
+            self._restore_expansion_state()
+            self._tree_visual_view = self.current_view
+            self._capture_expansion_state(view_key=self.current_view)
     
     def setup_columns_with_visibility(self, visible_columns):
         """Setup tree view columns with only visible columns."""
@@ -796,6 +881,8 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def refresh_view(self):
         """Refresh the tree view with current filters and visibility settings."""
+        self._capture_expansion_state()
+        
         if self.data is not None and not self.data.empty:
             # Get filtered data
             self.filtered_data = self.get_filtered_data()
@@ -810,16 +897,18 @@ class TreeViewWidget(ctk.CTkFrame):
             else:
                 # Group data by hierarchy with all columns
                 self.populate_tree(self.filtered_data)
-            
-            # Expand all nodes
-            self.expand_all()
         else:
             self.clear_tree()
+            empty_df = pd.DataFrame(columns=self._all_columns) if self._all_columns else pd.DataFrame()
             if self.visible_columns:
                 self.setup_columns_with_visibility(self.visible_columns)
-                self.populate_tree_with_visibility(pd.DataFrame(columns=self._all_columns), self.visible_columns)
+                self.populate_tree_with_visibility(empty_df, self.visible_columns)
             else:
-                self.populate_tree(pd.DataFrame(columns=self._all_columns))
+                self.populate_tree(empty_df)
+        
+        self._restore_expansion_state()
+        self._tree_visual_view = self.current_view
+        self._capture_expansion_state(view_key=self.current_view)
 
     # ------------------------------------------------------------------
     # Added items support

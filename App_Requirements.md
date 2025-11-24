@@ -27,12 +27,12 @@
   - `"Subcategory"` (second level)
   - `"Sub-subcategory"` (third level)
   - Each `"ERP Name"` object is rendered under its corresponding Sub-subcategory node with no intermediate “Article …” mappings.
-- Default column visibility definitions in `default_settings.json` must reference these exact JSON field names.
+- Default column visibility definitions in `application_setting.json` must reference these exact JSON field names.
 
 ### Column Management
 - Columns are dynamically determined from `data/component_database.json` (source of truth)
 - User will be able to set visible and non-visible columns
-- "Save View" button that will store column visibility settings to `config/default_settings.json`
+- "Save View" button stores column visibility and tree expansion settings to `config/application_setting.json`
 - Column visibility settings automatically saved when changed via Column Visibility dialog
 - All available columns derived from the actual JSON schema (no renaming to internal “Article …” aliases)
 
@@ -100,6 +100,7 @@
 - Filter settings must be saved and restored with Save View functionality
 - Filters must be automatically loaded from settings file when application starts
 - Filter state must be properly synchronized with Save View button state
+- Tree expansion state must persist across edits, view toggles, and application restarts; Save View captures the expansion map in `config/application_setting.json`
 
 ## Data Export and Save Requirements
 - Save functionality writes all modifications to `data/component_database.json`

@@ -201,6 +201,9 @@ class MainWindow:
         # Create tree view widget
         self.tree_view = TreeViewWidget(self.left_panel, self.config_manager)
         self.tree_view.pack(fill="both", expand=True)
+        
+        saved_expansion = self.config_manager.get_tree_expansion_state()
+        self.tree_view.load_expansion_state_from_config(saved_expansion)
 
         # Bind tree view selection event
         self.tree_view.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
@@ -520,6 +523,10 @@ class MainWindow:
             # Save filters to config
             self.config_manager.save_filters(current_filters)
             
+            # Save tree expansion state
+            expansion_state = self.tree_view.get_expansion_state_for_config()
+            self.config_manager.save_tree_expansion_state(expansion_state)
+            
             # Save AI model if available and not "No models available"
             if selected_model and selected_model != "No models available":
                 self.config_manager.save_selected_model(selected_model)
@@ -579,6 +586,11 @@ class MainWindow:
         else:
             filters_changed = bool(current_filters) and not bool(saved_filters)
         
+        # Compare current and saved tree expansion state
+        current_expansion = self.tree_view.get_expansion_state_for_config()
+        saved_expansion = self.config_manager.get_tree_expansion_state()
+        expansion_changed = current_expansion != saved_expansion
+        
         # Compare current and saved AI model
         model_changed = current_model != saved_model
 
@@ -586,7 +598,7 @@ class MainWindow:
         prompt_changed = current_prompt != saved_prompt
         
         # Update button state
-        has_changes = visibility_changed or filters_changed or model_changed or prompt_changed
+        has_changes = visibility_changed or filters_changed or expansion_changed or model_changed or prompt_changed
         if has_changes:
             self.save_view_button.configure(state="normal")
             self.view_has_changes = True
