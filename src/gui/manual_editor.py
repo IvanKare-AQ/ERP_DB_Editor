@@ -977,14 +977,21 @@ class ManualEditor(ctk.CTkFrame):
 
         if result:
             # Delete the item from tree view
-            self.tree_view.delete_item(self.selected_row_id)
+            deleted = self.tree_view.delete_item(self.selected_row_id)
 
-            # Clear the edit panel
-            self.set_selected_item(None, None)
+            if deleted:
+                # Clear the edit panel
+                self.set_selected_item(None, None)
 
-            # Update status
-            if self.main_window and hasattr(self.main_window, 'update_status'):
-                self.main_window.update_status("Item deleted successfully")
+                # Notify main window that data changed so Save button enables
+                if self.main_window and hasattr(self.main_window, 'mark_data_changed'):
+                    self.main_window.mark_data_changed()
+
+                # Update status
+                if self.main_window and hasattr(self.main_window, 'update_status'):
+                    self.main_window.update_status("Item deleted successfully")
+            else:
+                messagebox.showerror("Delete Item", "Failed to remove the selected item.")
 
     def update_all_fields(self):
         """Update all fields (ERP Name object, Manufacturer, Remark) for the selected item."""

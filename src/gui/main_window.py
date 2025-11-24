@@ -172,6 +172,15 @@ class MainWindow:
         )
         self.view_toggle_button.pack(side="left", padx=5, pady=5)
         self._showing_new_items = False
+
+        self.commit_items_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Commit Items",
+            command=self.commit_new_items,
+            width=130,
+            state="disabled"
+        )
+        self.commit_items_button.pack(side="left", padx=5, pady=5)
         
         
     def create_content_area(self):
@@ -283,6 +292,7 @@ class MainWindow:
             self.filter_button.configure(state="normal")
             self.clear_filters_button.configure(state="normal")
             self.view_toggle_button.configure(state="normal")
+            self.commit_items_button.configure(state="normal")
             
             # Update status and file info
             self.update_status("Database loaded successfully")
@@ -318,6 +328,87 @@ class MainWindow:
             self.tree_view.show_primary_items()
             self.view_toggle_button.configure(text="Current Items")
             self.update_status("Viewing current items")
+
+    def commit_new_items(self):
+        """Move draft items into the primary database."""
+        if not hasattr(self, 'json_handler'):
+            return
+
+        # Prevent duplicate clicks during processing
+        self.commit_items_button.configure(state="disabled")
+
+        try:
+            self.update_status("Checking draft items...")
+            self.json_handler.load_added_items()
+            draft_df = self.json_handler.get_added_data()
+            pending_count = len(draft_df.index)
+
+            if pending_count == 0:
+                messagebox.showinfo("No Draft Items", "There are no draft items to commit.")
+                self.update_status("No draft items to commit")
+                return
+
+            confirm = messagebox.askyesno(
+                "Commit Draft Items",
+                f"This will append {pending_count} draft item(s) to the main database "
+                "and clear the draft queue.\n\nDo you want to continue?",
+                icon="warning"
+            )
+            if not confirm:
+                self.update_status("Commit cancelled")
+                return
+
+            self.update_status("Validating draft items...")
+            result = self.json_handler.commit_added_items()
+            committed = result.get('committed', 0) if result else 0
+            errors = result.get('errors', []) if result else []
+
+            if errors:
+                # Show up to first 10 errors to avoid overwhelming dialog
+                preview = errors[:10]
+                remaining = len(errors) - len(preview)
+                error_message = "\n".join(preview)
+                if remaining > 0:
+                    error_message += f"\n...and {remaining} more issue(s)."
+                messagebox.showerror("Commit Failed", error_message)
+                self.update_status("Commit failed")
+                return
+
+            if committed == 0:
+                messagebox.showinfo("Commit Items", "No draft items were committed.")
+                self.update_status("No draft items committed")
+                return
+
+            # Preserve current filters if we were viewing the main dataset
+            filters_to_restore = {}
+            if not self.tree_view.is_showing_added_items():
+                filters_to_restore = self.tree_view.get_current_filters()
+
+            # Reload tree view with updated data
+            self.tree_view.load_data(
+                self.json_handler.get_data(),
+                self.json_handler.get_categories(),
+                set_primary=True
+            )
+            if filters_to_restore:
+                self.tree_view.load_filters(filters_to_restore)
+
+            # Refresh draft dataset and ensure we show current items
+            self.tree_view.set_added_data(self.json_handler.get_added_data())
+            self._showing_new_items = False
+            self.view_toggle_button.configure(text="Current Items")
+
+            success_message = f"Committed {committed} new item(s) to the database."
+            self.update_status(success_message)
+            messagebox.showinfo("Commit Successful", success_message)
+
+        except Exception as e:
+            messagebox.showerror("Commit Failed", f"Failed to commit items: {str(e)}")
+            self.update_status("Commit failed")
+        finally:
+            # Re-enable button so user can try again if needed
+            if hasattr(self, 'commit_items_button'):
+                self.commit_items_button.configure(state="normal")
             
     def mark_data_changed(self):
         """Mark that data has been changed, enabling Save button."""

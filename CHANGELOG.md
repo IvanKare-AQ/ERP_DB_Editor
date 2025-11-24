@@ -28,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - "Reset" button to revert category dropdowns to their original values
   - Integration with AI model selection from AI editor settings for consistent model usage
   - Button state management (disabled during suggestion generation, re-enabled after completion)
+- **Commit Items Workflow**: Draft queue promotion directly from the toolbar
+  - New "Commit Items" button next to the New/Current toggle
+  - Validates PN uniqueness, ERP Name completeness, and category paths before promoting items
+  - Appends validated drafts to `data/component_database.json`, clears `data/new_items.json`, and refreshes the tree view without discarding in-memory edits
+  - Detailed error reporting prevents partial commits while keeping existing data untouched
 
 ### Changed
 - **Buffered Editing**: `TreeViewWidget` now reuses cached DataFrames, invalidates them only through `_mark_data_dirty()`, and applies modifications in-place instead of cloning the full dataset on every action.
@@ -41,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Manual Editor**: Resetting an ERP Name now reports the restored value using the correct variable, eliminating the `original_erp_name` reference error.
+- **Delete Button Save State**: Removing an item now marks the dataset dirty and enables the Save button so deletions can be persisted immediately.
 
 ## [1.4.0] - 2025-11-20
 

@@ -371,6 +371,8 @@ class JsonHandler:
     def get_category_properties(self, category: str, subcategory: str, sub_subcategory: str) -> Dict[str, Any]:
         """Fetch enrichment values for a specific category path."""
         if not self.categories:
+            self.load_categories()
+        if not self.categories:
             return {}
 
         for cat in self.categories:
@@ -389,6 +391,127 @@ class JsonHandler:
                         'usage': subsub.get('usage', '')
                     }
         return {}
+
+    def _category_path_exists(self, category: str, subcategory: str, sub_subcategory: str) -> bool:
+        """Check whether a category path exists in the loaded category tree."""
+        if not self.categories:
+            self.load_categories()
+        if not self.categories:
+            return False
+
+        category = (category or '').strip()
+        subcategory = (subcategory or '').strip()
+        sub_subcategory = (sub_subcategory or '').strip()
+
+        for cat in self.categories:
+            if cat.get('category', '').strip() != category:
+                continue
+            for sub in cat.get('subcategories', []):
+                if sub.get('name', '').strip() != subcategory:
+                    continue
+                for subsub in sub.get('sub_subcategories', []):
+                    if subsub.get('name', '').strip() == sub_subcategory:
+                        return True
+        return False
+
+    def _normalize_erp_name(self, value: Any) -> Dict[str, str]:
+        """Normalize ERP Name structure to ensure all keys exist."""
+        if isinstance(value, dict):
+            return {
+                'full_name': value.get('full_name', ''),
+                'type': value.get('type', ''),
+                'part_number': value.get('part_number', ''),
+                'additional_parameters': value.get('additional_parameters', '')
+            }
+        full_name = str(value).strip() if value else ''
+        return {
+            'full_name': full_name,
+            'type': '',
+            'part_number': '',
+            'additional_parameters': ''
+        }
+
+    def _ensure_dataframe_columns(self, df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
+        """Ensure the dataframe contains the provided column set."""
+        for column in columns:
+            if column not in df.columns:
+                df[column] = ''
+        return df[columns]
+
+    def commit_added_items(self) -> Dict[str, Any]:
+        """Validate draft items and append them to the primary database."""
+        if self.data is None:
+            raise ValueError("Primary database is not loaded. Load the database before committing items.")
+
+        self.load_added_items()
+        if self.added_data is None or self.added_data.empty:
+            return {"committed": 0, "errors": ["There are no draft items to commit."]}
+
+        # Make a working copy to avoid mutating the original until validation succeeds
+        working_df = self.added_data.copy(deep=True).fillna('')
+
+        base_columns = self.get_column_names()
+        if not base_columns:
+            base_columns = list(self.data.columns)
+        working_df = self._ensure_dataframe_columns(working_df, base_columns)
+
+        errors: List[str] = []
+
+        # Collect existing PN values to ensure uniqueness
+        existing_pn = set()
+        if 'PN' in self.data.columns:
+            pn_series = pd.to_numeric(self.data['PN'], errors='coerce').dropna().astype(int)
+            existing_pn.update(pn_series.tolist())
+
+        for idx, row in working_df.iterrows():
+            row_errors = []
+            display_index = idx + 1
+
+            # Validate PN
+            pn_value = row.get('PN', '')
+            try:
+                pn_int = int(pn_value)
+            except (TypeError, ValueError):
+                row_errors.append("PN must be a numeric value.")
+            else:
+                if pn_int in existing_pn:
+                    row_errors.append(f"PN {pn_int:07d} already exists in the database.")
+                else:
+                    existing_pn.add(pn_int)
+                    working_df.at[idx, 'PN'] = pn_int
+
+            # Validate ERP Name
+            erp_obj = self._normalize_erp_name(row.get('ERP Name', {}))
+            if not erp_obj.get('full_name', '').strip():
+                row_errors.append("ERP Name full_name is required.")
+            working_df.at[idx, 'ERP Name'] = erp_obj
+
+            # Validate category path
+            category = str(row.get('Category', '')).strip()
+            subcategory = str(row.get('Subcategory', '')).strip()
+            sub_subcategory = str(row.get('Sub-subcategory', '')).strip()
+
+            if not category or not subcategory or not sub_subcategory:
+                row_errors.append("Category, Subcategory, and Sub-subcategory are required.")
+            elif not self._category_path_exists(category, subcategory, sub_subcategory):
+                row_errors.append(f"Invalid category path: {category} > {subcategory} > {sub_subcategory}")
+
+            if row_errors:
+                errors.append(f"Item {display_index}: " + " ".join(row_errors))
+
+        if errors:
+            return {"committed": 0, "errors": errors}
+
+        # Append to primary data and persist
+        self.data = pd.concat([self.data, working_df], ignore_index=True)
+        self.data = self.data.fillna('')
+        self.save_file(data=self.data)
+
+        # Clear draft items
+        self.added_data = pd.DataFrame(columns=base_columns)
+        self.save_added_items()
+
+        return {"committed": len(working_df), "errors": []}
 
     def _ensure_added_schema(self) -> None:
         """Ensure the draft DataFrame contains the same columns as the main dataset."""

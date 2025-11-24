@@ -46,6 +46,7 @@
   - Placeholder options ("Select Category...", etc.) only appear when a level has no available values
 - "Update All Fields" button saves all field modifications (ERP Name, Manufacturer, Remark)
 - "Reassign Item" button moves items to new Category/Subcategory/Sub-subcategory combinations
+- "Delete Selected Item" removes ERP entries from the in-memory dataset and must immediately mark data as dirty so the Save button becomes active
 - All user modifications tracked in memory until saved; column names must match the JSON schema when persisting to `data/component_database.json`
 - Reset actions must repopulate fields and status messages from the original JSON values (e.g., ERP Name resets use the stored `full_name`)
 
@@ -106,6 +107,17 @@
 - No column renaming occurs during export or save; the exact JSON field names remain intact (only the `"ERP Name"` object is flattened when generating Excel files)
 - All user modifications (ERP Name object, Manufacturer, Remark, Category/Subcategory/Sub-subcategory reassignments) are persisted to JSON
 - Data enrichment: Level 3 parameters (Stage, Origin, Serialized, Usage) automatically enriched from `data/airq_categories.json`
+
+## Draft Item Workflow Requirements
+- Draft queue stored in `data/new_items.json` mirrors the main schema for offline staging
+- "New Items" view shows the draft queue; "Current Items" shows the live database
+- "Commit Items" button in toolbar (next to view toggle) copies all draft items into `data/component_database.json`
+- Commit process validates each draft item:
+  - Ensures numeric, unique PN assignments
+  - Confirms ERP Name structure with non-empty `full_name`
+  - Verifies category paths exist in `data/airq_categories.json`
+- Successful commit appends items to database, clears `new_items.json`, and refreshes both views
+- Validation failures list offending items without mutating existing data
 
 ## User Interface Requirements
 - Status message bar at the bottom of the application window

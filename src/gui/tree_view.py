@@ -1161,12 +1161,14 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def delete_item(self, row_id):
         """Delete an item from the tree view and data."""
-        if not self.data is not None or self.data.empty:
-            return
+        if self.data is None or self.data.empty:
+            return False
             
         # Find and remove the item from the tree
+        deleted_from_tree = False
         for item in self.tree.get_children():
             if self._delete_item_recursive(item, row_id):
+                deleted_from_tree = True
                 break
                 
         # Remove from user modifications if exists
@@ -1175,6 +1177,7 @@ class TreeViewWidget(ctk.CTkFrame):
             
         # Remove from data using index for O(1) lookup
         base_row_id = self._get_base_row_id(row_id)
+        removed_from_data = False
         if base_row_id in self._row_id_index:
             idx = self._row_id_index[base_row_id]
             if idx in self.data.index:
@@ -1184,9 +1187,12 @@ class TreeViewWidget(ctk.CTkFrame):
                 del self._row_id_index[base_row_id]
                 self._base_data_id = id(self.data)
                 self._mark_data_dirty()
+                removed_from_data = True
                 
                 # Refresh the view
                 self.refresh_view()
+
+        return deleted_from_tree or removed_from_data
     
     def _delete_item_recursive(self, item, row_id):
         """Recursively search for and delete an item with the given row_id."""
