@@ -4,12 +4,7 @@
             "PN",
             "Manufacturer",
             "Remark",
-            "Stage",
-            "Origin",
-            "Serialized",
-            "Usage",
-            "CAD Name",
-            "EAN13"
+            "CAD Name"
         ]
     },
     "view_settings": {

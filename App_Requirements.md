@@ -360,6 +360,34 @@
   - Source directory structure preserved in builds
   - Console mode for macOS (better debugging and error visibility)
 
+## Category Suggestion System Requirements
+- **Smart Category Suggestions**: AI-powered category suggestion system for ERP items
+  - Hybrid approach using pattern matching, similarity matching, and AI fallback
+  - Pattern matching from existing data (fastest, most accurate for known types)
+  - Similarity matching with existing items (fast, accurate)
+  - AI suggestion as fallback (slower, handles edge cases)
+  - Integration with Ollama for AI-powered suggestions
+  - Automatic validation of suggested category paths against category structure
+  - Closest match finding for invalid suggestions
+  - Confidence levels (high/medium/low) for suggestions
+  - Method tracking (pattern/similarity/ai/none) for transparency
+- **Category Suggester Backend**: Complete backend module for category suggestions
+  - `CategorySuggester` class in `src/backend/category_suggester.py`
+  - Pattern building from existing database items
+  - Similarity calculation using Jaccard similarity and substring matching
+  - AI integration with Ollama for intelligent suggestions
+  - Category validation against `data/airq_categories.json` structure
+  - Support for model parameter customization
+- **Manual Editor Integration**: Category suggestion functionality in Editor tab
+  - "Suggest" button above "Reassign" button for category suggestions
+  - Threading support for non-blocking suggestion generation
+  - Real-time status updates during suggestion generation
+  - Automatic application of suggestions to category dropdowns
+  - User confirmation for invalid or close-match suggestions
+  - "Reset" button to revert category dropdowns to original values
+  - Button state management (disabled during suggestion generation)
+  - Integration with AI model selection from AI editor settings
+
 ## Dependencies
 - customtkinter (for GUI framework)
 - pandas (for data handling and DataFrame operations)

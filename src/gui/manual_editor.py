@@ -8,6 +8,9 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import os
+import threading
+from typing import Dict, Any
+from src.backend.category_suggester import CategorySuggester
 
 
 class ManualEditor(ctk.CTkFrame):
@@ -48,6 +51,9 @@ class ManualEditor(ctk.CTkFrame):
         self._original_category = None
         self._original_subcategory = None
         self._original_sub_subcategory = None
+        
+        # Initialize category suggester (will be set up when needed)
+        self.category_suggester = None
 
         # Panel will be sized by the tabview container
 
@@ -466,6 +472,17 @@ class ManualEditor(ctk.CTkFrame):
             state="disabled"
         )
         self.reassign_button.pack(pady=5)
+        
+        # Reset button (revert dropdowns to original values)
+        self.reset_category_button = ctk.CTkButton(
+            right_column,
+            text="Reset",
+            command=self.reset_category_dropdowns,
+            width=self.REASSIGN_BUTTON_WIDTH,
+            height=32,
+            state="disabled"
+        )
+        self.reset_category_button.pack(pady=(5, 0))
 
     def load_categories(self):
         """Load categories into the dropdown."""
@@ -518,9 +535,11 @@ class ManualEditor(ctk.CTkFrame):
         self._update_reassign_button_state()
     
     def _update_reassign_button_state(self):
-        """Update Reassign button state based on whether dropdowns have changed."""
+        """Update Reassign and Reset button states based on whether dropdowns have changed."""
         if not self.selected_item or not self.selected_row_id:
             self.reassign_button.configure(state="disabled")
+            if hasattr(self, 'reset_category_button'):
+                self.reset_category_button.configure(state="disabled")
             return
         
         current_category = self.category_dropdown.get()
@@ -544,8 +563,12 @@ class ManualEditor(ctk.CTkFrame):
         
         if has_changed and has_valid_selections:
             self.reassign_button.configure(state="normal")
+            if hasattr(self, 'reset_category_button'):
+                self.reset_category_button.configure(state="normal")
         else:
             self.reassign_button.configure(state="disabled")
+            if hasattr(self, 'reset_category_button'):
+                self.reset_category_button.configure(state="disabled")
 
     def set_selected_item(self, item_data, row_id):
         """Set the selected item and populate the edit fields."""
@@ -1102,7 +1125,7 @@ class ManualEditor(ctk.CTkFrame):
             self._original_category = category
             self._original_subcategory = subcategory
             self._original_sub_subcategory = sub_subcategory
-            # Disable Reassign button since values are now in sync
+            # Disable Reassign and Reset buttons since values are now in sync
             self._update_reassign_button_state()
             
             # Notify main window about changes for Save button state
@@ -1123,9 +1146,248 @@ class ManualEditor(ctk.CTkFrame):
         """Placeholder for future import capability."""
         messagebox.showinfo("Coming Soon", "Importing items will be available in a future update.")
     
+    def _get_category_suggester(self):
+        """Get or initialize category suggester."""
+        if self.category_suggester is None:
+            # Get Ollama handler from main window if available (via AI editor)
+            ollama_handler = None
+            if self.main_window and hasattr(self.main_window, 'edit_panel'):
+                if hasattr(self.main_window.edit_panel, 'ai_editor'):
+                    if hasattr(self.main_window.edit_panel.ai_editor, 'ollama_handler'):
+                        ollama_handler = self.main_window.edit_panel.ai_editor.ollama_handler
+            
+            # Get JSON handler for accessing existing data
+            json_handler = None
+            if self.main_window and hasattr(self.main_window, 'json_handler'):
+                json_handler = self.main_window.json_handler
+            
+            self.category_suggester = CategorySuggester(
+                ollama_handler=ollama_handler,
+                json_handler=json_handler
+            )
+        
+        return self.category_suggester
+    
     def suggest_category(self):
-        """Placeholder for AI suggestion flow."""
-        messagebox.showinfo("Suggestion", "Suggestions will be provided in a future update.")
+        """Get AI-powered category suggestion based on item characteristics."""
+        try:
+            suggester = self._get_category_suggester()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to initialize category suggester: {str(e)}")
+            return
+        
+        # Get current values
+        current_category = self.category_dropdown.get()
+        if current_category == "Select Category...":
+            current_category = None
+        
+        type_value = self.type_entry.get().strip()
+        pn_value = self.pn_entry.get().strip()
+        details_value = self.details_entry.get().strip()
+        
+        # Check if we have at least some information
+        if not type_value and not pn_value and not details_value:
+            messagebox.showwarning("Missing Information", "Please provide at least Type, Part Number, or Details for category suggestion.")
+            return
+        
+        # Show status
+        if self.main_window and hasattr(self.main_window, 'update_status'):
+            self.main_window.update_status("Generating category suggestion...")
+        
+        # Disable Suggest button during generation
+        self.suggest_button.configure(state="disabled", text="Suggesting...")
+        
+        # Run suggestion in separate thread
+        def suggest_thread():
+            try:
+                # Get model name from config if available
+                model_name = "llama3.2"  # Default
+                model_parameters = None
+                
+                if self.main_window and hasattr(self.main_window, 'config_manager'):
+                    config_manager = self.main_window.config_manager
+                    # Try to get model from AI editor settings
+                    if hasattr(self.main_window, 'edit_panel') and hasattr(self.main_window.edit_panel, 'ai_editor'):
+                        if hasattr(self.main_window.edit_panel.ai_editor, 'model_dropdown'):
+                            selected_model = self.main_window.edit_panel.ai_editor.model_dropdown.get()
+                            if selected_model and selected_model != "No models available":
+                                model_name = selected_model
+                                model_parameters = config_manager.get_model_parameters(model_name)
+                
+                # Generate suggestion
+                suggester = self._get_category_suggester()
+                suggestion = suggester.suggest_category(
+                    current_category=current_category,
+                    type_value=type_value,
+                    part_number=pn_value,
+                    details=details_value,
+                    model_name=model_name,
+                    model_parameters=model_parameters
+                )
+                
+                # Update UI in main thread
+                self.main_window.root.after(0, lambda: self._apply_suggestion(suggestion))
+                
+            except Exception as e:
+                error_msg = f"Error generating suggestion: {str(e)}"
+                self.main_window.root.after(0, lambda: self._suggestion_error(error_msg))
+        
+        threading.Thread(target=suggest_thread, daemon=True).start()
+    
+    def _apply_suggestion(self, suggestion: Dict[str, Any]):
+        """Apply the category suggestion to the dropdowns."""
+        # Re-enable Suggest button
+        self.suggest_button.configure(state="normal", text="Suggest")
+        
+        category = suggestion.get('category', '')
+        subcategory = suggestion.get('subcategory', '')
+        sub_subcategory = suggestion.get('sub_subcategory', '')
+        valid = suggestion.get('valid', False)
+        reasoning = suggestion.get('reasoning', '')
+        confidence = suggestion.get('confidence', 'low')
+        
+        if not category or not subcategory or not sub_subcategory:
+            messagebox.showwarning("Incomplete Suggestion", 
+                                  "Could not generate a complete category suggestion. Please try again or select manually.")
+            if self.main_window and hasattr(self.main_window, 'update_status'):
+                self.main_window.update_status("Category suggestion incomplete")
+            return
+        
+        # Check if suggestion is valid, try to find closest match if invalid
+        if not valid:
+            # Try to find a close match
+            suggester = self._get_category_suggester()
+            closest = suggester._find_closest_match(category, subcategory, sub_subcategory)
+            
+            if closest:
+                # Offer to use the closest match
+                result = messagebox.askyesno(
+                    "Category Path Not Found - Close Match Available",
+                    f"The suggested category path doesn't exist, but a close match was found:\n\n"
+                    f"Suggested: {category} > {subcategory} > {sub_subcategory}\n"
+                    f"Closest match: {closest[0]} > {closest[1]} > {closest[2]}\n\n"
+                    f"Reasoning: {reasoning}\n\n"
+                    f"Would you like to use the closest match instead?"
+                )
+                if result:
+                    category, subcategory, sub_subcategory = closest
+                    valid = True
+                else:
+                    if self.main_window and hasattr(self.main_window, 'update_status'):
+                        self.main_window.update_status("Category suggestion cancelled")
+                    return
+            else:
+                # No close match found, ask if user wants to apply anyway
+                result = messagebox.askyesno(
+                    "Invalid Category Path",
+                    f"The suggested category path may not exist in the category structure:\n\n"
+                    f"Category: {category}\n"
+                    f"Subcategory: {subcategory}\n"
+                    f"Sub-subcategory: {sub_subcategory}\n\n"
+                    f"Reasoning: {reasoning}\n\n"
+                    f"Would you like to apply it anyway? (You can adjust manually if needed)"
+                )
+                if not result:
+                    if self.main_window and hasattr(self.main_window, 'update_status'):
+                        self.main_window.update_status("Category suggestion cancelled")
+                    return
+        
+        # Apply suggestion to dropdowns
+        try:
+            # Load categories first
+            self.load_categories()
+            
+            # Set category
+            categories = self.tree_view.get_unique_categories()
+            if category in categories:
+                self.category_dropdown.set(category)
+                self.on_category_change(category)
+                
+                # Set subcategory
+                subcategories = self.tree_view.get_unique_subcategories(category)
+                if subcategory in subcategories:
+                    self.subcategory_dropdown.set(subcategory)
+                    self.on_subcategory_change(subcategory)
+                    
+                    # Set sub-subcategory
+                    sub_subcategories = self.tree_view.get_unique_sub_subcategories(category, subcategory)
+                    if sub_subcategory in sub_subcategories:
+                        self.sub_subcategory_dropdown.set(sub_subcategory)
+                        
+                        # Update Reassign button state
+                        self._update_reassign_button_state()
+                        
+                        # Update status with method and confidence
+                        method = suggestion.get('method', 'unknown')
+                        method_text = {
+                            'pattern': 'Pattern Matching',
+                            'similarity': 'Similarity Matching',
+                            'ai': 'AI Suggestion',
+                            'none': 'Manual'
+                        }.get(method, method)
+                        
+                        if self.main_window and hasattr(self.main_window, 'update_status'):
+                            self.main_window.update_status(
+                                f"Category suggestion applied ({method_text}, {confidence}): {category} > {subcategory} > {sub_subcategory}"
+                            )
+                    else:
+                        messagebox.showwarning("Invalid Sub-subcategory", 
+                                             f"Sub-subcategory '{sub_subcategory}' not found for the selected category path.")
+                else:
+                    messagebox.showwarning("Invalid Subcategory", 
+                                         f"Subcategory '{subcategory}' not found for category '{category}'.")
+            else:
+                messagebox.showwarning("Invalid Category", f"Category '{category}' not found in available categories.")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Error applying suggestion: {str(e)}")
+            if self.main_window and hasattr(self.main_window, 'update_status'):
+                self.main_window.update_status("Error applying category suggestion")
+    
+    def reset_category_dropdowns(self):
+        """Reset category dropdowns to their original values."""
+        if self._original_category is None:
+            return
+        
+        # Load categories first
+        self.load_categories()
+        
+        # Reset category dropdown
+        if self._original_category:
+            self.category_dropdown.set(self._original_category)
+            self.on_category_change(self._original_category)
+            
+            # Reset subcategory dropdown
+            if self._original_subcategory:
+                subcategories = self.tree_view.get_unique_subcategories(self._original_category)
+                if subcategories and self._original_subcategory in subcategories:
+                    self.subcategory_dropdown.configure(values=subcategories)
+                    self.subcategory_dropdown.set(self._original_subcategory)
+                    self.on_subcategory_change(self._original_subcategory)
+                    
+                    # Reset sub-subcategory dropdown
+                    if self._original_sub_subcategory:
+                        sub_subcategories = self.tree_view.get_unique_sub_subcategories(
+                            self._original_category, self._original_subcategory
+                        )
+                        if sub_subcategories and self._original_sub_subcategory in sub_subcategories:
+                            self.sub_subcategory_dropdown.configure(values=sub_subcategories)
+                            self.sub_subcategory_dropdown.set(self._original_sub_subcategory)
+        
+        # Update button states
+        self._update_reassign_button_state()
+        
+        if self.main_window and hasattr(self.main_window, 'update_status'):
+            self.main_window.update_status("Category dropdowns reset to original values")
+    
+    def _suggestion_error(self, error_msg: str):
+        """Handle suggestion generation error."""
+        # Re-enable Suggest button
+        self.suggest_button.configure(state="normal", text="Suggest")
+        
+        messagebox.showerror("Suggestion Error", error_msg)
+        if self.main_window and hasattr(self.main_window, 'update_status'):
+            self.main_window.update_status("Category suggestion failed")
     
     def add_new_item(self):
         """Validate inputs, build a draft item, and persist it to the temporary JSON."""

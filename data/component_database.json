@@ -7093,7 +7093,7 @@
         },
         "Image": "",
         "Manufacturer": "",
-        "Remark": "",
+        "Remark": "Wrong category",
         "Tracking Method": "",
         "Use for ML": false,
         "Category": "Raw Materials",
@@ -11433,10 +11433,10 @@
     {
         "PN": 499,
         "ERP Name": {
-            "full_name": "Filler_Microballoon-200-300UM",
+            "full_name": "Filler_NO-PN_Microballoon-200-300UM",
             "type": "Filler",
-            "part_number": "Microballoon-200-300UM",
-            "additional_parameters": ""
+            "part_number": "NO-PN",
+            "additional_parameters": "Microballoon-200-300UM"
         },
         "Image": "",
         "Manufacturer": "",
@@ -13043,10 +13043,10 @@
     {
         "PN": 569,
         "ERP Name": {
-            "full_name": "Fiberglass_Fabric-T300-3K-Twill",
-            "type": "Fiberglass",
-            "part_number": "Fabric-T300-3K-Twill",
-            "additional_parameters": ""
+            "full_name": "Fiberglass-Fabric_NO-PN_T300-3K-Twill",
+            "type": "Fiberglass-Fabric",
+            "part_number": "NO-PN",
+            "additional_parameters": "T300-3K-Twill"
         },
         "Image": "",
         "Manufacturer": "",
@@ -13089,10 +13089,10 @@
     {
         "PN": 571,
         "ERP Name": {
-            "full_name": "Fiberglass-Fabric-EW100-Twill-Weave",
-            "type": "Fiberglass-Fabric-EW100-Twill-Weave",
-            "part_number": "",
-            "additional_parameters": ""
+            "full_name": "Fiberglass-Fabric_NO-PN_EW100-Twill-Weave",
+            "type": "Fiberglass-Fabric",
+            "part_number": "NO-PN",
+            "additional_parameters": "EW100-Twill-Weave"
         },
         "Image": "",
         "Manufacturer": "",
@@ -24405,10 +24405,10 @@
     {
         "PN": 1180,
         "ERP Name": {
-            "full_name": "TVS-Diode_SOT-23_27-CAN-BUS_Suppressor",
-            "type": "TVS-Diode",
-            "part_number": "SOT-23",
-            "additional_parameters": "27-CAN-BUS_Suppressor"
+            "full_name": "Diode_NO-PN_TVS SOT-23 27-CAN-BUS_Suppressor",
+            "type": "Diode",
+            "part_number": "NO-PN",
+            "additional_parameters": "TVS SOT-23 27-CAN-BUS_Suppressor"
         },
         "Image": "",
         "Manufacturer": "",
@@ -24428,10 +24428,10 @@
     {
         "PN": 1181,
         "ERP Name": {
-            "full_name": "Diode_NO-PN_TVS-5.5V-36W-3-Line-USB-Port",
+            "full_name": "Diode_NO-PN_TVS 5.5V-36W-3-Line-USB-Port",
             "type": "Diode",
             "part_number": "NO-PN",
-            "additional_parameters": "TVS-5.5V-36W-3-Line-USB-Port"
+            "additional_parameters": "TVS 5.5V-36W-3-Line-USB-Port"
         },
         "Image": "",
         "Manufacturer": "",
@@ -25900,10 +25900,10 @@
     {
         "PN": 1245,
         "ERP Name": {
-            "full_name": "MOSFET_Nch-60V_20V_PowerPAK-1212-8SCD",
-            "type": "MOSFET",
-            "part_number": "Nch-60V",
-            "additional_parameters": "20V_PowerPAK-1212-8SCD"
+            "full_name": "Transistor_NO-PN_MOSFET-N 60V 20V PowerPAK-1212-8SCD",
+            "type": "Transistor",
+            "part_number": "NO-PN",
+            "additional_parameters": "MOSFET-N 60V 20V PowerPAK-1212-8SCD"
         },
         "Image": "",
         "Manufacturer": "",
@@ -26245,8 +26245,8 @@
     {
         "PN": 1260,
         "ERP Name": {
-            "full_name": "Screw_74HCT4067PW-Q100_SOT355-TSSOP2_Multiplexer-Switch-IC",
-            "type": "Screw",
+            "full_name": "IC-Interface_74HCT4067PW-Q100_SOT355-TSSOP2_Multiplexer-Switch-IC",
+            "type": "IC-Interface",
             "part_number": "74HCT4067PW-Q100",
             "additional_parameters": "SOT355-TSSOP2_Multiplexer-Switch-IC"
         },
@@ -26567,23 +26567,23 @@
     {
         "PN": 1274,
         "ERP Name": {
-            "full_name": "Zener-Diode-15V-0.35W-2%-AUTO",
-            "type": "Zener-Diode-15V-0.35W-2%-AUTO",
-            "part_number": "",
-            "additional_parameters": ""
+            "full_name": "Diode_NO-PN_Zener 15V-0.35W-2%-AUTO",
+            "type": "Diode",
+            "part_number": "NO-PN",
+            "additional_parameters": "Zener 15V-0.35W-2%-AUTO"
         },
         "Image": "",
         "Manufacturer": "",
         "Remark": "",
         "Tracking Method": "",
         "Use for ML": false,
-        "Category": "Fixed Assets",
-        "Subcategory": "IT Hardware & Networking",
-        "Sub-subcategory": "Printers & Plotters",
-        "Stage": "Fixed Asset",
+        "Category": "Components",
+        "Subcategory": "Electrical & Avionics",
+        "Sub-subcategory": "Diodes",
+        "Stage": "Component",
         "Origin": "Mixed",
         "Serialized": "No",
-        "Usage": "General",
+        "Usage": "Production",
         "CAD Name": "",
         "EAN13": ""
     },
@@ -27602,10 +27602,10 @@
     {
         "PN": 1319,
         "ERP Name": {
-            "full_name": "IC_REG-LIN_3.3V_250MA_SOT223-3",
-            "type": "IC",
-            "part_number": "REG-LIN",
-            "additional_parameters": "3.3V_250MA_SOT223-3"
+            "full_name": "IC-Power_NO-PN_REG-LIN 3.3V-250MA-SOT223-3",
+            "type": "IC-Power",
+            "part_number": "NO-PN",
+            "additional_parameters": "REG-LIN 3.3V-250MA-SOT223-3"
         },
         "Image": "",
         "Manufacturer": "",
@@ -27648,10 +27648,10 @@
     {
         "PN": 1321,
         "ERP Name": {
-            "full_name": "Transistor_MOSFET-HS0G-8-N-80V-300A",
+            "full_name": "Transistor_NO-PN_MOSFET-HS0G-8-N-80V-300A",
             "type": "Transistor",
-            "part_number": "MOSFET-HS0G-8-N-80V-300A",
-            "additional_parameters": ""
+            "part_number": "NO-PN",
+            "additional_parameters": "MOSFET-HS0G-8-N-80V-300A"
         },
         "Image": "",
         "Manufacturer": "",
@@ -27832,10 +27832,10 @@
     {
         "PN": 1329,
         "ERP Name": {
-            "full_name": "IC-TRANSCEIVER_HALF-1/1_8SOIC",
-            "type": "IC-TRANSCEIVER",
-            "part_number": "HALF-1/1",
-            "additional_parameters": "8SOIC"
+            "full_name": "IC-Transceiver_NO-PN_HALF-1/1 8SOIC",
+            "type": "IC-Transceiver",
+            "part_number": "NO-PN",
+            "additional_parameters": "HALF-1/1 8SOIC"
         },
         "Image": "",
         "Manufacturer": "",
@@ -28049,8 +28049,8 @@
         "Remark": "",
         "Tracking Method": "",
         "Use for ML": false,
-        "Category": "Components",
-        "Subcategory": "Mechanical",
+        "Category": "Consumables, Safety & Packaging",
+        "Subcategory": "ESD & Moisture Control",
         "Sub-subcategory": "Bushings",
         "Stage": "Component",
         "Origin": "Mixed",
@@ -28637,19 +28637,19 @@
     {
         "PN": 1364,
         "ERP Name": {
-            "full_name": "Flux_CQ4LF-0.5_No-Clean_Solder_15ml_Metal",
+            "full_name": "Flux_CQ4LF-0.5_No-Clean Solder flux 15ml",
             "type": "Flux",
             "part_number": "CQ4LF-0.5",
-            "additional_parameters": "No-Clean_Solder_15ml_Metal"
+            "additional_parameters": "No-Clean Solder flux 15ml"
         },
         "Image": "",
         "Manufacturer": "",
         "Remark": "",
         "Tracking Method": "",
         "Use for ML": false,
-        "Category": "Raw Materials",
-        "Subcategory": "Metals",
-        "Sub-subcategory": "Tool & Spring Steel",
+        "Category": "Consumables, Safety & Packaging",
+        "Subcategory": "Electrical Consumables",
+        "Sub-subcategory": "Solder & Flux",
         "Stage": "Raw",
         "Origin": "Outsourced",
         "Serialized": "No",
@@ -29902,19 +29902,19 @@
     {
         "PN": 1419,
         "ERP Name": {
-            "full_name": "Adapter_SPC5-UDESTK-EVAL-USB-JTAG",
+            "full_name": "Adapter_SPC5-UDESTK-EVAL_USB-JTAG",
             "type": "Adapter",
-            "part_number": "SPC5-UDESTK-EVAL-USB-JTAG",
-            "additional_parameters": ""
+            "part_number": "SPC5-UDESTK-EVAL",
+            "additional_parameters": "USB-JTAG"
         },
         "Image": "",
         "Manufacturer": "PLS",
         "Remark": "Wrong category",
         "Tracking Method": "",
         "Use for ML": false,
-        "Category": "Raw Materials",
-        "Subcategory": "Metals",
-        "Sub-subcategory": "Wires & Cables",
+        "Category": "Fixed Assets",
+        "Subcategory": "Testing & Calibration Equipment",
+        "Sub-subcategory": "Test Equipment",
         "Stage": "Raw",
         "Origin": "Outsourced",
         "Serialized": "No",
@@ -30293,10 +30293,10 @@
     {
         "PN": 1436,
         "ERP Name": {
-            "full_name": "Microswitch_NO-PN_5A-250VAC-6A-12VDC-IP67-Waterproof-3-Wire-Roller-Lever",
-            "type": "Microswitch",
+            "full_name": "Switch_NO-PN_Micro-5A-250VAC-6A-12VDC-IP67-Waterproof-3-Wire-Roller-Lever",
+            "type": "Switch",
             "part_number": "NO-PN",
-            "additional_parameters": "5A-250VAC-6A-12VDC-IP67-Waterproof-3-Wire-Roller-Lever"
+            "additional_parameters": "Micro-5A-250VAC-6A-12VDC-IP67-Waterproof-3-Wire-Roller-Lever"
         },
         "Image": "",
         "Manufacturer": "",
@@ -30626,8 +30626,8 @@
         "Tracking Method": "",
         "Use for ML": false,
         "Category": "Components",
-        "Subcategory": "Airframe & Structure",
-        "Sub-subcategory": "UAV Platforms",
+        "Subcategory": "Safety Systems",
+        "Sub-subcategory": "Safety Equipment",
         "Stage": "Component",
         "Origin": "Mixed",
         "Serialized": "No",
@@ -31524,7 +31524,7 @@
         "Use for ML": false,
         "Category": "Components",
         "Subcategory": "Mechanical",
-        "Sub-subcategory": "Bearings",
+        "Sub-subcategory": "Servo Accessories",
         "Stage": "Component",
         "Origin": "Mixed",
         "Serialized": "No",
@@ -31729,9 +31729,9 @@
         "Remark": "Wrong category",
         "Tracking Method": "",
         "Use for ML": false,
-        "Category": "Raw Materials",
-        "Subcategory": "Metals",
-        "Sub-subcategory": "Wires & Cables",
+        "Category": "Components",
+        "Subcategory": "Electrical & Avionics",
+        "Sub-subcategory": "Computers & Controllers",
         "Stage": "Raw",
         "Origin": "Outsourced",
         "Serialized": "No",
@@ -36733,19 +36733,19 @@
     {
         "PN": 1716,
         "ERP Name": {
-            "full_name": "Programming-Tool_Castle-Link-V3 ",
+            "full_name": "Programming-Tool_Castle-Link-V3",
             "type": "Programming-Tool",
-            "part_number": "Castle-Link-V3 ",
+            "part_number": "Castle-Link-V3",
             "additional_parameters": ""
         },
         "Image": "",
         "Manufacturer": "Castle Creations",
-        "Remark": "Wrong category",
+        "Remark": "",
         "Tracking Method": "",
         "Use for ML": false,
-        "Category": "Raw Materials",
-        "Subcategory": "Metals",
-        "Sub-subcategory": "Wires & Cables",
+        "Category": "Fixed Assets",
+        "Subcategory": "Testing & Calibration Equipment",
+        "Sub-subcategory": "Test Equipment",
         "Stage": "Raw",
         "Origin": "Outsourced",
         "Serialized": "No",
@@ -37182,7 +37182,7 @@
         "Use for ML": false,
         "Category": "Components",
         "Subcategory": "Electrical & Avionics",
-        "Sub-subcategory": "Passive Components",
+        "Sub-subcategory": "Potentiometers",
         "Stage": "Component",
         "Origin": "Mixed",
         "Serialized": "Mixed",
@@ -37216,10 +37216,10 @@
     {
         "PN": 1737,
         "ERP Name": {
-            "full_name": "Micro-Switch-KW3-OZ-16A-125-250VAC-SPDT-NO-NC-Hinge-Lever",
-            "type": "Micro-Switch-KW3-OZ-16A-125-250VAC-SPDT-NO-NC-Hinge-Lever",
-            "part_number": "",
-            "additional_parameters": ""
+            "full_name": "Switch_KW3-OZ_Micro-16A-125-250VAC-SPDT-NO-NC-Hinge-Lever",
+            "type": "Switch",
+            "part_number": "KW3-OZ",
+            "additional_parameters": "Micro-16A-125-250VAC-SPDT-NO-NC-Hinge-Lever"
         },
         "Image": "",
         "Manufacturer": "",
@@ -37227,8 +37227,8 @@
         "Tracking Method": "",
         "Use for ML": false,
         "Category": "Components",
-        "Subcategory": "Mechanical",
-        "Sub-subcategory": "Vibration Control",
+        "Subcategory": "Electrical & Avionics",
+        "Sub-subcategory": "Switches",
         "Stage": "Component",
         "Origin": "Mixed",
         "Serialized": "No",
@@ -37458,7 +37458,7 @@
         "Use for ML": false,
         "Category": "Components",
         "Subcategory": "Electrical & Avionics",
-        "Sub-subcategory": "Flight Termination",
+        "Sub-subcategory": "Connector Accessories",
         "Stage": "Component",
         "Origin": "Mixed",
         "Serialized": "Mixed",
@@ -42782,10 +42782,10 @@
     {
         "PN": 1979,
         "ERP Name": {
-            "full_name": "Screw_Lever-Engage-Release-Mech_Aluminium-Hardware",
+            "full_name": "Screw_NO-PN_Lever-Engage-Release-Mech Aluminium-Hardware",
             "type": "Screw",
-            "part_number": "Lever-Engage-Release-Mech",
-            "additional_parameters": "Aluminium-Hardware"
+            "part_number": "NO-PN",
+            "additional_parameters": "Lever-Engage-Release-Mech Aluminium-Hardware"
         },
         "Image": "",
         "Manufacturer": "",
@@ -43242,10 +43242,10 @@
     {
         "PN": 1999,
         "ERP Name": {
-            "full_name": "Wheel_SC456B-Metal-Cutting-Tool-Steel",
+            "full_name": "Wheel_SC456B_Metal-Cutting-Tool-Steel",
             "type": "Wheel",
-            "part_number": "SC456B-Metal-Cutting-Tool-Steel",
-            "additional_parameters": ""
+            "part_number": "SC456B",
+            "additional_parameters": "Metal-Cutting-Tool-Steel"
         },
         "Image": "",
         "Manufacturer": "",

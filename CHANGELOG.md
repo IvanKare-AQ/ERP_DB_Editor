@@ -12,6 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **View Toggle Button**: Added toggle button in toolbar to switch between "New Items" and "Current Items" views, with button label indicating current view state.
 - **Save Button State Management**: Save button is now disabled by default and only enabled when there are unsaved changes to the database.
 - **Reassign Button State Management**: Reassign button is disabled until category/subcategory/sub-subcategory dropdowns are changed from their original values.
+- **Category Suggestion System**: Complete AI-powered category suggestion functionality
+  - New `CategorySuggester` backend module (`src/backend/category_suggester.py`) for smart category suggestions
+  - Hybrid suggestion approach: pattern matching (fastest), similarity matching (fast), and AI fallback (comprehensive)
+  - Pattern building from existing database items to learn type-to-category mappings
+  - Similarity calculation using Jaccard similarity and substring matching for finding similar items
+  - AI integration with Ollama for intelligent category suggestions when patterns don't match
+  - Automatic validation of suggested category paths against `data/airq_categories.json` structure
+  - Closest match finding for invalid suggestions with user confirmation
+  - Confidence levels (high/medium/low) and method tracking (pattern/similarity/ai/none) for transparency
+  - "Suggest" button in Editor tab above "Reassign" button for generating category suggestions
+  - Threading support for non-blocking suggestion generation with real-time status updates
+  - Automatic application of valid suggestions to category dropdowns
+  - User confirmation dialogs for invalid or close-match suggestions
+  - "Reset" button to revert category dropdowns to their original values
+  - Integration with AI model selection from AI editor settings for consistent model usage
+  - Button state management (disabled during suggestion generation, re-enabled after completion)
 
 ### Changed
 - **Buffered Editing**: `TreeViewWidget` now reuses cached DataFrames, invalidates them only through `_mark_data_dirty()`, and applies modifications in-place instead of cloning the full dataset on every action.
