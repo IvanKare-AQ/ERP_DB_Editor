@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-01-16
+
 ### Added
 - **Tree View Indexing**: Introduced an in-memory `row_id → DataFrame index` dictionary so edits, deletes, and saves locate rows in O(1) time.
 - **View Toggle Button**: Added toggle button in toolbar to switch between "New Items" and "Current Items" views, with button label indicating current view state.
@@ -57,6 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Delete Button Save State**: Removing an item now marks the dataset dirty and enables the Save button so deletions can be persisted immediately.
 - **Tree View Expansion State**: Fixed TclError when capturing expansion state during column visibility changes by adding proper widget existence checks.
 - **Tree View Change Tracking**: Tree expansion/collapse actions now properly trigger view change notifications, enabling the Save View button when expansion state changes.
+
+## [Unreleased]
 
 ## [1.4.0] - 2025-11-20
 
