@@ -42,7 +42,7 @@ def test_project_structure():
         'src/gui/main_window.py',
         'src/gui/tree_view.py', 
         'src/gui/column_visibility.py',
-        'src/backend/excel_handler.py',
+        'src/backend/json_handler.py',
         'src/backend/config_manager.py',
         'config/application_setting.json'
     ]
