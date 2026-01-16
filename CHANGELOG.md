@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Application Version Display**: Added version number (v1.5.0) to top right corner of application header
+  - Displays in gray color for subtle visibility
+  - Positioned using flexbox layout in header
+- **Editor Always Visible**: Editor panel now always visible regardless of item selection
+  - Removed conditional hiding when no item is selected
+  - Users can start editing immediately without selecting an item first
+  - Editor automatically initializes with next available AirQ_PN when no item is selected
+  - Initial editor state matches "New" button behavior (all fields cleared, AirQ PN ready)
 - **Database Column Rename**: Renamed "PN" column to "AirQ_PN" throughout the application
   - Migration script (`migrate_pn_to_airq_pn.py`) for safe database schema updates
   - Automatic backup creation before migration

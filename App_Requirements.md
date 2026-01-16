@@ -427,6 +427,9 @@
   - Component-based architecture mirroring desktop application
   - Real-time validation and feedback
   - Responsive design with dark theme
+  - Application version display in top right corner of header
+  - Editor panel always visible (no need to select item first)
+  - Automatic initialization of editor with next available AirQ_PN when no item selected
 - **Migration Support**: Database migration scripts for schema changes
   - Scripts for renaming columns (e.g., PN to AirQ_PN)
   - Automatic backup creation before migrations

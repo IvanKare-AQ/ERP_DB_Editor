@@ -63,6 +63,7 @@ function App() {
       <div className="App">
         <div className="app-header">
           <h1>ERP Database Editor</h1>
+          <span className="app-version">v1.5.0</span>
         </div>
         
         <Toolbar

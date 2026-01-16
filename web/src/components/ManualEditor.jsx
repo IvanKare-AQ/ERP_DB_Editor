@@ -53,6 +53,55 @@ function ManualEditor({ selectedItem, onItemUpdate, onClearSelection }) {
   }, [])
 
   useEffect(() => {
+    // Initialize editor with next available AirQ PN when no item is selected and not in new item mode
+    if (!selectedItem && !isNewItemMode && airQPn === null) {
+      initializeEditor()
+    }
+  }, [selectedItem, isNewItemMode])
+
+  const initializeEditor = async () => {
+    try {
+      // Get next available AirQ_PN (database ID)
+      const response = await axios.get('/api/items/next-pn')
+      const nextAirQPn = response.data.pn || 1
+      setAirQPn(nextAirQPn)
+      setAirQPnValid(true)
+      setAirQPnChecking(false)
+      
+      // Clear all fields
+      setUserErpName('')
+      setType('')
+      setPn('') // Clear Mfr. PN
+      setDetails('')
+      setManufacturer('')
+      setRemark('')
+      setSerialized(false)
+      setBuy(true)
+      setCategory('')
+      setSubcategory('')
+      setSubSubcategory('')
+      setImagePath('')
+      setImageUrl(null)
+      setImageError(false)
+      setAvailableSubcategories([])
+      setAvailableSubSubcategories([])
+      
+      // Clear original values
+      setOriginalErpName('')
+      setOriginalManufacturer('')
+      setOriginalRemark('')
+      setOriginalCategory('')
+      setOriginalSubcategory('')
+      setOriginalSubSubcategory('')
+    } catch (err) {
+      console.error('Error initializing editor:', err)
+      setAirQPn(null)
+      setAirQPnValid(true)
+      setAirQPnChecking(false)
+    }
+  }
+
+  useEffect(() => {
     // Don't populate fields if in new item mode - let handleNew control the fields
     if (isNewItemMode && !selectedItem) {
       return // Keep fields as set by handleNew
@@ -244,15 +293,15 @@ function ManualEditor({ selectedItem, onItemUpdate, onClearSelection }) {
         buyValue = false
       }
 
-      // Get AirQ_PN value - use airQPn state if in new item mode, otherwise get next available
+      // Get AirQ_PN value - use airQPn state if in new item mode or no item selected, otherwise get next available
       let pnValue = null
-      if (isNewItemMode) {
+      if (isNewItemMode || !selectedItem) {
         // Validate AirQ PN before proceeding
         if (!airQPnValid) {
           alert('AirQ PN already exists. Please enter a unique value.')
           return
         }
-        // Use the AirQ_PN that was set when "New" button was clicked or entered by user
+        // Use the AirQ_PN that was set when "New" button was clicked, initialized, or entered by user
         pnValue = airQPn
         if (!pnValue) {
           // If user cleared it, get next available
@@ -634,17 +683,8 @@ function ManualEditor({ selectedItem, onItemUpdate, onClearSelection }) {
   const canReassign = category && subcategory && subSubcategory && 
     (category !== originalCategory || subcategory !== originalSubcategory || subSubcategory !== originalSubSubcategory)
 
-  // Show editor if item is selected OR if in new item mode
-  if (!selectedItem && !isNewItemMode) {
-    return (
-      <div className="manual-editor">
-        <p className="no-selection">Select an item from the tree view to edit</p>
-      </div>
-    )
-  }
-
-  // Calculate AirQ PN display - use airQPn if in new item mode, otherwise use selected item's AirQ_PN
-  const currentPn = isNewItemMode ? (airQPn || 0) : (selectedItem ? selectedItem.AirQ_PN : 0)
+  // Calculate AirQ PN display - use airQPn if in new item mode or if no item selected, otherwise use selected item's AirQ_PN
+  const currentPn = isNewItemMode ? (airQPn || 0) : (selectedItem ? selectedItem.AirQ_PN : (airQPn || 0))
   const pnDisplay = String(currentPn || 0).padStart(7, '0')
 
   return (
@@ -678,7 +718,7 @@ function ManualEditor({ selectedItem, onItemUpdate, onClearSelection }) {
       <div className="image-action-row">
         <div className="pn-label-container">
           <label className="pn-label">AirQ PN:</label>
-          {isNewItemMode ? (
+          {isNewItemMode || !selectedItem ? (
             <input
               type="text"
               value={airQPn || ''}
