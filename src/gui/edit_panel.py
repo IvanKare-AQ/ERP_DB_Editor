@@ -4,9 +4,6 @@ Contains three tabs: Manual, AI, and ML editors.
 """
 
 import customtkinter as ctk
-import tkinter as tk
-from tkinter import messagebox
-import threading
 
 from src.gui.manual_editor import ManualEditor
 from src.gui.ai_editor import AIEditor
@@ -37,8 +34,8 @@ class EditPanel(ctk.CTkFrame):
         self.tabview = ctk.CTkTabview(self, width=self.PANEL_WIDTH)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Add tabs with icons (using Unicode characters for icons)
-        self.manual_tab = self.tabview.add("Manual ✏️")  # Manual tab with pencil icon
+        # Add tabs (ordering: Editor, AI, ML)
+        self.manual_tab = self.tabview.add("Editor ✏️")  # Editor tab with pencil icon
         self.ai_tab = self.tabview.add("AI 🤖")  # AI tab with robot icon
         self.ml_tab = self.tabview.add("ML 🧠")  # ML tab with brain icon
 

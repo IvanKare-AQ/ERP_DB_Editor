@@ -27,12 +27,12 @@
   - `"Subcategory"` (second level)
   - `"Sub-subcategory"` (third level)
   - Each `"ERP Name"` object is rendered under its corresponding Sub-subcategory node with no intermediate “Article …” mappings.
-- Default column visibility definitions in `default_settings.json` must reference these exact JSON field names.
+- Default column visibility definitions in `application_setting.json` must reference these exact JSON field names.
 
 ### Column Management
 - Columns are dynamically determined from `data/component_database.json` (source of truth)
 - User will be able to set visible and non-visible columns
-- "Save View" button that will store column visibility settings to `config/default_settings.json`
+- "Save View" button stores column visibility and tree expansion settings to `config/application_setting.json`
 - Column visibility settings automatically saved when changed via Column Visibility dialog
 - All available columns derived from the actual JSON schema (no renaming to internal “Article …” aliases)
 
@@ -46,6 +46,7 @@
   - Placeholder options ("Select Category...", etc.) only appear when a level has no available values
 - "Update All Fields" button saves all field modifications (ERP Name, Manufacturer, Remark)
 - "Reassign Item" button moves items to new Category/Subcategory/Sub-subcategory combinations
+- "Delete Selected Item" removes ERP entries from the in-memory dataset and must immediately mark data as dirty so the Save button becomes active
 - All user modifications tracked in memory until saved; column names must match the JSON schema when persisting to `data/component_database.json`
 - Reset actions must repopulate fields and status messages from the original JSON values (e.g., ERP Name resets use the stored `full_name`)
 
@@ -59,6 +60,14 @@
 - User modification tracking and persistence
 - Hierarchical dropdown population and filtering
 - Use virtual environment (venv) for this application
+
+## Performance and Caching Requirements
+- Initial JSON load may be slow, but all subsequent operations must work exclusively from cached pandas DataFrames (no additional disk reads until Save/Export).
+- Tree view must maintain an in-memory `row_id → DataFrame index` dictionary so edit paths (reassign, update fields, delete) can locate rows in O(1) time.
+- Reassigning an item should update only the impacted tree node (incremental move) and fall back to a full rebuild only when incremental updates fail.
+- Filtered/modified datasets must be cached and invalidated via `_mark_data_dirty()` so editing no longer clones the full DataFrame on every keystroke.
+- Added-tab drafts load lazily—`new_items.json` is touched only when the Add tab becomes active or when draft data is saved.
+- All buffered edits (field updates, image changes, reassignments) must immediately refresh the UI using cached data without reloading the JSON file.
 
 ## Future Requirements
 - Requirements will be populated as application development progresses
@@ -91,6 +100,7 @@
 - Filter settings must be saved and restored with Save View functionality
 - Filters must be automatically loaded from settings file when application starts
 - Filter state must be properly synchronized with Save View button state
+- Tree expansion state must persist across edits, view toggles, and application restarts; Save View captures the expansion map in `config/application_setting.json`
 
 ## Data Export and Save Requirements
 - Save functionality writes all modifications to `data/component_database.json`
@@ -98,6 +108,17 @@
 - No column renaming occurs during export or save; the exact JSON field names remain intact (only the `"ERP Name"` object is flattened when generating Excel files)
 - All user modifications (ERP Name object, Manufacturer, Remark, Category/Subcategory/Sub-subcategory reassignments) are persisted to JSON
 - Data enrichment: Level 3 parameters (Stage, Origin, Serialized, Usage) automatically enriched from `data/airq_categories.json`
+
+## Draft Item Workflow Requirements
+- Draft queue stored in `data/new_items.json` mirrors the main schema for offline staging
+- "New Items" view shows the draft queue; "Current Items" shows the live database
+- "Commit Items" button in toolbar (next to view toggle) copies all draft items into `data/component_database.json`
+- Commit process validates each draft item:
+  - Ensures numeric, unique PN assignments
+  - Confirms ERP Name structure with non-empty `full_name`
+  - Verifies category paths exist in `data/airq_categories.json`
+- Successful commit appends items to database, clears `new_items.json`, and refreshes both views
+- Validation failures list offending items without mutating existing data
 
 ## User Interface Requirements
 - Status message bar at the bottom of the application window
@@ -141,15 +162,6 @@
 - Support for both single item and multiple item selection in AI operations
 - Real-time progress tracking with stop instructions during processing
 - Safe process termination ensuring no data loss or hanging threads
-
-## Data Cleaning Requirements
-- Multiline cell conversion functionality to convert multiline JSON cell values to single line entries
-- "NEN" prefix removal functionality to remove "NEN" and subsequent spaces from all cells
-- Data cleaning buttons in Manual tab for easy access to cleaning operations
-- Confirmation dialogs for irreversible data cleaning operations
-- Progress tracking and statistics for data cleaning operations
-- Automatic tree view refresh after data cleaning operations
-- Real-time status updates during data cleaning processes
 
 ## Data Integrity and Display Requirements
 - Immediate visual updates after item reassignment operations
@@ -223,15 +235,25 @@
 
 ### Tabbed Interface Redesign (v1.2.0)
 - **Modular Edit Panel Architecture**: Restructured right panel into three specialized tabs
-  - **Manual Tab (✏️)**: Manual editing, reassignment, and data cleaning tools
+  - **Editor Tab (✏️)**: Item editing, reassignment tools, image management, and new item creation (formerly Manual tab)
   - **AI Tab (🤖)**: AI-powered editing with model management and prompt tools
   - **ML Tab (🧠)**: Placeholder for future machine learning features
+- **Editor Tab Functionality**: The Editor tab (formerly Manual) includes all item editing capabilities:
+  - Image action buttons: `<- Add Item` (leftmost), `Import`, and `Add Image` positioned below image preview
+  - `Suggest` button above `Reassign` button for category suggestions
+  - All editing controls (Update All Fields, Delete Selected Item, Reassign) available in single unified interface
+  - New item creation integrated directly into the editor workflow
+- **Tab Switching Performance**: Tree view refresh is only triggered when switching between tabs that require different data views. Switching between Editor, AI, and ML tabs does not trigger tree view refresh, improving performance and user experience.
+- **Save Button State Management**: Save button is disabled by default and only enabled when there are unsaved changes to the database, preventing accidental saves of unchanged data.
+- **Reassign Button State Management**: Reassign button is disabled until category/subcategory/sub-subcategory dropdowns are changed from their original values, providing clear visual feedback on when reassignment is available.
+- **View Toggle Functionality**: Toggle button in toolbar switches between "New Items" and "Current Items" views, with button label dynamically updating to reflect current view state.
+- **PN Display Format**: PN (Part Number) values are displayed as 7-digit numbers with leading zeros (e.g., 0000123) throughout the application for consistent formatting.
 - **Fixed Width Layout**: Right panel now uses consistent 1000px width across all tabs
 - **Component Separation**: Each tab is a self-contained module with dedicated file
   - `manual_editor.py`: Manual editing functionality (ERP Name, Manufacturer, REMARK)
   - `ai_editor.py`: AI tools and model management (completely self-contained)
   - `ml_editor.py`: ML placeholder for future expansion
-- **Enhanced Data Cleaning**: Moved "Convert Multiline" and "Remove NEN" buttons to Manual tab
+- **Manual Editor Streamlining**: Removed legacy data-cleaning controls that depended on Excel workflows
 - **Unified UI Constants**: Width and height parameters standardized across all UI components
   - Consistent button heights (35px standard, 90px for reassign)
   - Standardized input field widths (400px)
@@ -259,6 +281,7 @@
 - **Image Management System**: Complete image handling with web search and preview
   - Automatic Image column creation in JSON database (positioned after ERP name)
   - Image preview display (150x150) in Manual Editing tab
+  - “Add Image” button located directly below the preview to keep acquisition workflow in one place
   - Modal dialog for image selection with multiple sources
   - Web image search using DuckDuckGo (no API key required)
   - Local file selection via file browser with full preview (up to 400x400)
@@ -309,14 +332,14 @@
   - Integration with existing Save View functionality
 
 ## Column Management and Data Integrity Requirements
-- **Dynamic Column Source**: Columns are dynamically determined from `data/component_database.json` (source of truth)
+- **Dynamic Column Source**: Columns are dynamically determined from `data/component_database.json` (source of truth), with filtered views always reflecting staged modifications (reassignments, field edits) even before Save.
 - **Complete Column Mapping**: Proper mapping between display names and JSON column names
 - **Data Population Integrity**: All columns must display actual data from JSON database
 - **Missing Column Detection**: Automatic detection and handling of columns missing from tree view
 - **Column Order Consistency**: Tree view column order matches JSON file structure
-- **Extended Column Support**: Support for all data columns including:
-  - Standard ERP columns (Image, SKU NR, ERP Name, KEN NAME, CAD Name, etc.)
-  - Processing status columns (SN, Manually processed)
+- **Extended Column Support & Buffering**: Support for all data columns, with staged edits (reassignments, ERP field changes, manufacturer/remark/image updates) applied immediately in-memory while the persisted JSON remains untouched until Save. This includes:
+  - Standard ERP columns (Image, SKU NR, ERP Name, KEN NAME, CAD Name, EAN13, etc.)
+  - Processing status columns (PN, Manually processed)
   - Level 3 parameters (Stage, Origin, Serialized, Usage) enriched from categories
   - AI suggestion columns (SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL)
   - AI/ML status columns (AI_STATUS, USE_FOR_ML)
@@ -349,6 +372,34 @@
   - Config directory included in builds
   - Source directory structure preserved in builds
   - Console mode for macOS (better debugging and error visibility)
+
+## Category Suggestion System Requirements
+- **Smart Category Suggestions**: AI-powered category suggestion system for ERP items
+  - Hybrid approach using pattern matching, similarity matching, and AI fallback
+  - Pattern matching from existing data (fastest, most accurate for known types)
+  - Similarity matching with existing items (fast, accurate)
+  - AI suggestion as fallback (slower, handles edge cases)
+  - Integration with Ollama for AI-powered suggestions
+  - Automatic validation of suggested category paths against category structure
+  - Closest match finding for invalid suggestions
+  - Confidence levels (high/medium/low) for suggestions
+  - Method tracking (pattern/similarity/ai/none) for transparency
+- **Category Suggester Backend**: Complete backend module for category suggestions
+  - `CategorySuggester` class in `src/backend/category_suggester.py`
+  - Pattern building from existing database items
+  - Similarity calculation using Jaccard similarity and substring matching
+  - AI integration with Ollama for intelligent suggestions
+  - Category validation against `data/airq_categories.json` structure
+  - Support for model parameter customization
+- **Manual Editor Integration**: Category suggestion functionality in Editor tab
+  - "Suggest" button above "Reassign" button for category suggestions
+  - Threading support for non-blocking suggestion generation
+  - Real-time status updates during suggestion generation
+  - Automatic application of suggestions to category dropdowns
+  - User confirmation for invalid or close-match suggestions
+  - "Reset" button to revert category dropdowns to original values
+  - Button state management (disabled during suggestion generation)
+  - Integration with AI model selection from AI editor settings
 
 ## Dependencies
 - customtkinter (for GUI framework)

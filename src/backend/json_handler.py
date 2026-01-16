@@ -7,7 +7,7 @@ Replaces the ExcelHandler.
 import pandas as pd
 import json
 import os
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 
 class JsonHandler:
@@ -22,6 +22,10 @@ class JsonHandler:
         project_root = os.path.dirname(os.path.dirname(current_dir))
         self.file_path = os.path.join(project_root, "data", "component_database.json")
         self.categories_file_path = os.path.join(project_root, "data", "airq_categories.json")
+        self.added_file_path = os.path.join(project_root, "data", "new_items.json")
+        self.added_data = pd.DataFrame()
+        self.schema_columns: List[str] = []
+        self._added_items_loaded = False  # Track if added items have been loaded (lazy loading)
         
     def load_categories(self) -> None:
         """Load the categories JSON file into memory."""
@@ -61,8 +65,9 @@ class JsonHandler:
             # Convert to Pandas DataFrame
             self.data = pd.DataFrame(data_list)
             self.file_path = path_to_load
+            self.schema_columns = list(self.data.columns)
             
-            # Clean the data
+            # Clean the data (this will add Buy and convert Serialized to "Yes"/"No")
             self.clean_data()
             
         except Exception as e:
@@ -118,6 +123,67 @@ class JsonHandler:
                     self.data.insert(erp_name_pos, 'Image', '')
                 else:
                     self.data['Image'] = ''
+            
+            # Ensure Serialized column exists (string: "Yes"/"No", default "No")
+            serialized_col_exists = any(existing_col.strip() == 'Serialized' for existing_col in self.data.columns)
+            if not serialized_col_exists:
+                # Add Serialized column with default "No"
+                self.data['Serialized'] = "No"
+            else:
+                # Convert existing values to "Yes"/"No" strings
+                def convert_serialized_to_yes_no(x):
+                    if pd.isna(x):
+                        return "No"
+                    if isinstance(x, bool):
+                        return "Yes" if x else "No"
+                    if isinstance(x, (int, float)):
+                        return "Yes" if bool(x) else "No"
+                    # Handle string values
+                    x_str = str(x).strip()
+                    if x_str.lower() in ('yes', 'true', '1', 'y'):
+                        return "Yes"
+                    elif x_str.lower() in ('no', 'false', '0', 'n', ''):
+                        return "No"
+                    else:
+                        # For values like "Mixed", default to "No"
+                        return "No"
+                
+                self.data['Serialized'] = self.data['Serialized'].apply(convert_serialized_to_yes_no)
+            
+            # Ensure Buy column exists (string: "Yes"/"No")
+            buy_col_exists = any(existing_col.strip() == 'Buy' for existing_col in self.data.columns)
+            if not buy_col_exists:
+                # Initialize Buy based on Manufacturer: "No" if contains "AirQ", "Yes" otherwise
+                if 'Manufacturer' in self.data.columns:
+                    airq_mask = self.data['Manufacturer'].astype(str).str.contains('AirQ', case=False, na=False)
+                    self.data['Buy'] = self.data['Manufacturer'].apply(
+                        lambda x: "No" if 'AirQ' in str(x) else "Yes"
+                    )
+                else:
+                    self.data['Buy'] = "Yes"
+            else:
+                # Convert existing values to "Yes"/"No" strings, but update for AirQ manufacturers
+                def convert_buy_to_yes_no(x):
+                    if pd.isna(x):
+                        return "Yes"  # Default to "Yes" if missing
+                    if isinstance(x, bool):
+                        return "Yes" if x else "No"
+                    if isinstance(x, (int, float)):
+                        return "Yes" if bool(x) else "No"
+                    # Handle string values
+                    x_str = str(x).strip()
+                    if x_str.lower() in ('yes', 'true', '1', 'y'):
+                        return "Yes"
+                    elif x_str.lower() in ('no', 'false', '0', 'n'):
+                        return "No"
+                    else:
+                        return "Yes"  # Default to "Yes"
+                
+                self.data['Buy'] = self.data['Buy'].apply(convert_buy_to_yes_no)
+                if 'Manufacturer' in self.data.columns:
+                    # Set Buy to "No" for items with Manufacturer containing "AirQ"
+                    airq_mask = self.data['Manufacturer'].astype(str).str.contains('AirQ', case=False, na=False)
+                    self.data.loc[airq_mask, 'Buy'] = "No"
                     
     def save_file(self, file_path: Optional[str] = None, data: Optional[pd.DataFrame] = None) -> None:
         """Save data to a JSON file."""
@@ -132,8 +198,29 @@ class JsonHandler:
             # Reverse column renaming for saving to JSON if we want to maintain the JSON schema
             # "ERP name" -> "ERP Name"
             
+            # Ensure Serialized and Buy are strings ("Yes"/"No") before saving
+            save_data_copy = save_data.copy()
+            if 'Serialized' in save_data_copy.columns:
+                def ensure_serialized_string(x):
+                    if pd.isna(x):
+                        return "No"
+                    if isinstance(x, bool):
+                        return "Yes" if x else "No"
+                    x_str = str(x).strip()
+                    return "Yes" if x_str.lower() in ('yes', 'true', '1', 'y') else "No"
+                save_data_copy['Serialized'] = save_data_copy['Serialized'].apply(ensure_serialized_string)
+            if 'Buy' in save_data_copy.columns:
+                def ensure_buy_string(x):
+                    if pd.isna(x):
+                        return "Yes"
+                    if isinstance(x, bool):
+                        return "Yes" if x else "No"
+                    x_str = str(x).strip()
+                    return "Yes" if x_str.lower() in ('yes', 'true', '1', 'y') else "No"
+                save_data_copy['Buy'] = save_data_copy['Buy'].apply(ensure_buy_string)
+            
             # Convert DataFrame to list of dicts
-            json_data = save_data.to_dict(orient='records')
+            json_data = save_data_copy.to_dict(orient='records')
             
             # Save to JSON file
             with open(path_to_save, 'w', encoding='utf-8') as f:
@@ -158,7 +245,7 @@ class JsonHandler:
         """Get the column names from the current data."""
         if self.data is not None:
             return list(self.data.columns)
-        return []
+        return self.schema_columns if self.schema_columns else []
         
     def get_unique_values(self, column: str) -> list:
         """Get unique values from a specific column."""
@@ -204,7 +291,8 @@ class JsonHandler:
         # A vectorized approach would be better if possible
         
         # Initialize new columns if they don't exist
-        for col in ['Stage', 'Origin', 'Serialized', 'Usage']:
+        # Note: Serialized is now a boolean field, not from category enrichment
+        for col in ['Stage', 'Origin', 'Usage']:
             if col not in self.data.columns:
                 self.data[col] = ''
                 
@@ -221,6 +309,9 @@ class JsonHandler:
             
             if mask.any():
                 for col, val in props.items():
+                    # Skip Serialized as it's now a boolean field, not from category enrichment
+                    if col == 'Serialized':
+                        continue
                     if val:
                         self.data.loc[mask, col] = val
 
@@ -296,4 +387,225 @@ class JsonHandler:
             "total_cells": total_cells,
             "percentage": (converted_count / total_cells * 100) if total_cells > 0 else 0
         }
+
+    # ------------------------------------------------------------------
+    # Added items management
+    # ------------------------------------------------------------------
+    def load_added_items(self) -> None:
+        """Load the temporary file that stores draft items created in the Add tab."""
+        try:
+            if not os.path.exists(self.added_file_path):
+                with open(self.added_file_path, 'w', encoding='utf-8') as f:
+                    json.dump([], f, indent=4)
+                self.added_data = pd.DataFrame(columns=self.get_column_names())
+                return
+
+            with open(self.added_file_path, 'r', encoding='utf-8') as f:
+                draft_list = json.load(f)
+
+            self.added_data = pd.DataFrame(draft_list)
+            if not self.added_data.empty:
+                self.added_data = self.added_data.fillna('')
+            self._ensure_added_schema()
+
+        except Exception as e:
+            print(f"Failed to load added items file: {e}")
+            self.added_data = pd.DataFrame(columns=self.get_column_names())
+
+    def save_added_items(self) -> None:
+        """Persist the current draft items to disk."""
+        try:
+            data_to_save = self.added_data if self.added_data is not None else pd.DataFrame()
+            json_data = data_to_save.to_dict(orient='records')
+            with open(self.added_file_path, 'w', encoding='utf-8') as f:
+                json.dump(json_data, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"Failed to save added items: {e}")
+
+    def get_added_data(self) -> pd.DataFrame:
+        """Return a copy of the draft items DataFrame."""
+        if self.added_data is not None and not self.added_data.empty:
+            return self.added_data.copy()
+        return pd.DataFrame(columns=self.get_column_names())
+
+    def add_added_item(self, item: Dict[str, Any]) -> None:
+        """Append a new draft item to the temporary DataFrame."""
+        if self.added_data is None or self.added_data.empty:
+            self.added_data = pd.DataFrame(columns=self.get_column_names())
+
+        self._ensure_added_schema()
+        self.added_data = pd.concat([self.added_data, pd.DataFrame([item])], ignore_index=True)
+
+    def get_next_available_pn(self) -> int:
+        """Return the next unique PN value across both primary and draft data."""
+        pn_values = []
+
+        def collect_pn(series: pd.Series):
+            if series is None:
+                return
+            numeric = pd.to_numeric(series, errors='coerce').dropna()
+            pn_values.extend(numeric.astype(int).tolist())
+
+        if self.data is not None and 'PN' in self.data.columns:
+            collect_pn(self.data['PN'])
+
+        if self.added_data is not None and 'PN' in self.added_data.columns:
+            collect_pn(self.added_data['PN'])
+
+        return max(pn_values) + 1 if pn_values else 1
+
+    def get_category_properties(self, category: str, subcategory: str, sub_subcategory: str) -> Dict[str, Any]:
+        """Fetch enrichment values for a specific category path."""
+        if not self.categories:
+            self.load_categories()
+        if not self.categories:
+            return {}
+
+        for cat in self.categories:
+            if cat.get('category') != category:
+                continue
+            for sub in cat.get('subcategories', []):
+                if sub.get('name') != subcategory:
+                    continue
+                for subsub in sub.get('sub_subcategories', []):
+                    if subsub.get('name') != sub_subcategory:
+                        continue
+                    return {
+                        'stage': subsub.get('stage', ''),
+                        'origin': subsub.get('origin', ''),
+                        'serialized': subsub.get('serialized', ''),
+                        'usage': subsub.get('usage', '')
+                    }
+        return {}
+
+    def _category_path_exists(self, category: str, subcategory: str, sub_subcategory: str) -> bool:
+        """Check whether a category path exists in the loaded category tree."""
+        if not self.categories:
+            self.load_categories()
+        if not self.categories:
+            return False
+
+        category = (category or '').strip()
+        subcategory = (subcategory or '').strip()
+        sub_subcategory = (sub_subcategory or '').strip()
+
+        for cat in self.categories:
+            if cat.get('category', '').strip() != category:
+                continue
+            for sub in cat.get('subcategories', []):
+                if sub.get('name', '').strip() != subcategory:
+                    continue
+                for subsub in sub.get('sub_subcategories', []):
+                    if subsub.get('name', '').strip() == sub_subcategory:
+                        return True
+        return False
+
+    def _normalize_erp_name(self, value: Any) -> Dict[str, str]:
+        """Normalize ERP Name structure to ensure all keys exist."""
+        if isinstance(value, dict):
+            return {
+                'full_name': value.get('full_name', ''),
+                'type': value.get('type', ''),
+                'part_number': value.get('part_number', ''),
+                'additional_parameters': value.get('additional_parameters', '')
+            }
+        full_name = str(value).strip() if value else ''
+        return {
+            'full_name': full_name,
+            'type': '',
+            'part_number': '',
+            'additional_parameters': ''
+        }
+
+    def _ensure_dataframe_columns(self, df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
+        """Ensure the dataframe contains the provided column set."""
+        for column in columns:
+            if column not in df.columns:
+                df[column] = ''
+        return df[columns]
+
+    def commit_added_items(self) -> Dict[str, Any]:
+        """Validate draft items and append them to the primary database."""
+        if self.data is None:
+            raise ValueError("Primary database is not loaded. Load the database before committing items.")
+
+        self.load_added_items()
+        if self.added_data is None or self.added_data.empty:
+            return {"committed": 0, "errors": ["There are no draft items to commit."]}
+
+        # Make a working copy to avoid mutating the original until validation succeeds
+        working_df = self.added_data.copy(deep=True).fillna('')
+
+        base_columns = self.get_column_names()
+        if not base_columns:
+            base_columns = list(self.data.columns)
+        working_df = self._ensure_dataframe_columns(working_df, base_columns)
+
+        errors: List[str] = []
+
+        # Collect existing PN values to ensure uniqueness
+        existing_pn = set()
+        if 'PN' in self.data.columns:
+            pn_series = pd.to_numeric(self.data['PN'], errors='coerce').dropna().astype(int)
+            existing_pn.update(pn_series.tolist())
+
+        for idx, row in working_df.iterrows():
+            row_errors = []
+            display_index = idx + 1
+
+            # Validate PN
+            pn_value = row.get('PN', '')
+            try:
+                pn_int = int(pn_value)
+            except (TypeError, ValueError):
+                row_errors.append("PN must be a numeric value.")
+            else:
+                if pn_int in existing_pn:
+                    row_errors.append(f"PN {pn_int:07d} already exists in the database.")
+                else:
+                    existing_pn.add(pn_int)
+                    working_df.at[idx, 'PN'] = pn_int
+
+            # Validate ERP Name
+            erp_obj = self._normalize_erp_name(row.get('ERP Name', {}))
+            if not erp_obj.get('full_name', '').strip():
+                row_errors.append("ERP Name full_name is required.")
+            working_df.at[idx, 'ERP Name'] = erp_obj
+
+            # Validate category path
+            category = str(row.get('Category', '')).strip()
+            subcategory = str(row.get('Subcategory', '')).strip()
+            sub_subcategory = str(row.get('Sub-subcategory', '')).strip()
+
+            if not category or not subcategory or not sub_subcategory:
+                row_errors.append("Category, Subcategory, and Sub-subcategory are required.")
+            elif not self._category_path_exists(category, subcategory, sub_subcategory):
+                row_errors.append(f"Invalid category path: {category} > {subcategory} > {sub_subcategory}")
+
+            if row_errors:
+                errors.append(f"Item {display_index}: " + " ".join(row_errors))
+
+        if errors:
+            return {"committed": 0, "errors": errors}
+
+        # Append to primary data and persist
+        self.data = pd.concat([self.data, working_df], ignore_index=True)
+        self.data = self.data.fillna('')
+        self.save_file(data=self.data)
+
+        # Clear draft items
+        self.added_data = pd.DataFrame(columns=base_columns)
+        self.save_added_items()
+
+        return {"committed": len(working_df), "errors": []}
+
+    def _ensure_added_schema(self) -> None:
+        """Ensure the draft DataFrame contains the same columns as the main dataset."""
+        base_columns = self.get_column_names()
+        if not base_columns:
+            return
+
+        for column in base_columns:
+            if column not in self.added_data.columns:
+                self.added_data[column] = ''
 

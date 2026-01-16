@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Optional
 class ConfigManager:
     """Manages configuration settings for the ERP Database Editor."""
     
-    def __init__(self, config_file: str = "config/default_settings.json"):
+    def __init__(self, config_file: str = "config/application_setting.json"):
         """Initialize the configuration manager."""
         self.config_file = config_file
         self.config = self.load_config()
@@ -32,8 +32,18 @@ class ConfigManager:
     def get_default_config(self) -> Dict[str, Any]:
         """Get default configuration."""
         return {
-            "column_visibility": {},
-            "view_settings": {}
+            "column_visibility": {
+                "visible_columns": []
+            },
+            "view_settings": {
+                "filters": {},
+                "tree_expansion": {
+                    "primary": {},
+                    "added": {}
+                }
+            },
+            "ai_settings": {},
+            "model_parameters": {}
         }
         
     def save_config(self) -> None:
@@ -79,6 +89,17 @@ class ConfigManager:
     def get_filters(self) -> Dict[str, Dict[str, Any]]:
         """Get saved filter settings."""
         return self.config.get("view_settings", {}).get("filters", {})
+    
+    def save_tree_expansion_state(self, expansion_state: Dict[str, Dict[str, bool]]) -> None:
+        """Persist tree expansion state for each view."""
+        if "view_settings" not in self.config:
+            self.config["view_settings"] = {}
+        self.config["view_settings"]["tree_expansion"] = expansion_state
+        self.save_config()
+    
+    def get_tree_expansion_state(self) -> Dict[str, Dict[str, bool]]:
+        """Retrieve saved tree expansion state."""
+        return self.config.get("view_settings", {}).get("tree_expansion", {})
     
     def get_ai_settings(self) -> Dict[str, Any]:
         """Get AI settings."""

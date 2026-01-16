@@ -7,8 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-01-16
+
+### Added
+- **Tree View Indexing**: Introduced an in-memory `row_id → DataFrame index` dictionary so edits, deletes, and saves locate rows in O(1) time.
+- **View Toggle Button**: Added toggle button in toolbar to switch between "New Items" and "Current Items" views, with button label indicating current view state.
+- **Save Button State Management**: Save button is now disabled by default and only enabled when there are unsaved changes to the database.
+- **Reassign Button State Management**: Reassign button is disabled until category/subcategory/sub-subcategory dropdowns are changed from their original values.
+- **Category Suggestion System**: Complete AI-powered category suggestion functionality
+  - New `CategorySuggester` backend module (`src/backend/category_suggester.py`) for smart category suggestions
+  - Hybrid suggestion approach: pattern matching (fastest), similarity matching (fast), and AI fallback (comprehensive)
+  - Pattern building from existing database items to learn type-to-category mappings
+  - Similarity calculation using Jaccard similarity and substring matching for finding similar items
+  - AI integration with Ollama for intelligent category suggestions when patterns don't match
+  - Automatic validation of suggested category paths against `data/airq_categories.json` structure
+  - Closest match finding for invalid suggestions with user confirmation
+  - Confidence levels (high/medium/low) and method tracking (pattern/similarity/ai/none) for transparency
+  - "Suggest" button in Editor tab above "Reassign" button for generating category suggestions
+  - Threading support for non-blocking suggestion generation with real-time status updates
+  - Automatic application of valid suggestions to category dropdowns
+  - User confirmation dialogs for invalid or close-match suggestions
+  - "Reset" button to revert category dropdowns to their original values
+  - Integration with AI model selection from AI editor settings for consistent model usage
+  - Button state management (disabled during suggestion generation, re-enabled after completion)
+- **Commit Items Workflow**: Draft queue promotion directly from the toolbar
+  - New "Commit Items" button next to the New/Current toggle
+  - Validates PN uniqueness, ERP Name completeness, and category paths before promoting items
+  - Appends validated drafts to `data/component_database.json`, clears `data/new_items.json`, and refreshes the tree view without discarding in-memory edits
+  - Detailed error reporting prevents partial commits while keeping existing data untouched
+- **Tree Expansion Persistence**: Tree view now preserves user expansion state for primary and draft datasets, avoids forced auto-expansion after edits, and saves/restores the expansion map through Save View.
+- **Serialized and Buy Fields**: Added two new boolean fields stored as human-readable "Yes"/"No" strings
+  - "Serialized" field: Indicates whether an item is serialized (defaults to "No")
+  - "Buy" field: Indicates whether an item should be purchased (defaults to "Yes", automatically set to "No" for items with Manufacturer containing "AirQ")
+  - Checkboxes in Editor tab (under Details, above "Update All Fields" button) for easy editing
+  - Both fields are visible in tree view and exported to Excel
+  - Fields are stored as "Yes"/"No" strings in JSON for human readability
+
+### Changed
+- **Buffered Editing**: `TreeViewWidget` now reuses cached DataFrames, invalidates them only through `_mark_data_dirty()`, and applies modifications in-place instead of cloning the full dataset on every action.
+- **Reassign UX**: Item reassignments update the existing tree node in place (with automatic fallback to a full refresh) which eliminates multi-second rebuilds in large datasets.
+- **Tab Switching Optimization**: Tree view refresh now only occurs when switching between the Add tab and other tabs (Manual, AI, ML). Switching between Manual, AI, and ML tabs no longer triggers tree view refresh, reducing unnecessary UI updates and improving performance.
+- **Add Tab Loading**: Draft items (`data/new_items.json`) load lazily the first time the Add tab opens, reducing startup time when drafts are unused.
+- **UI Consolidation**: Removed Add tab completely; Add Item, Import, and Suggest functionality moved to Editor tab for improved usability.
+- **Button Layout**: Reordered image action buttons with "<- Add Item" moved to the leftmost position.
+- **Tab Naming**: Renamed "Manual" tab to "Editor" and "Manual Editing" title to "Item editor" for clearer terminology.
+- **PN Display Format**: PN values are now displayed as 7-digit numbers with leading zeros (e.g., 0000123) in tree view and messages.
+- **Settings File Rename**: `config/default_settings.json` has been renamed to `config/application_setting.json` to reflect the broader scope of saved preferences (columns, filters, AI settings, and tree expansion state).
+
 ### Fixed
 - **Manual Editor**: Resetting an ERP Name now reports the restored value using the correct variable, eliminating the `original_erp_name` reference error.
+- **Delete Button Save State**: Removing an item now marks the dataset dirty and enables the Save button so deletions can be persisted immediately.
+- **Tree View Expansion State**: Fixed TclError when capturing expansion state during column visibility changes by adding proper widget existence checks.
+- **Tree View Change Tracking**: Tree expansion/collapse actions now properly trigger view change notifications, enabling the Save View button when expansion state changes.
+
+## [Unreleased]
 
 ## [1.4.0] - 2025-11-20
 
@@ -31,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Apply User ERP Names Button**: Removed button that moved User ERP Name to ERP name (no longer needed)
 - **Clear User ERP Name Button**: Removed button for clearing User ERP Name (no longer needed)
 - **Hardcoded Column Lists**: Removed all hardcoded column lists - columns now come from data structure
-- **Rows Configuration**: Removed "rows" array from `config/default_settings.json` (columns now dynamic)
+- **Rows Configuration**: Removed "rows" array from `config/application_setting.json` (columns now dynamic)
 
 ### Fixed
 - **Column Visibility**: Column visibility now automatically saves to config when changed
@@ -417,7 +469,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Root Cause**: Missing cases in `populate_tree_with_visibility()` method for several columns
   - **KEN NAME Column**: Fixed missing case that caused empty data display despite column being visible
   - **Extended Column Support**: Added support for all missing Excel columns:
-    - SN (Serial Number)
+   - PN (Part Number)
     - Manually processed (Processing status)
     - SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL (AI suggestions)
     - AI_STATUS, USE_FOR_ML (AI/ML status columns)
@@ -442,7 +494,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Comprehensive Column Support**: Full support for all Excel file columns
   - Standard ERP columns: User ERP Name, Image, SKU NR, ERP Name, KEN NAME, CAD Name, etc.
-  - Processing status columns: SN, Manually processed
+  - Processing status columns: PN, Manually processed
   - AI suggestion columns: SUGGESTED_CAT, SUGGESTED_SUBCAT, SUGGESTED_SUBLEVEL
   - AI/ML status columns: AI_STATUS, USE_FOR_ML
 - **Data Verification**: Systematic testing framework for column data integrity
@@ -451,6 +503,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **CAD/EAN Metadata Columns**: Each record in `data/component_database.json` now includes empty `CAD Name` and `EAN13` fields so upcoming UI and export work can rely on a consistent schema.
 - **AI Model Management System**: Complete model management functionality
   - Model Manager dialog (900x700) for downloading, removing, and configuring AI models
   - Dynamic parameter display based on model capabilities using `ollama show` command
@@ -541,6 +594,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic parameter initialization for new models
   - Robust error handling for parameter operations
   - Better user feedback and status updates
+
+- **Add Tab Visibility & Functionality**: Replaced the emoji placeholder with a programmatically rendered green plus icon and rebuilt the Add tab UI so it mirrors the Manual tab (image row with `Import`, `Add Image`, and `<- Add Item`, Update/Delete/Reassign buttons) while buffering new entries in `data/new_items.json`.
+- **Buffered Editing Workflow**: Tree view, manual editor, and main window now keep all edits (reassignments, ERP fields, manufacturer/remark/image changes) in memory. The UI reflects those changes immediately while the primary JSON isn’t touched until Save, preventing accidental persistence. Cached modification/filtered datasets keep the tree responsive even on large databases. This same staged mechanism now powers the Add tab so draft reassignment behaves identically to the manual editor.
 
 ### Added
 - **Item Deletion Functionality**: Complete item removal system

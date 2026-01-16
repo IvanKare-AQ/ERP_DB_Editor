@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import os
 import sys
+import pandas as pd
 
 # Add the project root to the Python path
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -42,6 +43,8 @@ class MainWindow:
         
         # Track view changes
         self.view_has_changes = False
+        # Track data changes for Save button state
+        self.data_has_changes = False
         
         # Setup the GUI
         self.setup_gui()
@@ -159,6 +162,26 @@ class MainWindow:
         separator3 = ctk.CTkFrame(self.toolbar_frame, width=2, height=30)
         separator3.pack(side="left", padx=10, pady=5)
         
+        # View toggle button (New Items / Current Items)
+        self.view_toggle_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Current Items",
+            command=self.toggle_view,
+            width=120,
+            state="disabled"
+        )
+        self.view_toggle_button.pack(side="left", padx=5, pady=5)
+        self._showing_new_items = False
+
+        self.commit_items_button = ctk.CTkButton(
+            self.toolbar_frame,
+            text="Commit Items",
+            command=self.commit_new_items,
+            width=130,
+            state="disabled"
+        )
+        self.commit_items_button.pack(side="left", padx=5, pady=5)
+        
         
     def create_content_area(self):
         """Create the main content area with tree view and edit panel."""
@@ -178,6 +201,10 @@ class MainWindow:
         # Create tree view widget
         self.tree_view = TreeViewWidget(self.left_panel, self.config_manager)
         self.tree_view.pack(fill="both", expand=True)
+        self.tree_view.set_view_change_callback(self.on_tree_view_changed)
+        
+        saved_expansion = self.config_manager.get_tree_expansion_state()
+        self.tree_view.load_expansion_state_from_config(saved_expansion)
 
         # Bind tree view selection event
         self.tree_view.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
@@ -219,8 +246,10 @@ class MainWindow:
     
     def update_status(self, message):
         """Update the status bar message."""
-        self.status_label.configure(text=message)
-        self.root.update_idletasks()  # Force immediate update
+        if hasattr(self, 'status_label'):
+            self.status_label.configure(text=message)
+        if hasattr(self, 'root'):
+            self.root.update_idletasks()  # Force immediate update
     
     def update_file_info(self, file_path=None):
         """Update the file information in the status bar."""
@@ -243,9 +272,13 @@ class MainWindow:
             
             # Enrich data with category properties
             self.json_handler.enrich_data()
+            # Load added items (for Add Item functionality in Manual tab)
+            self.json_handler.load_added_items()
             
             # Update tree view with data and categories
             self.tree_view.load_data(self.json_handler.get_data(), self.json_handler.get_categories())
+            # Initialize with added data
+            self.tree_view.set_added_data(self.json_handler.get_added_data())
             
             # Load saved filters after data is loaded
             saved_filters = self.config_manager.get_filters()
@@ -255,13 +288,15 @@ class MainWindow:
             # Update Save View button state after loading data and filters
             self.update_save_view_button_state()
             
-            # Enable buttons
-            self.save_button.configure(state="normal")
+            # Enable buttons (Save button stays disabled until changes are made)
+            self.save_button.configure(state="disabled")
             self.export_button.configure(state="normal")
             self.column_visibility_button.configure(state="normal")
             self.save_view_button.configure(state="normal")
             self.filter_button.configure(state="normal")
             self.clear_filters_button.configure(state="normal")
+            self.view_toggle_button.configure(state="normal")
+            self.commit_items_button.configure(state="normal")
             
             # Update status and file info
             self.update_status("Database loaded successfully")
@@ -270,7 +305,121 @@ class MainWindow:
         except Exception as e:
             self.update_status("Error loading database")
             messagebox.showerror("Error", f"Failed to load database: {str(e)}")
+    
+    def refresh_added_items_view(self):
+        """Synchronize the tree view with the latest draft items."""
+        if not hasattr(self, 'tree_view'):
+            return
+        # Ensure added items are loaded
+        self.json_handler.load_added_items()
+        self.tree_view.set_added_data(self.json_handler.get_added_data())
+        # Update view if currently showing new items
+        if self._showing_new_items:
+            self.tree_view.show_added_items()
+    
+    def toggle_view(self):
+        """Toggle between New Items and Current Items view."""
+        if not hasattr(self, 'tree_view'):
+            return
+        
+        self._showing_new_items = not self._showing_new_items
+        
+        if self._showing_new_items:
+            self.tree_view.show_added_items()
+            self.view_toggle_button.configure(text="New Items")
+            self.update_status("Viewing new items")
+        else:
+            self.tree_view.show_primary_items()
+            self.view_toggle_button.configure(text="Current Items")
+            self.update_status("Viewing current items")
+
+    def commit_new_items(self):
+        """Move draft items into the primary database."""
+        if not hasattr(self, 'json_handler'):
+            return
+
+        # Prevent duplicate clicks during processing
+        self.commit_items_button.configure(state="disabled")
+
+        try:
+            self.update_status("Checking draft items...")
+            self.json_handler.load_added_items()
+            draft_df = self.json_handler.get_added_data()
+            pending_count = len(draft_df.index)
+
+            if pending_count == 0:
+                messagebox.showinfo("No Draft Items", "There are no draft items to commit.")
+                self.update_status("No draft items to commit")
+                return
+
+            confirm = messagebox.askyesno(
+                "Commit Draft Items",
+                f"This will append {pending_count} draft item(s) to the main database "
+                "and clear the draft queue.\n\nDo you want to continue?",
+                icon="warning"
+            )
+            if not confirm:
+                self.update_status("Commit cancelled")
+                return
+
+            self.update_status("Validating draft items...")
+            result = self.json_handler.commit_added_items()
+            committed = result.get('committed', 0) if result else 0
+            errors = result.get('errors', []) if result else []
+
+            if errors:
+                # Show up to first 10 errors to avoid overwhelming dialog
+                preview = errors[:10]
+                remaining = len(errors) - len(preview)
+                error_message = "\n".join(preview)
+                if remaining > 0:
+                    error_message += f"\n...and {remaining} more issue(s)."
+                messagebox.showerror("Commit Failed", error_message)
+                self.update_status("Commit failed")
+                return
+
+            if committed == 0:
+                messagebox.showinfo("Commit Items", "No draft items were committed.")
+                self.update_status("No draft items committed")
+                return
+
+            # Preserve current filters if we were viewing the main dataset
+            filters_to_restore = {}
+            if not self.tree_view.is_showing_added_items():
+                filters_to_restore = self.tree_view.get_current_filters()
+
+            # Reload tree view with updated data
+            self.tree_view.load_data(
+                self.json_handler.get_data(),
+                self.json_handler.get_categories(),
+                set_primary=True
+            )
+            if filters_to_restore:
+                self.tree_view.load_filters(filters_to_restore)
+
+            # Refresh draft dataset and ensure we show current items
+            self.tree_view.set_added_data(self.json_handler.get_added_data())
+            self._showing_new_items = False
+            self.view_toggle_button.configure(text="Current Items")
+
+            success_message = f"Committed {committed} new item(s) to the database."
+            self.update_status(success_message)
+            messagebox.showinfo("Commit Successful", success_message)
+
+        except Exception as e:
+            messagebox.showerror("Commit Failed", f"Failed to commit items: {str(e)}")
+            self.update_status("Commit failed")
+        finally:
+            # Re-enable button so user can try again if needed
+            if hasattr(self, 'commit_items_button'):
+                self.commit_items_button.configure(state="normal")
             
+    def mark_data_changed(self):
+        """Mark that data has been changed, enabling Save button."""
+        self.data_has_changes = True
+        if hasattr(self, 'save_button'):
+            self.save_button.configure(state="normal")
+    
     def save_database(self):
         """Save the database to JSON."""
         try:
@@ -279,6 +428,10 @@ class MainWindow:
             # Get data with user modifications applied
             data = self.get_data_with_modifications()
             self.json_handler.save_file(data=data)
+            
+            # Reset data changes flag and disable Save button
+            self.data_has_changes = False
+            self.save_button.configure(state="disabled")
             
             self.update_status("Database saved successfully")
         except Exception as e:
@@ -371,6 +524,10 @@ class MainWindow:
             # Save filters to config
             self.config_manager.save_filters(current_filters)
             
+            # Save tree expansion state
+            expansion_state = self.tree_view.get_expansion_state_for_config()
+            self.config_manager.save_tree_expansion_state(expansion_state)
+            
             # Save AI model if available and not "No models available"
             if selected_model and selected_model != "No models available":
                 self.config_manager.save_selected_model(selected_model)
@@ -430,6 +587,11 @@ class MainWindow:
         else:
             filters_changed = bool(current_filters) and not bool(saved_filters)
         
+        # Compare current and saved tree expansion state
+        current_expansion = self.tree_view.get_expansion_state_for_config()
+        saved_expansion = self.config_manager.get_tree_expansion_state()
+        expansion_changed = current_expansion != saved_expansion
+        
         # Compare current and saved AI model
         model_changed = current_model != saved_model
 
@@ -437,13 +599,18 @@ class MainWindow:
         prompt_changed = current_prompt != saved_prompt
         
         # Update button state
-        has_changes = visibility_changed or filters_changed or model_changed or prompt_changed
+        has_changes = visibility_changed or filters_changed or expansion_changed or model_changed or prompt_changed
         if has_changes:
             self.save_view_button.configure(state="normal")
             self.view_has_changes = True
         else:
             self.save_view_button.configure(state="disabled")
             self.view_has_changes = False
+
+    def on_tree_view_changed(self):
+        """Callback invoked when tree view expansion state changes."""
+        self.view_has_changes = True
+        self.update_save_view_button_state()
     
     def open_filter_dialog(self):
         """Open the filter dialog."""
@@ -508,45 +675,49 @@ class MainWindow:
                     self.edit_panel.ai_editor.update_apply_to_selected_button_state()
                 self.update_status("Ready")
         else:
-            self.manual_edit_panel.set_selected_item(None, None)
+            self.edit_panel.manual_editor.set_selected_item(None, None)
             self.tree_view.selected_items = []
             if hasattr(self, 'edit_panel') and hasattr(self.edit_panel, 'ai_editor') and hasattr(self.edit_panel.ai_editor, 'update_apply_to_selected_button_state'):
                 self.edit_panel.ai_editor.update_apply_to_selected_button_state()
     
     def find_row_id_from_tree_item(self, item_text, item_values):
         """Find the row ID for a tree item."""
-        # This is a simplified approach - in a real implementation,
-        # you might want to store row IDs in tree items
-        if not self.tree_view.data.empty:
-            # Extract full_name from ERP name object for comparison
-            import pandas as pd
-            def get_erp_full_name(erp_obj):
-                if isinstance(erp_obj, dict):
-                    return erp_obj.get('full_name', '')
-                elif pd.isna(erp_obj):
-                    return ''
-                else:
-                    return str(erp_obj)
-            
-            erp_name_series = self.tree_view.data['ERP Name'].apply(get_erp_full_name)
-            # Find matching row in data
-            matching_rows = self.tree_view.data[
-                (erp_name_series == item_text)
-            ]
-            if not matching_rows.empty:
-                row = matching_rows.iloc[0]
-                delimiter = "◆◆◆"
-                # Extract full_name for row_id
-                erp_name_obj = row.get('ERP Name', {})
-                erp_name_full = get_erp_full_name(erp_name_obj)
-                return f"{erp_name_full}{delimiter}{row.get('Category', '')}{delimiter}{row.get('Subcategory', '')}{delimiter}{row.get('Sub-subcategory', '')}"
+        dataset = self.tree_view.get_data_with_modifications()
+        if dataset is None or dataset.empty:
+            dataset = self.tree_view.get_data()
+        if dataset is None or dataset.empty:
+            return None
+        
+        import pandas as pd
+        def get_erp_full_name(erp_obj):
+            if isinstance(erp_obj, dict):
+                return erp_obj.get('full_name', '')
+            elif pd.isna(erp_obj):
+                return ''
+            else:
+                return str(erp_obj)
+        
+        erp_name_series = dataset['ERP Name'].apply(get_erp_full_name)
+        matching_rows = dataset[(erp_name_series == item_text)]
+        if not matching_rows.empty:
+            row = matching_rows.iloc[0]
+            delimiter = getattr(self.tree_view, 'ROW_ID_DELIMITER', "◆◆◆")
+            erp_name_obj = row.get('ERP Name', {})
+            erp_name_full = get_erp_full_name(erp_name_obj)
+            return f"{erp_name_full}{delimiter}{row.get('Category', '')}{delimiter}{row.get('Subcategory', '')}{delimiter}{row.get('Sub-subcategory', '')}"
         return None
     
     def get_original_row_data(self, row_id):
         """Get original row data for a row ID, with user modifications applied."""
-        if hasattr(self.tree_view, 'data') and not self.tree_view.data.empty:
-            # Parse row ID to find matching data
-            parts = row_id.split('◆◆◆')
+        dataset = self.tree_view.get_data()
+        if dataset is not None and not dataset.empty:
+            # Parse base row ID (original location) to find matching data
+            delimiter = getattr(self.tree_view, 'ROW_ID_DELIMITER', "◆◆◆")
+            base_row_id = row_id
+            entry = self.tree_view.user_modifications.get(row_id)
+            if entry and '_base_row_id' in entry:
+                base_row_id = entry['_base_row_id']
+            parts = base_row_id.split(delimiter)
             if len(parts) >= 4:
                 erp_name = parts[0]
                 category = parts[1]
@@ -565,20 +736,27 @@ class MainWindow:
                     else:
                         return str(erp_obj)
                 
-                erp_name_series = self.tree_view.data['ERP Name'].apply(get_erp_full_name)
-                matching_rows = self.tree_view.data[
+                erp_name_series = dataset['ERP Name'].apply(get_erp_full_name)
+                matching_rows = dataset[
                     (erp_name_series == erp_name) &
-                    (self.tree_view.data['Category'] == category) &
-                    (self.tree_view.data['Subcategory'] == subcategory) &
-                    (self.tree_view.data[sub_subcategory_col] == sub_subcategory)
+                    (dataset['Category'] == category) &
+                    (dataset['Subcategory'] == subcategory) &
+                    (dataset[sub_subcategory_col] == sub_subcategory)
                 ]
                 if not matching_rows.empty:
                     row_data = matching_rows.iloc[0].to_dict()
                     
-                    # Apply user modifications (reassignment) to the row data
-                    if row_id in self.tree_view.user_modifications:
-                        mods = self.tree_view.user_modifications[row_id]
-                        # Apply reassignment modifications
+                    # Apply buffered modifications to the row data for preview
+                    mods = self.tree_view.user_modifications.get(row_id, {})
+                    if mods:
+                        if 'erp_name' in mods and mods['erp_name']:
+                            row_data['ERP Name'] = mods['erp_name']
+                        if 'manufacturer' in mods:
+                            row_data['Manufacturer'] = mods['manufacturer']
+                        if 'remark' in mods:
+                            row_data['Remark'] = mods['remark']
+                        if 'image' in mods:
+                            row_data['Image'] = mods['image']
                         if 'new_category' in mods:
                             row_data['Category'] = mods['new_category']
                         if 'new_subcategory' in mods:
@@ -593,8 +771,10 @@ class MainWindow:
         """Get data with user modifications applied."""
         import pandas as pd
         
-        # Start with original data
-        data = self.tree_view.get_data().copy()
+        base_data = self.tree_view.get_data()
+        if base_data is None:
+            return pd.DataFrame()
+        data = base_data.copy()
         
         # Clean up duplicate columns - keep only the first occurrence of each column
         columns_to_keep = []
@@ -614,8 +794,10 @@ class MainWindow:
         modifications = self.tree_view.get_user_modifications()
         
         for row_id, mods in modifications.items():
-            # Find the row in data
-            parts = row_id.split('◆◆◆')
+            # Find the row in data using the original row identifier
+            delimiter = getattr(self.tree_view, 'ROW_ID_DELIMITER', "◆◆◆")
+            base_row_id = mods.get('_base_row_id', row_id)
+            parts = base_row_id.split(delimiter)
             if len(parts) >= 4:
                 erp_name = parts[0]
                 category = parts[1]

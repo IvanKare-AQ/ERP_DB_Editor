@@ -8,6 +8,9 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import os
+import threading
+from typing import Dict, Any
+from src.backend.category_suggester import CategorySuggester
 
 
 class ManualEditor(ctk.CTkFrame):
@@ -21,7 +24,6 @@ class ManualEditor(ctk.CTkFrame):
     RESET_BUTTON_WIDTH = 60      # Width for reset buttons
     UPDATE_BUTTON_WIDTH = 120    # Width for update button
     DELETE_BUTTON_WIDTH = 150    # Width for delete button
-    ACTION_BUTTON_WIDTH = 150    # Width for action buttons (Convert Multiline, Remove NEN)
     REASSIGN_BUTTON_WIDTH = 100  # Width for reassign button
 
     # Height constants for consistent UI sizing
@@ -31,18 +33,27 @@ class ManualEditor(ctk.CTkFrame):
     SEPARATOR_HEIGHT = 2         # Height for separator lines
     IMAGE_PREVIEW_SIZE = 150     # Size for image preview (width and height in pixels)
 
-    def __init__(self, parent, tree_view, main_window=None):
+    def __init__(self, parent, tree_view, main_window=None, mode="manual"):
         """Initialize the manual editor."""
         super().__init__(parent)
 
         self.tree_view = tree_view
         self.main_window = main_window
+        self.mode = mode
         self.selected_item = None
         self.selected_row_id = None
         
         # Image handling
         self.current_image_photo = None  # Store PhotoImage reference
         self.image_handler = None  # Will be initialized when Excel file is loaded
+        
+        # Track original dropdown values for Reassign button state
+        self._original_category = None
+        self._original_subcategory = None
+        self._original_sub_subcategory = None
+        
+        # Initialize category suggester (will be set up when needed)
+        self.category_suggester = None
 
         # Panel will be sized by the tabview container
 
@@ -52,13 +63,14 @@ class ManualEditor(ctk.CTkFrame):
     def setup_manual_editor(self):
         """Setup the manual editor components."""
         # Title
-        title_label = ctk.CTkLabel(self, text="Manual Editing", font=ctk.CTkFont(size=16, weight="bold"))
-        title_label.pack(pady=(10, 5))
+        self.title_label = ctk.CTkLabel(self, text="Item editor", font=ctk.CTkFont(size=16, weight="bold"))
+        self.title_label.pack(pady=(10, 5))
         
         # Small image preview centered
         image_container = ctk.CTkFrame(self, width=self.IMAGE_PREVIEW_SIZE, height=self.IMAGE_PREVIEW_SIZE)
         image_container.pack(pady=(0, 10))
         image_container.pack_propagate(False)  # Prevent resizing
+        self.image_container = image_container
         
         # Use tk.Label for image support
         self.image_preview_label = tk.Label(
@@ -71,6 +83,44 @@ class ManualEditor(ctk.CTkFrame):
         )
         self.image_preview_label.place(x=0, y=0, width=self.IMAGE_PREVIEW_SIZE, height=self.IMAGE_PREVIEW_SIZE)
 
+        # Image action buttons frame (Add Item, Import, Add Image)
+        self.image_action_frame = ctk.CTkFrame(self)
+        self.image_action_frame.pack(pady=(0, 15))
+        
+        # Add Item button (moved to left)
+        self.add_item_button = ctk.CTkButton(
+            self.image_action_frame,
+            text="<- Add Item",
+            command=self.add_new_item,
+            width=self.UPDATE_BUTTON_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT
+        )
+        self.add_item_button.pack(side="left", padx=5)
+        
+        # Import button
+        self.import_button = ctk.CTkButton(
+            self.image_action_frame,
+            text="Import",
+            command=self.import_item,
+            width=self.UPDATE_BUTTON_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT
+        )
+        self.import_button.pack(side="left", padx=5)
+        
+        # Add Image button (enabled by default for adding new items)
+        self.add_image_button = ctk.CTkButton(
+            self.image_action_frame,
+            text="Add Image",
+            command=self.open_image_dialog,
+            width=self.UPDATE_BUTTON_WIDTH,
+            height=self.INPUT_FIELD_HEIGHT,
+            state="normal"
+        )
+        self.add_image_button.pack(side="left", padx=5)
+        
+        # Track selected image path for new items
+        self.selected_image_path = ""
+
         # User ERP Name section
         self.setup_user_erp_name_section(self)
 
@@ -81,14 +131,13 @@ class ManualEditor(ctk.CTkFrame):
         # Reassignment section
         self.setup_reassignment_section(self)
 
-        # Data cleaning section at the bottom
-        self.setup_data_cleaning_section(self)
 
     def setup_user_erp_name_section(self, parent):
         """Setup the ERP Name editing section."""
         # ERP Name input field and buttons frame
         user_erp_frame = ctk.CTkFrame(parent)
         user_erp_frame.pack(anchor="w", pady=(0, 5))
+        self.user_erp_frame = user_erp_frame
 
         # ERP Name label
         user_erp_label = ctk.CTkLabel(
@@ -313,9 +362,30 @@ class ManualEditor(ctk.CTkFrame):
         )
         self.convert_and_update_button.pack(side="left")
 
+        # Boolean checkboxes frame (Serialized and Buy)
+        checkboxes_frame = ctk.CTkFrame(parent)
+        checkboxes_frame.pack(anchor="w", pady=(5, 0))
+        
+        # Serialized checkbox
+        self.serialized_checkbox = ctk.CTkCheckBox(
+            checkboxes_frame,
+            text="Serialized",
+            width=150
+        )
+        self.serialized_checkbox.pack(side="left", padx=(10, 20))
+        
+        # Buy checkbox
+        self.buy_checkbox = ctk.CTkCheckBox(
+            checkboxes_frame,
+            text="Buy",
+            width=150
+        )
+        self.buy_checkbox.pack(side="left", padx=(0, 10))
+
         # Update button frame (moved to bottom)
         update_frame = ctk.CTkFrame(parent)
         update_frame.pack(anchor="w", pady=(5, 10))
+        self.update_frame = update_frame
 
         # Update button
         self.update_name_button = ctk.CTkButton(
@@ -327,17 +397,6 @@ class ManualEditor(ctk.CTkFrame):
             state="disabled"
         )
         self.update_name_button.pack(side="left", padx=5)
-        
-        # Add Image button
-        self.add_image_button = ctk.CTkButton(
-            update_frame,
-            text="Add Image",
-            command=self.open_image_dialog,
-            width=self.UPDATE_BUTTON_WIDTH,
-            height=self.INPUT_FIELD_HEIGHT,
-            state="disabled"
-        )
-        self.add_image_button.pack(side="left", padx=5)
         
         # Delete button (moved here from top)
         self.delete_button = ctk.CTkButton(
@@ -402,13 +461,26 @@ class ManualEditor(ctk.CTkFrame):
         self.sub_subcategory_dropdown = ctk.CTkOptionMenu(
             sub_subcategory_frame,
             values=["Select Sub-subcategory..."],
+            command=self.on_sub_subcategory_change,
             width=self.DROPDOWN_WIDTH
         )
         self.sub_subcategory_dropdown.pack(side="left", padx=5, pady=5)
 
-        # Right column for Reassign button
+        # Right column for Suggest and Reassign buttons
         right_column = ctk.CTkFrame(main_frame)
         right_column.pack(side="right", padx=(5, 10), pady=5)
+        self.reassign_button_container = right_column
+
+        # Suggest button
+        self.suggest_button = ctk.CTkButton(
+            right_column,
+            text="Suggest",
+            command=self.suggest_category,
+            width=self.REASSIGN_BUTTON_WIDTH,
+            height=32,
+            state="normal"
+        )
+        self.suggest_button.pack(pady=(0, 5))
 
         # Reassign button
         self.reassign_button = ctk.CTkButton(
@@ -420,44 +492,17 @@ class ManualEditor(ctk.CTkFrame):
             state="disabled"
         )
         self.reassign_button.pack(pady=5)
-
-    def setup_data_cleaning_section(self, parent):
-        """Setup the data cleaning section."""
-        # Data cleaning frame at the bottom
-        cleaning_frame = ctk.CTkFrame(parent)
-        cleaning_frame.pack(fill="x", pady=(20, 0))
-
-        # Title
-        cleaning_title = ctk.CTkLabel(
-            cleaning_frame,
-            text="Data Cleaning Operations",
-            font=ctk.CTkFont(size=14, weight="bold")
-        )
-        cleaning_title.pack(pady=(10, 10))
-
-        # Buttons frame
-        buttons_frame = ctk.CTkFrame(cleaning_frame)
-        buttons_frame.pack(fill="x", padx=10, pady=(0, 10))
-
-        # Convert Multiline button
-        self.convert_multiline_button = ctk.CTkButton(
-            buttons_frame,
-            text="Convert Multiline Cells",
-            command=self.convert_multiline_cells,
-            width=self.ACTION_BUTTON_WIDTH,
+        
+        # Reset button (revert dropdowns to original values)
+        self.reset_category_button = ctk.CTkButton(
+            right_column,
+            text="Reset",
+            command=self.reset_category_dropdowns,
+            width=self.REASSIGN_BUTTON_WIDTH,
+            height=32,
             state="disabled"
         )
-        self.convert_multiline_button.pack(side="left", padx=5, pady=5)
-
-        # Remove NEN button
-        self.remove_nen_button = ctk.CTkButton(
-            buttons_frame,
-            text="Remove NEN Prefix",
-            command=self.remove_nen_prefix,
-            width=self.ACTION_BUTTON_WIDTH,
-            state="disabled"
-        )
-        self.remove_nen_button.pack(side="left", padx=5, pady=5)
+        self.reset_category_button.pack(pady=(5, 0))
 
     def load_categories(self):
         """Load categories into the dropdown."""
@@ -472,6 +517,7 @@ class ManualEditor(ctk.CTkFrame):
         if not category or category == "Select Category...":
             self.subcategory_dropdown.configure(values=["Select Subcategory..."])
             self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
+            self._update_reassign_button_state()
             return
 
         # Load subcategories for selected category
@@ -483,11 +529,13 @@ class ManualEditor(ctk.CTkFrame):
 
         # Reset sub_subcategory dropdown
         self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
+        self._update_reassign_button_state()
 
     def on_subcategory_change(self, subcategory):
         """Handle subcategory selection change."""
         if not subcategory or subcategory == "Select Subcategory...":
             self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
+            self._update_reassign_button_state()
             return
 
         category = self.category_dropdown.get()
@@ -500,6 +548,47 @@ class ManualEditor(ctk.CTkFrame):
             self.sub_subcategory_dropdown.configure(values=sub_subcategories)
         else:
             self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])
+        self._update_reassign_button_state()
+    
+    def on_sub_subcategory_change(self, sub_subcategory):
+        """Handle sub-subcategory selection change."""
+        self._update_reassign_button_state()
+    
+    def _update_reassign_button_state(self):
+        """Update Reassign and Reset button states based on whether dropdowns have changed."""
+        if not self.selected_item or not self.selected_row_id:
+            self.reassign_button.configure(state="disabled")
+            if hasattr(self, 'reset_category_button'):
+                self.reset_category_button.configure(state="disabled")
+            return
+        
+        current_category = self.category_dropdown.get()
+        current_subcategory = self.subcategory_dropdown.get()
+        current_sub_subcategory = self.sub_subcategory_dropdown.get()
+        
+        # Check if any dropdown has changed from original values
+        has_changed = (
+            current_category != self._original_category or
+            current_subcategory != self._original_subcategory or
+            current_sub_subcategory != self._original_sub_subcategory
+        )
+        
+        # Also check that all dropdowns have valid selections
+        placeholder_values = {"Select Category...", "Select Subcategory...", "Select Sub-subcategory..."}
+        has_valid_selections = (
+            current_category and current_category not in placeholder_values and
+            current_subcategory and current_subcategory not in placeholder_values and
+            current_sub_subcategory and current_sub_subcategory not in placeholder_values
+        )
+        
+        if has_changed and has_valid_selections:
+            self.reassign_button.configure(state="normal")
+            if hasattr(self, 'reset_category_button'):
+                self.reset_category_button.configure(state="normal")
+        else:
+            self.reassign_button.configure(state="disabled")
+            if hasattr(self, 'reset_category_button'):
+                self.reset_category_button.configure(state="disabled")
 
     def set_selected_item(self, item_data, row_id):
         """Set the selected item and populate the edit fields."""
@@ -507,6 +596,17 @@ class ManualEditor(ctk.CTkFrame):
         self.selected_row_id = row_id
 
         if item_data:
+            # Apply buffered modifications before populating UI
+            user_mods = self.tree_view.user_modifications.get(row_id, {})
+            if user_mods:
+                item_data = item_data.copy()
+                if 'new_category' in user_mods:
+                    item_data['Category'] = user_mods['new_category']
+                if 'new_subcategory' in user_mods:
+                    item_data['Subcategory'] = user_mods['new_subcategory']
+                if 'new_sub_subcategory' in user_mods:
+                    item_data['Sub-subcategory'] = user_mods['new_sub_subcategory']
+
             # Get ERP name object
             erp_name_obj = item_data.get('ERP Name', {})
             if not isinstance(erp_name_obj, dict):
@@ -556,6 +656,34 @@ class ManualEditor(ctk.CTkFrame):
             self.remark_entry.delete(0, tk.END)
             self.remark_entry.insert(0, current_remark)
 
+            # Populate Serialized checkbox - priority: user modifications > original Serialized
+            current_serialized = self.tree_view.user_modifications.get(row_id, {}).get('serialized', None)
+            if current_serialized is None:
+                current_serialized = item_data.get('Serialized', "No")
+            # Convert "Yes"/"No" string to boolean for checkbox
+            if isinstance(current_serialized, str):
+                current_serialized = current_serialized.strip().lower() in ('yes', 'true', '1', 'y')
+            elif isinstance(current_serialized, bool):
+                pass  # Already boolean
+            else:
+                current_serialized = bool(current_serialized)
+            self.serialized_checkbox.configure(state="normal")
+            self.serialized_checkbox.select() if current_serialized else self.serialized_checkbox.deselect()
+
+            # Populate Buy checkbox - priority: user modifications > original Buy
+            current_buy = self.tree_view.user_modifications.get(row_id, {}).get('buy', None)
+            if current_buy is None:
+                current_buy = item_data.get('Buy', "Yes")
+            # Convert "Yes"/"No" string to boolean for checkbox
+            if isinstance(current_buy, str):
+                current_buy = current_buy.strip().lower() in ('yes', 'true', '1', 'y')
+            elif isinstance(current_buy, bool):
+                pass  # Already boolean
+            else:
+                current_buy = bool(current_buy)
+            self.buy_checkbox.configure(state="normal")
+            self.buy_checkbox.select() if current_buy else self.buy_checkbox.deselect()
+
             # Enable buttons when item is selected
             self.update_name_button.configure(state="normal")
             self.reset_name_button.configure(state="normal")
@@ -568,6 +696,11 @@ class ManualEditor(ctk.CTkFrame):
             current_category = item_data.get('Category', '')
             current_subcategory = item_data.get('Subcategory', '')
             current_sub_subcategory = item_data.get('Sub-subcategory', '')
+
+            # Store original values for Reassign button state tracking
+            self._original_category = current_category
+            self._original_subcategory = current_subcategory
+            self._original_sub_subcategory = current_sub_subcategory
 
             # Load categories first
             self.load_categories()
@@ -588,8 +721,8 @@ class ManualEditor(ctk.CTkFrame):
                             if current_sub_subcategory:
                                 self.sub_subcategory_dropdown.set(current_sub_subcategory)
 
-            # Enable buttons
-            self.reassign_button.configure(state="normal")
+            # Update Reassign button state (will be disabled initially since no changes yet)
+            self._update_reassign_button_state()
             
             # Update image preview
             self.update_image_preview()
@@ -606,6 +739,12 @@ class ManualEditor(ctk.CTkFrame):
             self.type_entry.delete(0, tk.END)
             self.pn_entry.delete(0, tk.END)
             self.details_entry.delete(0, tk.END)
+            
+            # Clear checkboxes
+            self.serialized_checkbox.deselect()
+            self.serialized_checkbox.configure(state="disabled")
+            self.buy_checkbox.deselect()
+            self.buy_checkbox.configure(state="disabled")
 
             # Disable buttons when no item is selected
             self.update_name_button.configure(state="disabled")
@@ -687,31 +826,35 @@ class ManualEditor(ctk.CTkFrame):
 
     def open_image_dialog(self):
         """Open the image selection dialog."""
-        if not self.selected_item or not self.selected_row_id:
-            messagebox.showwarning("Warning", "Please select an item first")
+        # Allow image selection even when no item is selected (for adding new items)
+        if not self.main_window:
+            messagebox.showwarning("Warning", "Main window not available.")
             return
         
         # Initialize image handler if needed
-        if not self.image_handler and self.main_window:
+        if not self.image_handler:
             from src.backend.image_handler import ImageHandler
-            excel_path = self.main_window.current_file_path
-            self.image_handler = ImageHandler(excel_path)
+            db_path = self.main_window.current_file_path
+            self.image_handler = ImageHandler(db_path)
         
-        # Get PN for initial search
+        # Get PN for initial search; fall back to ERP name
         pn_value = self.pn_entry.get().strip()
         if pn_value:
             initial_search = pn_value
-        else:
+        elif self.selected_item:
             erp_name_obj = self.selected_item.get('ERP Name', {})
             if isinstance(erp_name_obj, dict):
                 initial_search = erp_name_obj.get('full_name', '')
             else:
                 initial_search = str(erp_name_obj) if erp_name_obj else ''
+        else:
+            # For new items, use ERP name from entry
+            initial_search = self.user_erp_name_entry.get().strip()
         
         # Open image dialog
         from src.gui.image_dialog import ImageSelectionDialog
         ImageSelectionDialog(
-            self.main_window.root if self.main_window else self,
+            self.main_window.root if hasattr(self.main_window, "root") else self,
             self.image_handler,
             initial_search,
             callback=self.on_image_selected
@@ -723,13 +866,15 @@ class ManualEditor(ctk.CTkFrame):
         Args:
             relative_path: Relative path to the saved image
         """
-        if not self.selected_row_id:
-            return
-        
-        # Update the Image column in user modifications
-        if self.selected_row_id not in self.tree_view.user_modifications:
-            self.tree_view.user_modifications[self.selected_row_id] = {}
-        self.tree_view.user_modifications[self.selected_row_id]['image'] = relative_path
+        # Store image path for new items or update existing item
+        if self.selected_row_id:
+            # Update the Image column in user modifications
+            if self.selected_row_id not in self.tree_view.user_modifications:
+                self.tree_view.user_modifications[self.selected_row_id] = {}
+            self.tree_view.user_modifications[self.selected_row_id]['image'] = relative_path
+        else:
+            # For new items, store in selected_image_path
+            self.selected_image_path = relative_path
         
         # Update the image preview
         self.load_and_display_image(relative_path)
@@ -886,14 +1031,21 @@ class ManualEditor(ctk.CTkFrame):
 
         if result:
             # Delete the item from tree view
-            self.tree_view.delete_item(self.selected_row_id)
+            deleted = self.tree_view.delete_item(self.selected_row_id)
 
-            # Clear the edit panel
-            self.set_selected_item(None, None)
+            if deleted:
+                # Clear the edit panel
+                self.set_selected_item(None, None)
 
-            # Update status
-            if self.main_window and hasattr(self.main_window, 'update_status'):
-                self.main_window.update_status("Item deleted successfully")
+                # Notify main window that data changed so Save button enables
+                if self.main_window and hasattr(self.main_window, 'mark_data_changed'):
+                    self.main_window.mark_data_changed()
+
+                # Update status
+                if self.main_window and hasattr(self.main_window, 'update_status'):
+                    self.main_window.update_status("Item deleted successfully")
+            else:
+                messagebox.showerror("Delete Item", "Failed to remove the selected item.")
 
     def update_all_fields(self):
         """Update all fields (ERP Name object, Manufacturer, Remark) for the selected item."""
@@ -907,6 +1059,8 @@ class ManualEditor(ctk.CTkFrame):
         details_value = self.details_entry.get().strip()
         manufacturer = self.manufacturer_entry.get().strip()
         remark = self.remark_entry.get().strip()
+        serialized = self.serialized_checkbox.get()
+        buy = self.buy_checkbox.get()
 
         # Reconstruct ERP Name object from parsed fields
         erp_name_obj = {
@@ -920,6 +1074,12 @@ class ManualEditor(ctk.CTkFrame):
         self.tree_view.update_user_erp_name(self.selected_row_id, erp_name_obj)
         self.tree_view.update_manufacturer(self.selected_row_id, manufacturer)
         self.tree_view.update_remark(self.selected_row_id, remark)
+        self.tree_view.update_serialized(self.selected_row_id, serialized)
+        self.tree_view.update_buy(self.selected_row_id, buy)
+        
+        # Notify main window about changes for Save button state
+        if self.main_window and hasattr(self.main_window, 'mark_data_changed'):
+            self.main_window.mark_data_changed()
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
@@ -930,6 +1090,8 @@ class ManualEditor(ctk.CTkFrame):
                 updated_fields.append(f"Manufacturer: {manufacturer}")
             if remark:
                 updated_fields.append(f"Remark: {remark}")
+            updated_fields.append(f"Serialized: {serialized}")
+            updated_fields.append(f"Buy: {buy}")
 
             if updated_fields:
                 self.main_window.update_status(f"Updated: {', '.join(updated_fields)}")
@@ -1023,117 +1185,386 @@ class ManualEditor(ctk.CTkFrame):
             not sub_subcategory or sub_subcategory == "Select Sub-subcategory..."):
             return
 
-        self.tree_view.reassign_item(self.selected_row_id, category, subcategory, sub_subcategory)
+        new_row_id = self.tree_view.reassign_item(self.selected_row_id, category, subcategory, sub_subcategory)
+        if new_row_id:
+            self.selected_row_id = new_row_id
+            # Update original values to new values after reassignment
+            self._original_category = category
+            self._original_subcategory = subcategory
+            self._original_sub_subcategory = sub_subcategory
+            # Disable Reassign and Reset buttons since values are now in sync
+            self._update_reassign_button_state()
+            
+            # Notify main window about changes for Save button state
+            if self.main_window and hasattr(self.main_window, 'mark_data_changed'):
+                self.main_window.mark_data_changed()
+            
+            if self.main_window:
+                updated_data = self.main_window.get_original_row_data(new_row_id)
+                if updated_data:
+                    # Update selected item data but keep original dropdown values
+                    self.selected_item = updated_data
 
         # Update status if main window is available
         if self.main_window and hasattr(self.main_window, 'status_label'):
             self.main_window.update_status(f"Reassigned item to: {category} > {subcategory} > {sub_subcategory}")
-
-    def convert_multiline_cells(self):
-        """Convert multiline cells to single line entries."""
-        if not hasattr(self.main_window, 'excel_handler') or self.main_window.excel_handler is None:
-            messagebox.showwarning("Warning", "No data loaded. Please open an Excel file first.")
-            return
-
-        # Show confirmation dialog
-        response = messagebox.askyesno(
-            "Convert Multiline Cells",
-            "This will convert all multiline cells to single line entries.\n\n"
-            "Multiline content will be converted to single lines with spaces.\n"
-            "This operation cannot be undone.\n\n"
-            "Do you want to continue?"
-        )
-
-        if not response:
-            if self.main_window and hasattr(self.main_window, 'update_status'):
-                self.main_window.update_status("Multiline conversion cancelled")
-            return
-
-        # Show progress
-        if self.main_window and hasattr(self.main_window, 'update_status'):
-            self.main_window.update_status("Converting multiline cells to single line...")
-
-        # Perform the conversion
+    
+    def import_item(self):
+        """Placeholder for future import capability."""
+        messagebox.showinfo("Coming Soon", "Importing items will be available in a future update.")
+    
+    def _get_category_suggester(self):
+        """Get or initialize category suggester."""
+        if self.category_suggester is None:
+            # Get Ollama handler from main window if available (via AI editor)
+            ollama_handler = None
+            if self.main_window and hasattr(self.main_window, 'edit_panel'):
+                if hasattr(self.main_window.edit_panel, 'ai_editor'):
+                    if hasattr(self.main_window.edit_panel.ai_editor, 'ollama_handler'):
+                        ollama_handler = self.main_window.edit_panel.ai_editor.ollama_handler
+            
+            # Get JSON handler for accessing existing data
+            json_handler = None
+            if self.main_window and hasattr(self.main_window, 'json_handler'):
+                json_handler = self.main_window.json_handler
+            
+            self.category_suggester = CategorySuggester(
+                ollama_handler=ollama_handler,
+                json_handler=json_handler
+            )
+        
+        return self.category_suggester
+    
+    def suggest_category(self):
+        """Get AI-powered category suggestion based on item characteristics."""
         try:
-            result = self.main_window.excel_handler.convert_multiline_to_single_line()
-
-            # Reload the tree view with the updated data from Excel handler
-            self.tree_view.load_data(self.main_window.excel_handler.get_data())
-
-            # Update status with results
-            if result["converted"] > 0:
-                if self.main_window and hasattr(self.main_window, 'update_status'):
-                    self.main_window.update_status(
-                        f"Converted {result['converted']} multiline cells to single line "
-                        f"({result['percentage']:.1f}% of total cells)"
-                    )
-                messagebox.showinfo(
-                    "Conversion Complete",
-                    f"Successfully converted {result['converted']} multiline cells to single line.\n\n"
-                    f"Total cells processed: {result['total_cells']}\n"
-                    f"Percentage converted: {result['percentage']:.1f}%"
-                )
-            else:
-                if self.main_window and hasattr(self.main_window, 'update_status'):
-                    self.main_window.update_status("No multiline cells found to convert")
-                messagebox.showinfo("No Conversion Needed", "No multiline cells were found in the data.")
-
+            suggester = self._get_category_suggester()
         except Exception as e:
-            error_msg = f"Error converting multiline cells: {str(e)}"
-            if self.main_window and hasattr(self.main_window, 'update_status'):
-                self.main_window.update_status(error_msg)
-            messagebox.showerror("Conversion Error", error_msg)
-
-    def remove_nen_prefix(self):
-        """Remove 'NEN' prefix and subsequent spaces from all cells."""
-        if not hasattr(self.main_window, 'excel_handler') or self.main_window.excel_handler is None:
-            messagebox.showwarning("Warning", "No data loaded. Please open an Excel file first.")
+            messagebox.showerror("Error", f"Failed to initialize category suggester: {str(e)}")
             return
-
-        # Show confirmation dialog
-        response = messagebox.askyesno(
-            "Remove NEN Prefix",
-            "This will remove 'NEN' prefix and subsequent spaces from all cells.\n\n"
-            "This operation cannot be undone.\n\n"
-            "Do you want to continue?"
-        )
-
-        if not response:
-            if self.main_window and hasattr(self.main_window, 'update_status'):
-                self.main_window.update_status("NEN removal cancelled")
+        
+        # Get current values
+        current_category = self.category_dropdown.get()
+        if current_category == "Select Category...":
+            current_category = None
+        
+        type_value = self.type_entry.get().strip()
+        pn_value = self.pn_entry.get().strip()
+        details_value = self.details_entry.get().strip()
+        
+        # Check if we have at least some information
+        if not type_value and not pn_value and not details_value:
+            messagebox.showwarning("Missing Information", "Please provide at least Type, Part Number, or Details for category suggestion.")
             return
-
-        # Show progress
+        
+        # Show status
         if self.main_window and hasattr(self.main_window, 'update_status'):
-            self.main_window.update_status("Removing 'NEN' prefix from cells...")
-
-        # Perform the removal
-        try:
-            result = self.main_window.excel_handler.remove_nen_prefix()
-
-            # Reload the tree view with the updated data from Excel handler
-            self.tree_view.load_data(self.main_window.excel_handler.get_data())
-
-            # Update status with results
-            if result["converted"] > 0:
-                if self.main_window and hasattr(self.main_window, 'update_status'):
-                    self.main_window.update_status(
-                        f"Removed 'NEN' prefix from {result['converted']} cells "
-                        f"({result['percentage']:.1f}% of total cells)"
-                    )
-                messagebox.showinfo(
-                    "NEN Removal Complete",
-                    f"Successfully removed 'NEN' prefix from {result['converted']} cells.\n\n"
-                    f"Total cells processed: {result['total_cells']}\n"
-                    f"Percentage converted: {result['percentage']:.1f}%"
+            self.main_window.update_status("Generating category suggestion...")
+        
+        # Disable Suggest button during generation
+        self.suggest_button.configure(state="disabled", text="Suggesting...")
+        
+        # Run suggestion in separate thread
+        def suggest_thread():
+            try:
+                # Get model name from config if available
+                model_name = "llama3.2"  # Default
+                model_parameters = None
+                
+                if self.main_window and hasattr(self.main_window, 'config_manager'):
+                    config_manager = self.main_window.config_manager
+                    # Try to get model from AI editor settings
+                    if hasattr(self.main_window, 'edit_panel') and hasattr(self.main_window.edit_panel, 'ai_editor'):
+                        if hasattr(self.main_window.edit_panel.ai_editor, 'model_dropdown'):
+                            selected_model = self.main_window.edit_panel.ai_editor.model_dropdown.get()
+                            if selected_model and selected_model != "No models available":
+                                model_name = selected_model
+                                model_parameters = config_manager.get_model_parameters(model_name)
+                
+                # Generate suggestion
+                suggester = self._get_category_suggester()
+                suggestion = suggester.suggest_category(
+                    current_category=current_category,
+                    type_value=type_value,
+                    part_number=pn_value,
+                    details=details_value,
+                    model_name=model_name,
+                    model_parameters=model_parameters
                 )
-            else:
-                if self.main_window and hasattr(self.main_window, 'update_status'):
-                    self.main_window.update_status("No cells with 'NEN' prefix found")
-                messagebox.showinfo("No NEN Prefix Found", "No cells starting with 'NEN' were found in the data.")
-
-        except Exception as e:
-            error_msg = f"Error removing 'NEN' prefix: {str(e)}"
+                
+                # Update UI in main thread
+                self.main_window.root.after(0, lambda: self._apply_suggestion(suggestion))
+                
+            except Exception as e:
+                error_msg = f"Error generating suggestion: {str(e)}"
+                self.main_window.root.after(0, lambda: self._suggestion_error(error_msg))
+        
+        threading.Thread(target=suggest_thread, daemon=True).start()
+    
+    def _apply_suggestion(self, suggestion: Dict[str, Any]):
+        """Apply the category suggestion to the dropdowns."""
+        # Re-enable Suggest button
+        self.suggest_button.configure(state="normal", text="Suggest")
+        
+        category = suggestion.get('category', '')
+        subcategory = suggestion.get('subcategory', '')
+        sub_subcategory = suggestion.get('sub_subcategory', '')
+        valid = suggestion.get('valid', False)
+        reasoning = suggestion.get('reasoning', '')
+        confidence = suggestion.get('confidence', 'low')
+        
+        if not category or not subcategory or not sub_subcategory:
+            messagebox.showwarning("Incomplete Suggestion", 
+                                  "Could not generate a complete category suggestion. Please try again or select manually.")
             if self.main_window and hasattr(self.main_window, 'update_status'):
-                self.main_window.update_status(error_msg)
-            messagebox.showerror("NEN Removal Error", error_msg)
+                self.main_window.update_status("Category suggestion incomplete")
+            return
+        
+        # Check if suggestion is valid, try to find closest match if invalid
+        if not valid:
+            # Try to find a close match
+            suggester = self._get_category_suggester()
+            closest = suggester._find_closest_match(category, subcategory, sub_subcategory)
+            
+            if closest:
+                # Offer to use the closest match
+                result = messagebox.askyesno(
+                    "Category Path Not Found - Close Match Available",
+                    f"The suggested category path doesn't exist, but a close match was found:\n\n"
+                    f"Suggested: {category} > {subcategory} > {sub_subcategory}\n"
+                    f"Closest match: {closest[0]} > {closest[1]} > {closest[2]}\n\n"
+                    f"Reasoning: {reasoning}\n\n"
+                    f"Would you like to use the closest match instead?"
+                )
+                if result:
+                    category, subcategory, sub_subcategory = closest
+                    valid = True
+                else:
+                    if self.main_window and hasattr(self.main_window, 'update_status'):
+                        self.main_window.update_status("Category suggestion cancelled")
+                    return
+            else:
+                # No close match found, ask if user wants to apply anyway
+                result = messagebox.askyesno(
+                    "Invalid Category Path",
+                    f"The suggested category path may not exist in the category structure:\n\n"
+                    f"Category: {category}\n"
+                    f"Subcategory: {subcategory}\n"
+                    f"Sub-subcategory: {sub_subcategory}\n\n"
+                    f"Reasoning: {reasoning}\n\n"
+                    f"Would you like to apply it anyway? (You can adjust manually if needed)"
+                )
+                if not result:
+                    if self.main_window and hasattr(self.main_window, 'update_status'):
+                        self.main_window.update_status("Category suggestion cancelled")
+                    return
+        
+        # Apply suggestion to dropdowns
+        try:
+            # Load categories first
+            self.load_categories()
+            
+            # Set category
+            categories = self.tree_view.get_unique_categories()
+            if category in categories:
+                self.category_dropdown.set(category)
+                self.on_category_change(category)
+                
+                # Set subcategory
+                subcategories = self.tree_view.get_unique_subcategories(category)
+                if subcategory in subcategories:
+                    self.subcategory_dropdown.set(subcategory)
+                    self.on_subcategory_change(subcategory)
+                    
+                    # Set sub-subcategory
+                    sub_subcategories = self.tree_view.get_unique_sub_subcategories(category, subcategory)
+                    if sub_subcategory in sub_subcategories:
+                        self.sub_subcategory_dropdown.set(sub_subcategory)
+                        
+                        # Update Reassign button state
+                        self._update_reassign_button_state()
+                        
+                        # Update status with method and confidence
+                        method = suggestion.get('method', 'unknown')
+                        method_text = {
+                            'pattern': 'Pattern Matching',
+                            'similarity': 'Similarity Matching',
+                            'ai': 'AI Suggestion',
+                            'none': 'Manual'
+                        }.get(method, method)
+                        
+                        if self.main_window and hasattr(self.main_window, 'update_status'):
+                            self.main_window.update_status(
+                                f"Category suggestion applied ({method_text}, {confidence}): {category} > {subcategory} > {sub_subcategory}"
+                            )
+                    else:
+                        messagebox.showwarning("Invalid Sub-subcategory", 
+                                             f"Sub-subcategory '{sub_subcategory}' not found for the selected category path.")
+                else:
+                    messagebox.showwarning("Invalid Subcategory", 
+                                         f"Subcategory '{subcategory}' not found for category '{category}'.")
+            else:
+                messagebox.showwarning("Invalid Category", f"Category '{category}' not found in available categories.")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Error applying suggestion: {str(e)}")
+            if self.main_window and hasattr(self.main_window, 'update_status'):
+                self.main_window.update_status("Error applying category suggestion")
+    
+    def reset_category_dropdowns(self):
+        """Reset category dropdowns to their original values."""
+        if self._original_category is None:
+            return
+        
+        # Load categories first
+        self.load_categories()
+        
+        # Reset category dropdown
+        if self._original_category:
+            self.category_dropdown.set(self._original_category)
+            self.on_category_change(self._original_category)
+            
+            # Reset subcategory dropdown
+            if self._original_subcategory:
+                subcategories = self.tree_view.get_unique_subcategories(self._original_category)
+                if subcategories and self._original_subcategory in subcategories:
+                    self.subcategory_dropdown.configure(values=subcategories)
+                    self.subcategory_dropdown.set(self._original_subcategory)
+                    self.on_subcategory_change(self._original_subcategory)
+                    
+                    # Reset sub-subcategory dropdown
+                    if self._original_sub_subcategory:
+                        sub_subcategories = self.tree_view.get_unique_sub_subcategories(
+                            self._original_category, self._original_subcategory
+                        )
+                        if sub_subcategories and self._original_sub_subcategory in sub_subcategories:
+                            self.sub_subcategory_dropdown.configure(values=sub_subcategories)
+                            self.sub_subcategory_dropdown.set(self._original_sub_subcategory)
+        
+        # Update button states
+        self._update_reassign_button_state()
+        
+        if self.main_window and hasattr(self.main_window, 'update_status'):
+            self.main_window.update_status("Category dropdowns reset to original values")
+    
+    def _suggestion_error(self, error_msg: str):
+        """Handle suggestion generation error."""
+        # Re-enable Suggest button
+        self.suggest_button.configure(state="normal", text="Suggest")
+        
+        messagebox.showerror("Suggestion Error", error_msg)
+        if self.main_window and hasattr(self.main_window, 'update_status'):
+            self.main_window.update_status("Category suggestion failed")
+    
+    def add_new_item(self):
+        """Validate inputs, build a draft item, and persist it to the temporary JSON."""
+        if not self.main_window or not hasattr(self.main_window, "json_handler"):
+            messagebox.showerror("Error", "JSON handler not available.")
+            return
+
+        full_name = self.user_erp_name_entry.get().strip()
+        category = self.category_dropdown.get().strip()
+        subcategory = self.subcategory_dropdown.get().strip()
+        sub_subcategory = self.sub_subcategory_dropdown.get().strip()
+
+        if not full_name:
+            messagebox.showwarning("Missing Data", "ERP Name is required.")
+            return
+
+        placeholder_values = {"Select Category...", "Select Subcategory...", "Select Sub-subcategory..."}
+        if (
+            not category
+            or not subcategory
+            or not sub_subcategory
+            or category in placeholder_values
+            or subcategory in placeholder_values
+            or sub_subcategory in placeholder_values
+        ):
+            messagebox.showwarning("Missing Data", "Please choose Category, Subcategory, and Sub-subcategory.")
+            return
+
+        json_handler = self.main_window.json_handler
+        pn_value = json_handler.get_next_available_pn()
+        item_payload = self._build_new_item_payload(pn_value, category, subcategory, sub_subcategory)
+
+        json_handler.add_added_item(item_payload)
+        json_handler.save_added_items()
+
+        if hasattr(self.main_window, "refresh_added_items_view"):
+            self.main_window.refresh_added_items_view()
+
+        # Format PN as 7 digits for display
+        pn_formatted = f"{pn_value:07d}"
+        messagebox.showinfo("Draft Saved", f"Draft item PN {pn_formatted} saved to the add queue.")
+        self._reset_form_fields_for_new_item()
+    
+    def _build_new_item_payload(self, pn_value, category, subcategory, sub_subcategory):
+        """Construct the JSON object for the new draft item."""
+        from typing import Any, Dict
+        
+        erp_name_obj = {
+            'full_name': self.user_erp_name_entry.get().strip(),
+            'type': self.type_entry.get().strip(),
+            'part_number': self.pn_entry.get().strip(),
+            'additional_parameters': self.details_entry.get().strip()
+        }
+
+        manufacturer = self.manufacturer_entry.get().strip()
+        remark = self.remark_entry.get().strip()
+
+        props = {}
+        if hasattr(self.main_window, "json_handler"):
+            props = self.main_window.json_handler.get_category_properties(category, subcategory, sub_subcategory) or {}
+
+        # Get Serialized and Buy checkbox values (checkboxes return booleans)
+        serialized_checkbox_value = self.serialized_checkbox.get() if hasattr(self, 'serialized_checkbox') else False
+        buy_checkbox_value = self.buy_checkbox.get() if hasattr(self, 'buy_checkbox') else True
+        # If manufacturer contains "AirQ", set Buy to False
+        if 'AirQ' in manufacturer:
+            buy_checkbox_value = False
+        
+        # Convert boolean to "Yes"/"No" strings for storage
+        serialized = "Yes" if serialized_checkbox_value else "No"
+        buy = "Yes" if buy_checkbox_value else "No"
+
+        new_item = {
+            'PN': pn_value,
+            'ERP Name': erp_name_obj,
+            'Image': self.selected_image_path,
+            'Manufacturer': manufacturer,
+            'Remark': remark,
+            'Tracking Method': '',
+            'Use for ML': False,
+            'Category': category,
+            'Subcategory': subcategory,
+            'Sub-subcategory': sub_subcategory,
+            'Stage': props.get('stage', ''),
+            'Origin': props.get('origin', ''),
+            'Usage': props.get('usage', ''),
+            'CAD Name': '',
+            'EAN13': '',
+            'Serialized': serialized,
+            'Buy': buy
+        }
+
+        return new_item
+    
+    def _reset_form_fields_for_new_item(self):
+        """Reset all fields to empty state after adding a new item."""
+        self.selected_image_path = ""
+        self.user_erp_name_entry.delete(0, tk.END)
+        self.type_entry.delete(0, tk.END)
+        self.pn_entry.delete(0, tk.END)
+        self.details_entry.delete(0, tk.END)
+        self.manufacturer_entry.delete(0, tk.END)
+        self.remark_entry.delete(0, tk.END)
+
+        self.image_preview_label.configure(image='', text="No Image")
+        self.current_image_photo = None
+
+        # Reset dropdowns to placeholders
+        self.category_dropdown.set("Select Category...")
+        self.subcategory_dropdown.set("Select Subcategory...")
+        self.subcategory_dropdown.configure(values=["Select Subcategory..."])
+        self.sub_subcategory_dropdown.set("Select Sub-subcategory...")
+        self.sub_subcategory_dropdown.configure(values=["Select Sub-subcategory..."])

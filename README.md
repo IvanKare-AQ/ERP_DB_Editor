@@ -24,7 +24,7 @@ ERP_DB_Editor/
 │       ├── excel_handler.py # Excel file operations
 │       └── config_manager.py # Configuration management
 ├── config/                # Configuration files
-│   └── default_settings.json
+│   └── application_setting.json
 ├── data/                  # Data files (ignored by git)
 ├── App_Requirements.md     # Project requirements and context
 ├── requirements.txt       # Python dependencies
@@ -84,10 +84,11 @@ python src/main.py
 
 ## Configuration
 
-The application uses `config/default_settings.json` to store:
+The application uses `config/application_setting.json` to store:
 - Available columns
 - Column visibility settings
-- View preferences
+- View preferences (filters, tree expansion state)
+- AI model and prompt preferences
 
 ## Requirements
 
