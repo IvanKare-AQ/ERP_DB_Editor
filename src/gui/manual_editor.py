@@ -362,6 +362,26 @@ class ManualEditor(ctk.CTkFrame):
         )
         self.convert_and_update_button.pack(side="left")
 
+        # Boolean checkboxes frame (Serialized and Buy)
+        checkboxes_frame = ctk.CTkFrame(parent)
+        checkboxes_frame.pack(anchor="w", pady=(5, 0))
+        
+        # Serialized checkbox
+        self.serialized_checkbox = ctk.CTkCheckBox(
+            checkboxes_frame,
+            text="Serialized",
+            width=150
+        )
+        self.serialized_checkbox.pack(side="left", padx=(10, 20))
+        
+        # Buy checkbox
+        self.buy_checkbox = ctk.CTkCheckBox(
+            checkboxes_frame,
+            text="Buy",
+            width=150
+        )
+        self.buy_checkbox.pack(side="left", padx=(0, 10))
+
         # Update button frame (moved to bottom)
         update_frame = ctk.CTkFrame(parent)
         update_frame.pack(anchor="w", pady=(5, 10))
@@ -636,6 +656,34 @@ class ManualEditor(ctk.CTkFrame):
             self.remark_entry.delete(0, tk.END)
             self.remark_entry.insert(0, current_remark)
 
+            # Populate Serialized checkbox - priority: user modifications > original Serialized
+            current_serialized = self.tree_view.user_modifications.get(row_id, {}).get('serialized', None)
+            if current_serialized is None:
+                current_serialized = item_data.get('Serialized', "No")
+            # Convert "Yes"/"No" string to boolean for checkbox
+            if isinstance(current_serialized, str):
+                current_serialized = current_serialized.strip().lower() in ('yes', 'true', '1', 'y')
+            elif isinstance(current_serialized, bool):
+                pass  # Already boolean
+            else:
+                current_serialized = bool(current_serialized)
+            self.serialized_checkbox.configure(state="normal")
+            self.serialized_checkbox.select() if current_serialized else self.serialized_checkbox.deselect()
+
+            # Populate Buy checkbox - priority: user modifications > original Buy
+            current_buy = self.tree_view.user_modifications.get(row_id, {}).get('buy', None)
+            if current_buy is None:
+                current_buy = item_data.get('Buy', "Yes")
+            # Convert "Yes"/"No" string to boolean for checkbox
+            if isinstance(current_buy, str):
+                current_buy = current_buy.strip().lower() in ('yes', 'true', '1', 'y')
+            elif isinstance(current_buy, bool):
+                pass  # Already boolean
+            else:
+                current_buy = bool(current_buy)
+            self.buy_checkbox.configure(state="normal")
+            self.buy_checkbox.select() if current_buy else self.buy_checkbox.deselect()
+
             # Enable buttons when item is selected
             self.update_name_button.configure(state="normal")
             self.reset_name_button.configure(state="normal")
@@ -691,6 +739,12 @@ class ManualEditor(ctk.CTkFrame):
             self.type_entry.delete(0, tk.END)
             self.pn_entry.delete(0, tk.END)
             self.details_entry.delete(0, tk.END)
+            
+            # Clear checkboxes
+            self.serialized_checkbox.deselect()
+            self.serialized_checkbox.configure(state="disabled")
+            self.buy_checkbox.deselect()
+            self.buy_checkbox.configure(state="disabled")
 
             # Disable buttons when no item is selected
             self.update_name_button.configure(state="disabled")
@@ -1005,6 +1059,8 @@ class ManualEditor(ctk.CTkFrame):
         details_value = self.details_entry.get().strip()
         manufacturer = self.manufacturer_entry.get().strip()
         remark = self.remark_entry.get().strip()
+        serialized = self.serialized_checkbox.get()
+        buy = self.buy_checkbox.get()
 
         # Reconstruct ERP Name object from parsed fields
         erp_name_obj = {
@@ -1018,6 +1074,8 @@ class ManualEditor(ctk.CTkFrame):
         self.tree_view.update_user_erp_name(self.selected_row_id, erp_name_obj)
         self.tree_view.update_manufacturer(self.selected_row_id, manufacturer)
         self.tree_view.update_remark(self.selected_row_id, remark)
+        self.tree_view.update_serialized(self.selected_row_id, serialized)
+        self.tree_view.update_buy(self.selected_row_id, buy)
         
         # Notify main window about changes for Save button state
         if self.main_window and hasattr(self.main_window, 'mark_data_changed'):
@@ -1032,6 +1090,8 @@ class ManualEditor(ctk.CTkFrame):
                 updated_fields.append(f"Manufacturer: {manufacturer}")
             if remark:
                 updated_fields.append(f"Remark: {remark}")
+            updated_fields.append(f"Serialized: {serialized}")
+            updated_fields.append(f"Buy: {buy}")
 
             if updated_fields:
                 self.main_window.update_status(f"Updated: {', '.join(updated_fields)}")
@@ -1456,6 +1516,17 @@ class ManualEditor(ctk.CTkFrame):
         if hasattr(self.main_window, "json_handler"):
             props = self.main_window.json_handler.get_category_properties(category, subcategory, sub_subcategory) or {}
 
+        # Get Serialized and Buy checkbox values (checkboxes return booleans)
+        serialized_checkbox_value = self.serialized_checkbox.get() if hasattr(self, 'serialized_checkbox') else False
+        buy_checkbox_value = self.buy_checkbox.get() if hasattr(self, 'buy_checkbox') else True
+        # If manufacturer contains "AirQ", set Buy to False
+        if 'AirQ' in manufacturer:
+            buy_checkbox_value = False
+        
+        # Convert boolean to "Yes"/"No" strings for storage
+        serialized = "Yes" if serialized_checkbox_value else "No"
+        buy = "Yes" if buy_checkbox_value else "No"
+
         new_item = {
             'PN': pn_value,
             'ERP Name': erp_name_obj,
@@ -1469,10 +1540,11 @@ class ManualEditor(ctk.CTkFrame):
             'Sub-subcategory': sub_subcategory,
             'Stage': props.get('stage', ''),
             'Origin': props.get('origin', ''),
-            'Serialized': props.get('serialized', ''),
             'Usage': props.get('usage', ''),
             'CAD Name': '',
-            'EAN13': ''
+            'EAN13': '',
+            'Serialized': serialized,
+            'Buy': buy
         }
 
         return new_item

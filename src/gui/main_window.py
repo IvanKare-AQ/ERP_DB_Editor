@@ -201,6 +201,7 @@ class MainWindow:
         # Create tree view widget
         self.tree_view = TreeViewWidget(self.left_panel, self.config_manager)
         self.tree_view.pack(fill="both", expand=True)
+        self.tree_view.set_view_change_callback(self.on_tree_view_changed)
         
         saved_expansion = self.config_manager.get_tree_expansion_state()
         self.tree_view.load_expansion_state_from_config(saved_expansion)
@@ -605,6 +606,11 @@ class MainWindow:
         else:
             self.save_view_button.configure(state="disabled")
             self.view_has_changes = False
+
+    def on_tree_view_changed(self):
+        """Callback invoked when tree view expansion state changes."""
+        self.view_has_changes = True
+        self.update_save_view_button_state()
     
     def open_filter_dialog(self):
         """Open the filter dialog."""

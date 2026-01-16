@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Appends validated drafts to `data/component_database.json`, clears `data/new_items.json`, and refreshes the tree view without discarding in-memory edits
   - Detailed error reporting prevents partial commits while keeping existing data untouched
 - **Tree Expansion Persistence**: Tree view now preserves user expansion state for primary and draft datasets, avoids forced auto-expansion after edits, and saves/restores the expansion map through Save View.
+- **Serialized and Buy Fields**: Added two new boolean fields stored as human-readable "Yes"/"No" strings
+  - "Serialized" field: Indicates whether an item is serialized (defaults to "No")
+  - "Buy" field: Indicates whether an item should be purchased (defaults to "Yes", automatically set to "No" for items with Manufacturer containing "AirQ")
+  - Checkboxes in Editor tab (under Details, above "Update All Fields" button) for easy editing
+  - Both fields are visible in tree view and exported to Excel
+  - Fields are stored as "Yes"/"No" strings in JSON for human readability
 
 ### Changed
 - **Buffered Editing**: `TreeViewWidget` now reuses cached DataFrames, invalidates them only through `_mark_data_dirty()`, and applies modifications in-place instead of cloning the full dataset on every action.
@@ -49,6 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Manual Editor**: Resetting an ERP Name now reports the restored value using the correct variable, eliminating the `original_erp_name` reference error.
 - **Delete Button Save State**: Removing an item now marks the dataset dirty and enables the Save button so deletions can be persisted immediately.
+- **Tree View Expansion State**: Fixed TclError when capturing expansion state during column visibility changes by adding proper widget existence checks.
+- **Tree View Change Tracking**: Tree expansion/collapse actions now properly trigger view change notifications, enabling the Save View button when expansion state changes.
 
 ## [1.4.0] - 2025-11-20
 

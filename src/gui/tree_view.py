@@ -55,6 +55,9 @@ class TreeViewWidget(ctk.CTkFrame):
         # Columns will be dynamically determined from loaded data
         self._all_columns = None
         
+        # Callback for view change notifications (assigned by main window)
+        self.view_change_callback = None
+        
         # Create the tree view
         self.create_tree_view()
 
@@ -258,6 +261,8 @@ class TreeViewWidget(ctk.CTkFrame):
         # Bind mouse events for hover effects
         self.tree.bind("<Motion>", self.on_mouse_motion)
         self.tree.bind("<Leave>", self.on_mouse_leave)
+        self.tree.bind("<<TreeviewOpen>>", self._on_tree_item_toggle)
+        self.tree.bind("<<TreeviewClose>>", self._on_tree_item_toggle)
         
     def setup_columns(self):
         """Setup the tree view columns."""
@@ -469,6 +474,26 @@ class TreeViewWidget(ctk.CTkFrame):
                         values.append(str(pn_value))
                 else:
                     values.append('')
+            elif col in ["Serialized", "Buy"]:
+                # Handle "Yes"/"No" string columns
+                value = row.get(data_col, "No")
+                if pd.isna(value):
+                    values.append("No")
+                else:
+                    # Convert to "Yes"/"No" string
+                    if isinstance(value, bool):
+                        values.append("Yes" if value else "No")
+                    elif isinstance(value, str):
+                        value_str = value.strip()
+                        if value_str.lower() in ('yes', 'true', '1', 'y'):
+                            values.append("Yes")
+                        elif value_str.lower() in ('no', 'false', '0', 'n'):
+                            values.append("No")
+                        else:
+                            values.append("No")  # Default
+                    else:
+                        # Convert other types
+                        values.append("Yes" if bool(value) else "No")
             else:
                 values.append(row.get(data_col, ''))
         
@@ -492,8 +517,19 @@ class TreeViewWidget(ctk.CTkFrame):
     # ------------------------------------------------------------------
     def _expand_all_nodes(self):
         """Expand every node in the tree (fallback when no saved state)."""
+        if not hasattr(self, "tree"):
+            return
+        try:
+            if not self.tree.winfo_exists():
+                return
+        except tk.TclError:
+            return
+        
         def expand_children(item):
-            self.tree.item(item, open=True)
+            try:
+                self.tree.item(item, open=True)
+            except tk.TclError:
+                return
             for child in self.tree.get_children(item):
                 expand_children(child)
         
@@ -505,7 +541,16 @@ class TreeViewWidget(ctk.CTkFrame):
         if not hasattr(self, "tree"):
             return
         
-        children = self.tree.get_children()
+        try:
+            if not self.tree.winfo_exists():
+                return
+        except tk.TclError:
+            return
+        
+        try:
+            children = self.tree.get_children()
+        except tk.TclError:
+            return
         if view_key is None:
             view_key = self._tree_visual_view
         if view_key not in self._expansion_states:
@@ -514,9 +559,13 @@ class TreeViewWidget(ctk.CTkFrame):
         state = {}
         
         def traverse(item, path):
-            text = self.tree.item(item, "text") or ""
+            try:
+                text = self.tree.item(item, "text") or ""
+                open_state = bool(self.tree.item(item, "open"))
+            except tk.TclError:
+                return
             node_path = path + (text,)
-            state[node_path] = bool(self.tree.item(item, "open"))
+            state[node_path] = open_state
             for child in self.tree.get_children(item):
                 traverse(child, node_path)
         
@@ -529,13 +578,24 @@ class TreeViewWidget(ctk.CTkFrame):
     
     def _restore_expansion_state(self):
         """Restore expanded/collapsed nodes for the target view."""
+        if not hasattr(self, "tree"):
+            return
+        try:
+            if not self.tree.winfo_exists():
+                return
+        except tk.TclError:
+            return
+        
         state = self._expansion_states.get(self.current_view, {})
         if not state:
             self._expand_all_nodes()
             return
         
         def traverse(item, path):
-            text = self.tree.item(item, "text") or ""
+            try:
+                text = self.tree.item(item, "text") or ""
+            except tk.TclError:
+                return
             node_path = path + (text,)
             if node_path in state:
                 self.tree.item(item, open=state[node_path])
@@ -574,6 +634,22 @@ class TreeViewWidget(ctk.CTkFrame):
         
         for view in ("primary", "added"):
             self._expansion_states.setdefault(view, {})
+
+    def set_view_change_callback(self, callback):
+        """Register callback to notify when view-related settings change."""
+        self.view_change_callback = callback
+
+    def _notify_view_change(self):
+        if callable(self.view_change_callback):
+            try:
+                self.view_change_callback()
+            except Exception:
+                pass
+
+    def _on_tree_item_toggle(self, _event=None):
+        """Handle expand/collapse events to track expansion state."""
+        self._capture_expansion_state(view_key=self.current_view)
+        self._notify_view_change()
             
     def get_data(self):
         """Get the current data from the tree view."""
@@ -627,6 +703,7 @@ class TreeViewWidget(ctk.CTkFrame):
             self._restore_expansion_state()
             self._tree_visual_view = self.current_view
             self._capture_expansion_state(view_key=self.current_view)
+            self._notify_view_change()
     
     def setup_columns_with_visibility(self, visible_columns):
         """Setup tree view columns with only visible columns."""
@@ -866,6 +943,20 @@ class TreeViewWidget(ctk.CTkFrame):
                 data.at[idx, 'Remark'] = mods['remark']
             if 'image' in mods:
                 data.at[idx, 'Image'] = mods['image']
+            if 'serialized' in mods:
+                # Ensure it's stored as "Yes"/"No" string
+                serialized_val = mods['serialized']
+                if isinstance(serialized_val, bool):
+                    data.at[idx, 'Serialized'] = "Yes" if serialized_val else "No"
+                else:
+                    data.at[idx, 'Serialized'] = str(serialized_val)
+            if 'buy' in mods:
+                # Ensure it's stored as "Yes"/"No" string
+                buy_val = mods['buy']
+                if isinstance(buy_val, bool):
+                    data.at[idx, 'Buy'] = "Yes" if buy_val else "No"
+                else:
+                    data.at[idx, 'Buy'] = str(buy_val)
 
         self._modified_cache = {
             'version': self._mod_version,
@@ -1001,6 +1092,30 @@ class TreeViewWidget(ctk.CTkFrame):
         entry = self._ensure_mod_entry(row_id)
         entry['remark'] = remark
         # Note: Remark updates will be reflected in tree view when data is refreshed
+        self._mark_data_dirty()
+    
+    def update_serialized(self, row_id, serialized):
+        """Update serialized flag for a specific row."""
+        entry = self._ensure_mod_entry(row_id)
+        # Convert boolean to "Yes"/"No" string
+        if isinstance(serialized, bool):
+            entry['serialized'] = "Yes" if serialized else "No"
+        elif isinstance(serialized, str):
+            entry['serialized'] = "Yes" if serialized.strip().lower() in ('yes', 'true', '1', 'y') else "No"
+        else:
+            entry['serialized'] = "Yes" if bool(serialized) else "No"
+        self._mark_data_dirty()
+    
+    def update_buy(self, row_id, buy):
+        """Update buy flag for a specific row."""
+        entry = self._ensure_mod_entry(row_id)
+        # Convert boolean to "Yes"/"No" string
+        if isinstance(buy, bool):
+            entry['buy'] = "Yes" if buy else "No"
+        elif isinstance(buy, str):
+            entry['buy'] = "Yes" if buy.strip().lower() in ('yes', 'true', '1', 'y') else "No"
+        else:
+            entry['buy'] = "Yes" if bool(buy) else "No"
         self._mark_data_dirty()
     
     def _find_tree_item_by_row_id(self, row_id):
