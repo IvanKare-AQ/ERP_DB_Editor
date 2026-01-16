@@ -1,0 +1,16 @@
+.ai-editor {
+  padding: 20px;
+  color: #ffffff;
+}
+
+.ai-editor h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+.no-selection {
+  color: #888;
+  text-align: center;
+  padding: 40px;
+}

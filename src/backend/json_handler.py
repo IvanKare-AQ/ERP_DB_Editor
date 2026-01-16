@@ -446,11 +446,11 @@ class JsonHandler:
             numeric = pd.to_numeric(series, errors='coerce').dropna()
             pn_values.extend(numeric.astype(int).tolist())
 
-        if self.data is not None and 'PN' in self.data.columns:
-            collect_pn(self.data['PN'])
+        if self.data is not None and 'AirQ_PN' in self.data.columns:
+            collect_pn(self.data['AirQ_PN'])
 
-        if self.added_data is not None and 'PN' in self.added_data.columns:
-            collect_pn(self.added_data['PN'])
+        if self.added_data is not None and 'AirQ_PN' in self.added_data.columns:
+            collect_pn(self.added_data['AirQ_PN'])
 
         return max(pn_values) + 1 if pn_values else 1
 
@@ -545,26 +545,26 @@ class JsonHandler:
 
         # Collect existing PN values to ensure uniqueness
         existing_pn = set()
-        if 'PN' in self.data.columns:
-            pn_series = pd.to_numeric(self.data['PN'], errors='coerce').dropna().astype(int)
+        if 'AirQ_PN' in self.data.columns:
+            pn_series = pd.to_numeric(self.data['AirQ_PN'], errors='coerce').dropna().astype(int)
             existing_pn.update(pn_series.tolist())
 
         for idx, row in working_df.iterrows():
             row_errors = []
             display_index = idx + 1
 
-            # Validate PN
-            pn_value = row.get('PN', '')
+            # Validate AirQ_PN
+            pn_value = row.get('AirQ_PN', '')
             try:
                 pn_int = int(pn_value)
             except (TypeError, ValueError):
-                row_errors.append("PN must be a numeric value.")
+                row_errors.append("AirQ_PN must be a numeric value.")
             else:
                 if pn_int in existing_pn:
-                    row_errors.append(f"PN {pn_int:07d} already exists in the database.")
+                    row_errors.append(f"AirQ_PN {pn_int:07d} already exists in the database.")
                 else:
                     existing_pn.add(pn_int)
-                    working_df.at[idx, 'PN'] = pn_int
+                    working_df.at[idx, 'AirQ_PN'] = pn_int
 
             # Validate ERP Name
             erp_obj = self._normalize_erp_name(row.get('ERP Name', {}))

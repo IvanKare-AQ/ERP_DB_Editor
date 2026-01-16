@@ -401,6 +401,37 @@
   - Button state management (disabled during suggestion generation)
   - Integration with AI model selection from AI editor settings
 
+## Database Schema Requirements
+- **AirQ_PN Field**: Primary identifier field in `component_database.json` (renamed from "PN")
+  - AirQ_PN serves as the unique database ID for each component
+  - Displayed as "AirQ PN" in the UI with 7-digit formatting (e.g., 0000123)
+  - Automatically assigned next available value when creating new items
+  - Editable in new item mode with real-time uniqueness validation
+  - Field turns red when user enters an existing value
+  - Validation prevents submission of duplicate AirQ_PN values
+- **Mfr. PN Field**: Manufacturer Part Number stored in ERP Name object
+  - Separate from AirQ_PN (database ID)
+  - Stored as `part_number` in the ERP Name object structure
+  - Displayed as "Mfr. PN" in the UI
+  - Can be "NO-PN" for items without manufacturer part numbers
+  - Editable independently from AirQ_PN
+
+## Web Application Requirements
+- **FastAPI Backend**: RESTful API for database operations
+  - Port 8001 for API server
+  - CORS enabled for React frontend communication
+  - API endpoints for CRUD operations, image handling, category management
+  - Static file serving for React build output
+- **React Frontend**: Modern web-based user interface
+  - Vite build tool for development and production
+  - Component-based architecture mirroring desktop application
+  - Real-time validation and feedback
+  - Responsive design with dark theme
+- **Migration Support**: Database migration scripts for schema changes
+  - Scripts for renaming columns (e.g., PN to AirQ_PN)
+  - Automatic backup creation before migrations
+  - Validation and error handling
+
 ## Dependencies
 - customtkinter (for GUI framework)
 - pandas (for data handling and DataFrame operations)
@@ -410,4 +441,8 @@
 - Pillow (for image processing)
 - ddgs (for web image search)
 - pyinstaller (for cross-platform executable creation)
+- fastapi (for web API backend)
+- uvicorn (for ASGI server)
+- react (for web frontend)
+- vite (for frontend build tool)
 - Note: openpyxl removed - Excel support no longer needed

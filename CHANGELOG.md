@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Database Column Rename**: Renamed "PN" column to "AirQ_PN" throughout the application
+  - Migration script (`migrate_pn_to_airq_pn.py`) for safe database schema updates
+  - Automatic backup creation before migration
+  - Updated all backend code references from PN to AirQ_PN
+  - Updated all API route references from PN to AirQ_PN
+  - Updated GUI code to use AirQ_PN column name
+  - Updated web frontend to use AirQ_PN
+- **AirQ PN Field Enhancement**: Improved AirQ PN field behavior in new item mode
+  - AirQ PN field is now editable when creating new items
+  - Automatically populated with next available AirQ_PN value
+  - Real-time uniqueness validation with visual feedback (red border when duplicate)
+  - Prevents submission of duplicate AirQ_PN values
+  - Field displays as read-only when editing existing items
+- **Label Updates**: Improved field labeling for clarity
+  - "PN" label renamed to "AirQ PN" for database ID field
+  - "PN" label under Type renamed to "Mfr. PN" for manufacturer part number
+  - Clear distinction between AirQ_PN (database ID) and Mfr. PN (manufacturer part number)
+- **Placeholder Text Updates**: Improved input field placeholders
+  - Type, Mfr. PN, and Details fields now use "Enter..." placeholders
+  - Consistent with other editable fields in the application
+  - Removed "Parsed from User ERP Name..." text
+
+### Changed
+- **New Button Behavior**: Modified "New" button functionality
+  - AirQ PN field now set to first available AirQ_PN (not defaulting to 1)
+  - Mfr. PN field remains blank (separate from AirQ_PN)
+  - All other input fields cleared as before
+  - AirQ PN field becomes editable in new item mode
+- **Database Schema**: Updated component_database.json structure
+  - "PN" column renamed to "AirQ_PN" in all database records
+  - Maintains backward compatibility through migration script
+  - All existing data migrated automatically
+
+### Fixed
+- **AirQ PN Default Value**: Fixed AirQ PN defaulting to 1 instead of next available value
+  - Now correctly fetches and displays next available AirQ_PN from database
+  - Proper handling when database is empty or has gaps in numbering
+
 ## [1.5.0] - 2026-01-16
 
 ### Added

@@ -463,8 +463,8 @@ class TreeViewWidget(ctk.CTkFrame):
             if col == "ERP Name":
                 # Extract full_name from ERP name object for display
                 values.append(self._get_erp_name_full(row))
-            elif col == "PN":
-                # Format PN as 7 digits with leading zeros
+            elif col == "AirQ_PN":
+                # Format AirQ_PN as 7 digits with leading zeros
                 pn_value = row.get(data_col, '')
                 if pn_value and pd.notna(pn_value):
                     try:

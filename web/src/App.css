@@ -1,0 +1,42 @@
+.App {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  background-color: #1e1e1e;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.app-header {
+  padding: 15px 20px;
+  background-color: #2b2b2b;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.app-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.app-left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid #3a3a3a;
+}
+
+.app-right-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
