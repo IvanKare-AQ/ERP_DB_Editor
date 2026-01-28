@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Web Application Features**:
+  - **Column Visibility Dialog**: Full implementation of column visibility management in web UI
+    - Dialog displays all available columns with checkboxes
+    - TreeView dynamically updates to show only selected columns
+    - Column header row displays visible column names
+    - Settings persist via Save View functionality
+  - **Filter Dialog**: Spreadsheet-style filtering functionality for web UI
+    - Filter types: Contains, Equals, Starts With, Ends With, Not Contains
+    - Multiple column filters can be applied simultaneously
+    - Autocomplete suggestions from unique column values
+    - Clear individual filters or clear all filters functionality
+  - **Export Functionality**: Excel export with timestamped filenames
+    - Export button labeled "Excel" with download icon
+    - Filenames include timestamp: `component_database_YYYY-MM-DDTHH-MM-SS.xlsx`
+    - Separate JSON export endpoint available for programmatic access
+  - **View Toggle**: Switch between primary and added/draft items
+    - Button dynamically updates label ("Show New Items" / "Show Current Items")
+    - TreeView loads appropriate dataset based on current view
+    - API endpoint `/api/database/load-added` for loading draft items
+  - **TreeView Column Display**: Dynamic column rendering based on visibility settings
+    - Items display all visible columns in flex layout
+    - Column header row shows visible column names
+    - Proper formatting for different column types (AirQ_PN, ERP Name, etc.)
 - **Application Version Display**: Added version number (v1.5.0) to top right corner of application header
   - Displays in gray color for subtle visibility
   - Positioned using flexbox layout in header
@@ -50,6 +73,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All existing data migrated automatically
 
 ### Fixed
+- **Web Application Button Functionality**: Fixed non-working toolbar buttons in web UI
+  - Export button now properly exports Excel files with correct blob handling
+  - Filter Data button opens Filter Dialog with full functionality
+  - Show New Items button properly toggles between primary and added items views
+  - Column Visibility button opens dialog and applies changes correctly
+- **Export Error Handling**: Improved error handling for export functionality
+  - Better detection of error responses vs. file downloads
+  - Proper parsing of JSON error messages
+  - Clear error messages displayed to users
 - **AirQ PN Default Value**: Fixed AirQ PN defaulting to 1 instead of next available value
   - Now correctly fetches and displays next available AirQ_PN from database
   - Proper handling when database is empty or has gaps in numbering

@@ -40,3 +40,16 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.toolbar-btn-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+.toolbar-btn-icon {
+  font-size: 16px;
+  line-height: 1;
+  display: inline-block;
+}

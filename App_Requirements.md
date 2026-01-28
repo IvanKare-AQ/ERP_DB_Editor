@@ -421,6 +421,8 @@
   - Port 8001 for API server
   - CORS enabled for React frontend communication
   - API endpoints for CRUD operations, image handling, category management
+  - API endpoints for database export (JSON and Excel formats)
+  - API endpoint for loading added/draft items separately
   - Static file serving for React build output
 - **React Frontend**: Modern web-based user interface
   - Vite build tool for development and production
@@ -430,6 +432,30 @@
   - Application version display in top right corner of header
   - Editor panel always visible (no need to select item first)
   - Automatic initialization of editor with next available AirQ_PN when no item selected
+  - Column Visibility dialog for managing visible columns in tree view
+  - Filter Dialog for applying spreadsheet-style filters to tree view data
+  - Export functionality with timestamped Excel file downloads
+  - View toggle between primary items and added/draft items
+  - TreeView component with dynamic column display based on visibility settings
+- **Export Functionality**:
+  - Excel export with timestamp appended to filename (format: `component_database_YYYY-MM-DDTHH-MM-SS.xlsx`)
+  - JSON export endpoint available for programmatic access
+  - Download icon displayed on Excel export button
+- **Column Visibility**:
+  - Column Visibility dialog allows users to select which columns are displayed
+  - TreeView dynamically updates to show only selected columns
+  - Column header row displays visible column names
+  - Settings persist via Save View functionality
+- **Filter Functionality**:
+  - Filter Dialog provides spreadsheet-style filtering for all columns
+  - Filter types: Contains, Equals, Starts With, Ends With, Not Contains
+  - Multiple column filters can be applied simultaneously
+  - Autocomplete suggestions from unique column values
+  - Clear individual filters or clear all filters
+- **View Management**:
+  - Toggle between primary database items and added/draft items
+  - Button label dynamically updates ("Show New Items" / "Show Current Items")
+  - TreeView loads appropriate dataset based on current view
 - **Migration Support**: Database migration scripts for schema changes
   - Scripts for renaming columns (e.g., PN to AirQ_PN)
   - Automatic backup creation before migrations
@@ -446,6 +472,9 @@
 - pyinstaller (for cross-platform executable creation)
 - fastapi (for web API backend)
 - uvicorn (for ASGI server)
+- python-multipart (for file uploads in FastAPI)
+- pydantic (for data validation in FastAPI)
+- openpyxl (for Excel export functionality)
 - react (for web frontend)
 - vite (for frontend build tool)
-- Note: openpyxl removed - Excel support no longer needed
+- axios (for HTTP requests in React)

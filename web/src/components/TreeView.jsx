@@ -2,24 +2,37 @@ import React, { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import './TreeView.css'
 
-function TreeView({ onItemSelect, selectedItemId }) {
+function TreeView({ onItemSelect, selectedItemId, visibleColumns = [], currentView = 'primary' }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [expandedNodes, setExpandedNodes] = useState(new Set())
-  const [visibleColumns, setVisibleColumns] = useState([])
+  const [allColumns, setAllColumns] = useState([])
 
   useEffect(() => {
     loadDatabase()
-  }, [])
+  }, [currentView])
+
+  useEffect(() => {
+    // Reload when visibleColumns change
+    if (data && visibleColumns.length > 0) {
+      // Force re-render with new column visibility
+    }
+  }, [visibleColumns, data])
 
   const loadDatabase = async () => {
     try {
       setLoading(true)
-      const response = await axios.get('/api/database/load')
+      let response
+      if (currentView === 'added') {
+        response = await axios.get('/api/database/load-added')
+      } else {
+        response = await axios.get('/api/database/load')
+      }
+      
       if (response.data.success) {
         setData(response.data.data.items)
-        setVisibleColumns(response.data.data.columns || [])
+        setAllColumns(response.data.data.columns || [])
         setError(null)
       } else {
         setError('Failed to load database')
@@ -30,6 +43,37 @@ function TreeView({ onItemSelect, selectedItemId }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const getColumnValue = (item, columnName) => {
+    try {
+      if (columnName === 'ERP Name') {
+        const erpNameObj = item['ERP Name']
+        if (typeof erpNameObj === 'string') {
+          return erpNameObj
+        } else if (erpNameObj && typeof erpNameObj === 'object') {
+          return erpNameObj.full_name || erpNameObj.type || ''
+        }
+        return ''
+      } else if (columnName === 'AirQ_PN') {
+        const pn = item.AirQ_PN || ''
+        return String(pn).padStart(7, '0')
+      } else {
+        return item[columnName] || ''
+      }
+    } catch (err) {
+      console.error(`Error getting column value for ${columnName}:`, err)
+      return ''
+    }
+  }
+
+  const getDisplayColumns = () => {
+    // If visibleColumns is provided and not empty, use it
+    // Otherwise, use all columns
+    if (visibleColumns && visibleColumns.length > 0) {
+      return visibleColumns
+    }
+    return allColumns
   }
 
   // Build hierarchical structure
@@ -133,20 +177,7 @@ function TreeView({ onItemSelect, selectedItemId }) {
                       {isSubSubcategoryExpanded && treeData[category][subcategory][subSubcategory].map(item => {
                         const itemId = item._id
                         const isSelected = selectedItemId === itemId
-                        let pn = '0000000'
-                        let erpName = 'No Name'
-                        
-                        try {
-                          pn = String(item.AirQ_PN || '').padStart(7, '0')
-                          const erpNameObj = item['ERP Name']
-                          if (typeof erpNameObj === 'string') {
-                            erpName = erpNameObj
-                          } else if (erpNameObj && typeof erpNameObj === 'object') {
-                            erpName = erpNameObj.full_name || erpNameObj.type || 'No Name'
-                          }
-                        } catch (err) {
-                          console.error('Error processing item:', err, item)
-                        }
+                        const displayColumns = getDisplayColumns()
                         
                         return (
                           <div
@@ -163,8 +194,22 @@ function TreeView({ onItemSelect, selectedItemId }) {
                               }
                             }}
                           >
-                            <span className="tree-item-pn">{pn}</span>
-                            <span className="tree-item-name">{erpName}</span>
+                            {displayColumns.length > 0 ? (
+                              displayColumns.map((col, idx) => (
+                                <span 
+                                  key={col} 
+                                  className={`tree-item-cell tree-item-${col.toLowerCase().replace(/\s+/g, '-')}`}
+                                  style={{ minWidth: idx === 0 ? '80px' : '120px' }}
+                                >
+                                  {getColumnValue(item, col)}
+                                </span>
+                              ))
+                            ) : (
+                              <>
+                                <span className="tree-item-pn">{getColumnValue(item, 'AirQ_PN')}</span>
+                                <span className="tree-item-name">{getColumnValue(item, 'ERP Name')}</span>
+                              </>
+                            )}
                           </div>
                         )
                       })}
@@ -181,8 +226,22 @@ function TreeView({ onItemSelect, selectedItemId }) {
     return nodes
   }
 
+  const displayColumns = getDisplayColumns()
+
   return (
     <div className="tree-view">
+      {displayColumns.length > 0 && (
+        <div className="tree-header">
+          {displayColumns.map(col => (
+            <span 
+              key={col} 
+              className={`tree-header-cell tree-header-${col.toLowerCase().replace(/\s+/g, '-')}`}
+            >
+              {col}
+            </span>
+          ))}
+        </div>
+      )}
       {renderTree()}
     </div>
   )

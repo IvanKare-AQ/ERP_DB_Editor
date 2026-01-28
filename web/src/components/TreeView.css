@@ -6,6 +6,40 @@
   color: #ffffff;
 }
 
+.tree-header {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background-color: #2b2b2b;
+  border-bottom: 2px solid #3a3a3a;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  gap: 10px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+}
+
+.tree-header-cell {
+  color: #ccc;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-header-cell.tree-header-airq_pn {
+  min-width: 80px;
+}
+
+.tree-header-cell.tree-header-erp-name {
+  flex: 1;
+  min-width: 150px;
+}
+
 .tree-loading,
 .tree-error,
 .tree-empty {
@@ -61,6 +95,7 @@
   border-radius: 4px;
   transition: background-color 0.2s;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .tree-item:hover {
@@ -73,6 +108,25 @@
 
 .tree-item-selected:hover {
   background-color: #4a6a8a;
+}
+
+.tree-item-cell {
+  color: #ffffff;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-item-cell.tree-item-airq_pn {
+  font-family: monospace;
+  color: #888;
+  min-width: 80px;
+}
+
+.tree-item-cell.tree-item-erp-name {
+  flex: 1;
+  min-width: 150px;
 }
 
 .tree-item-pn {

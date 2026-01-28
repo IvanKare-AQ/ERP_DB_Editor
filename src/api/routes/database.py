@@ -135,22 +135,124 @@ async def get_columns():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get columns: {str(e)}")
 
-@router.post("/export/excel")
-async def export_to_excel(file_path: Optional[str] = None):
-    """Export database to Excel file."""
+@router.get("/load-added")
+async def load_added_items():
+    """Load added/draft items from new_items.json."""
     try:
         handler = get_json_handler()
-        data = handler.get_data()
+        handler.load_added_items()
+        added_data = handler.get_added_data()
         
-        if data is None:
-            raise HTTPException(status_code=400, detail="No data to export")
+        if added_data is None or added_data.empty:
+            return {
+                "success": True,
+                "message": "No added items found",
+                "data": {
+                    "items": [],
+                    "columns": [],
+                    "row_count": 0
+                }
+            }
         
-        # This would need to be implemented with file download
-        # For now, return the data as JSON
         return {
             "success": True,
-            "message": "Export functionality to be implemented",
-            "data": data.to_dict(orient='records')
+            "message": "Added items loaded successfully",
+            "data": {
+                "items": added_data.to_dict(orient='records'),
+                "columns": list(added_data.columns),
+                "row_count": len(added_data)
+            }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to export: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to load added items: {str(e)}")
+
+@router.post("/export/json")
+async def export_to_json():
+    """Export database to JSON file."""
+    try:
+        from fastapi.responses import Response
+        import json
+        
+        handler = get_json_handler()
+        handler.load_file()  # Ensure data is loaded
+        data = handler.get_data()
+        
+        if data is None or data.empty:
+            raise HTTPException(status_code=400, detail="No data to export")
+        
+        # Convert DataFrame to JSON
+        json_data = data.to_dict(orient='records')
+        
+        # Convert to JSON string with proper formatting
+        json_string = json.dumps(json_data, indent=2, ensure_ascii=False)
+        json_bytes = json_string.encode('utf-8')
+        
+        # Return as response with proper headers
+        return Response(
+            content=json_bytes,
+            media_type="application/json",
+            headers={
+                "Content-Disposition": "attachment; filename=component_database.json",
+                "Content-Type": "application/json; charset=utf-8"
+            }
+        )
+    except Exception as e:
+        import traceback
+        error_detail = f"Failed to export JSON: {str(e)}\n{traceback.format_exc()}"
+        raise HTTPException(status_code=500, detail=error_detail)
+
+@router.post("/export/excel")
+async def export_to_excel():
+    """Export database to Excel file. Separate endpoint for Excel export functionality."""
+    try:
+        from fastapi.responses import Response
+        import io
+        import pandas as pd
+        
+        handler = get_json_handler()
+        handler.load_file()  # Ensure data is loaded
+        data = handler.get_data()
+        
+        if data is None or data.empty:
+            raise HTTPException(status_code=400, detail="No data to export")
+        
+        # Create a copy for export
+        export_data = data.copy()
+        
+        # Convert ERP Name objects to full_name strings for Excel
+        if 'ERP Name' in export_data.columns:
+            def get_erp_full_name(erp_obj):
+                if isinstance(erp_obj, dict):
+                    return erp_obj.get('full_name', '')
+                elif pd.isna(erp_obj):
+                    return ''
+                else:
+                    return str(erp_obj)
+            
+            export_data['ERP Name'] = export_data['ERP Name'].apply(get_erp_full_name)
+        
+        # Create Excel file in memory
+        output = io.BytesIO()
+        try:
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                export_data.to_excel(writer, index=False, sheet_name='Components')
+            
+            # Get the bytes from the BytesIO object
+            output.seek(0)
+            excel_bytes = output.getvalue()
+            
+            # Return as response with proper headers
+            return Response(
+                content=excel_bytes,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={
+                    "Content-Disposition": "attachment; filename=component_database.xlsx",
+                    "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                }
+            )
+        finally:
+            output.close()
+    except Exception as e:
+        import traceback
+        error_detail = f"Failed to export Excel: {str(e)}\n{traceback.format_exc()}"
+        raise HTTPException(status_code=500, detail=error_detail)

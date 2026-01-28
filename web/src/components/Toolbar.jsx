@@ -24,10 +24,11 @@ function Toolbar({
           Save
         </button>
         <button 
-          className="toolbar-btn" 
+          className="toolbar-btn toolbar-btn-with-icon" 
           onClick={onExport}
         >
-          Export
+          <span className="toolbar-btn-icon">⬇</span>
+          Excel
         </button>
       </div>
       

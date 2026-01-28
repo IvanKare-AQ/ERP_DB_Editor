@@ -1,12 +1,16 @@
 # ERP Database Editor
 
-A Python GUI application for editing ERP database files using CustomTkinter.
+A Python application for editing ERP database files, available as both a desktop GUI (CustomTkinter) and a web application (FastAPI + React).
 
 ## Features
 
+- **Dual Interface**: Desktop GUI (CustomTkinter) and Web Application (React + FastAPI)
 - **Excel File Operations**: Open, save, and save-as functionality for Excel files
 - **Hierarchical Tree View**: Displays data in a tree format with Article Category → Article Subcategory → Article Sublevel → ERP Names hierarchy
 - **Column Visibility Control**: Users can show/hide columns and save their view preferences
+- **Manual Editor**: Edit item details including ERP Name, Type, Mfr. PN, Details, Manufacturer, Remarks
+- **Image Management**: Add images via web search (DuckDuckGo) or local file upload
+- **AI Features**: AI-powered category suggestions and field updates
 - **Clean Architecture**: Separation between GUI and backend components
 - **Configuration Management**: Persistent settings stored in JSON format
 
@@ -37,7 +41,9 @@ ERP_DB_Editor/
 
 ## Installation
 
-### Automated Installation (Recommended)
+### Desktop Application
+
+#### Automated Installation (Recommended)
 
 **For Linux/macOS:**
 ```bash
@@ -56,7 +62,7 @@ The installation scripts will automatically:
 - Create necessary directories
 - Verify the installation
 
-### Manual Installation
+#### Manual Installation
 
 1. Create and activate a virtual environment:
 ```bash
@@ -69,18 +75,57 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Run the application:
+3. Run the desktop application:
 ```bash
 python src/main.py
 ```
 
+### Web Application
+
+For web application setup, see [SETUP_WEB.md](SETUP_WEB.md) for detailed instructions.
+
+**Quick Start:**
+1. Install Python dependencies (same as desktop):
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Install Node.js dependencies:
+   ```bash
+   cd web
+   npm install
+   ```
+
+3. Start the backend API:
+   ```bash
+   ./run_api.sh
+   ```
+
+4. Start the frontend (in a new terminal):
+   ```bash
+   cd web
+   npm run dev
+   ```
+
+5. Open http://localhost:3000 in your browser
+
 ## Usage
 
+### Desktop Application
 1. **Load Database**: The application automatically loads the database (`data/component_database.json`) on startup.
 2. **View Data**: Data is displayed in a hierarchical tree view
 3. **Column Visibility**: Click "Column Visibility" to control which columns are shown
 4. **Save View**: Click "Save View" to save your column visibility preferences
 5. **Save Changes**: Use "Save" to save your changes to the database
+
+### Web Application
+1. **Start Servers**: Ensure both backend (port 8001) and frontend (port 3000) are running
+2. **Access Application**: Open http://localhost:3000 in your browser
+3. **Edit Items**: Click on items in the tree view to edit them in the editor panel
+4. **Add Items**: Click "New" to create a new item, then "Add Item" to save
+5. **Manage Images**: Use "Add Image" to search the web or upload local images
+6. **Column Visibility**: Use "Column Visibility" button to customize visible columns
+7. **Save Changes**: Use "Save" to persist changes to the database
 
 ## Configuration
 
@@ -92,10 +137,17 @@ The application uses `config/application_setting.json` to store:
 
 ## Requirements
 
+### Desktop Application
 - Python 3.8+
 - customtkinter
 - pandas
 - openpyxl
+
+### Web Application
+- Python 3.8+ (with FastAPI, uvicorn)
+- Node.js 18+ and npm
+- React 18+
+- See `requirements.txt` and `web/package.json` for complete dependency lists
 
 ## Development
 
